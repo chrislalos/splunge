@@ -9,4 +9,4 @@ home=$(getdir "${BASH_SOURCE[0]}")
 export PYTHONPATH=$PYTHONPATH:$home
 echo PYTHONPATH=$PYTHONPATH
 commitMsg=${1:-'no message'}
-git -C "$home" commit -am "$commitMsg" && git push; python3 -m setup clean sdist upload -r splunge
+git -C "$home" commit -am "$commitMsg" && git push; python3 -m setup clean sdist upload -r sparktools
