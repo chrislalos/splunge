@@ -13,6 +13,23 @@ from splunge import MagicLoader
 from splunge import PathString
 # from splunge import extracts
 
+
+#######################################################################################
+#
+# To run splunge:
+#
+# cd yourWebAppFolder
+# gunicorn -b localhost:somePortNumber splunge.App:Application (listen on a port)
+#
+#    or
+#
+# gunicorn -b unix:/tmp/splunge splunge.App:Application (listen on a Unix socket)
+#
+# In the likely event you run splunge behind nginx, use the Unix socket variant.
+#
+######################################################################################
+
+
 def createAndEnhanceModule (moduleName, path):
 	module = imp.load_source(moduleName, path)
 	module.validateMethod = validateMethod
@@ -88,6 +105,25 @@ class Response:
 		self.headers = []
 
 
+###########################################################################################
+#
+# Here's what splunge does.
+#
+# For url http://yourhost/name
+#
+# First: Splunge looks for a file named name.py
+#        If name.py is found, splunge loads the module using magic loader, and executes it.
+#        After executing the module, splunge checks if the special variable _ was set.
+#        If _ was set and is of type bytes, _ is sent as the response body.
+#        Otherwise _ is treated as a jinja template string and rendered using jinja
+#        (This is all to allow a quick method for a user to write a single python file, which
+#         does some processing and then returns a value)
+#
+#        After name.py is processed (if it existed), splunge looks for name.pyp
+#        If name.pyp is found, splunge treats it as a jinja template and renders it.
+#
+#       Other than some error handling, that's splunge.
+#
 class Application ():
 	def __init__ (self, env, start_response):
 		self.env = env
@@ -118,6 +154,7 @@ class Application ():
 					self.response.headers.append(('Content-Type', 'text/plain'))
 					for name in sorted(args):
 						value = args[name]
+						print("type({})={}".format(value, type(value))
 						self.response.text += "{} = {}\n".format(name, value)
 				else:
 					print("templatePath=" + templatePath)
