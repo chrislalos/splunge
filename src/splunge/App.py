@@ -112,6 +112,7 @@ class Application ():
 					self.response.text = renderString(args['_'], args)
 			else:
 				templatePath = getTemplatePath(env)
+				print("templatePath={}".format(templatePath))
 				if not os.path.isfile(templatePath):
 					self.response.headers.append(('Content-Type', 'text/plain'))
 					for name in sorted(args):
