@@ -114,6 +114,7 @@ class Application ():
 				templatePath = getTemplatePath(env)
 				print("templatePath={}".format(templatePath))
 				if not os.path.isfile(templatePath):
+					print("template path was not found")
 					self.response.headers.append(('Content-Type', 'text/plain'))
 					for name in sorted(args):
 						value = args[name]
