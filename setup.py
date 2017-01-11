@@ -8,7 +8,7 @@ setuptools.setup(name='splunge',
                  url='https://github.com/beantaxi/splunge',
                  author='Chris Lalos',
                  author_email='chris.lalos@gmail.com',
-                 install_requires=['gunicorn'],
+                 install_requires=['gunicorn', 'jinja2'],
                  packages=setuptools.find_packages('src'),
                  package_dir={'': 'src'})
 #                 packages=setuptools.find_packages(exclude=['tests']))
