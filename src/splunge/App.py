@@ -109,7 +109,7 @@ class Application ():
 				if isinstance(args['_'], bytes):
 					self.response.text = args['_']
 				else:
-					self.response.text = renderString(args['_'], args)
+					self.response.text = renderString(str(args['_']), args)
 			else:
 				templatePath = getTemplatePath(env)
 				print("templatePath={}".format(templatePath))
