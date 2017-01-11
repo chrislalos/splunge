@@ -57,7 +57,7 @@ def execModule (module):
 	args = {'http': module.http}
 	for attr in newAttrs:
 		val = getattr(module, attr)
-		if not inspect.isfunction(val) and not inspect.isclass(val):
+		if not callablet(val) and not inspect.isclass(val):
 			args[attr] = getattr(module, attr)
 	return args
 
@@ -116,11 +116,17 @@ class Response:
 #        After executing the module, splunge checks if the special variable _ was set.
 #        If _ was set and is of type bytes, _ is sent as the response body.
 #        Otherwise _ is treated as a jinja template string and rendered using jinja
-#        (This is all to allow a quick method for a user to write a single python file, which
+#        (This is a quick method for a user to write a single python file, which
 #         does some processing and then returns a value)
 #
 #        After name.py is processed (if it existed), splunge looks for name.pyp
 #        If name.pyp is found, splunge treats it as a jinja template and renders it.
+#        If name.pyp is not found, splunge iterates over the module it just executed, and dumps 
+#        all the variables that were set in the module.
+#        (This is a quick method for a user to write a single pythong file, which does some
+#         calculations, and then displays the results. What else would you want to do with a
+#         python file in your webapp, with no associated template file?)
+#        
 #
 #       Other than some error handling, that's splunge.
 #
