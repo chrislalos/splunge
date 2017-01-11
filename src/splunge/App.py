@@ -154,7 +154,7 @@ class Application ():
 					self.response.headers.append(('Content-Type', 'text/plain'))
 					for name in sorted(args):
 						value = args[name]
-						print("type({})={}".format(value, type(value))
+						print("type({})={}".format(value, type(value)))
 						self.response.text += "{} = {}\n".format(name, value)
 				else:
 					print("templatePath=" + templatePath)
