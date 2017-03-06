@@ -25,7 +25,8 @@ from splunge import PathString
 #
 # gunicorn -b unix:/tmp/splunge splunge.App:Application (listen on a Unix socket)
 #
-# In the likely event you run splunge behind nginx, use the Unix socket variant.
+# In the likely event you run splunge behind nginx, use the Unix socket variant. 
+# However the socket method can be handy for quick testing
 #
 ######################################################################################
 
