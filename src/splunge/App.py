@@ -36,6 +36,15 @@ def createAndEnhanceModule (moduleName, path):
 	return module
 
 
+######################################################################################
+#
+# This is the magic, which allows python modules in a splunge app to have 'global'
+# functions without doing any explicit imports. Who the heck wants to do imports?
+#
+# Note there is more value here than mere namespace pollution. E.g., instead of 
+# maintaining a response object, and having to call response.headers.append(), you 
+# can just call addHeader(). Nice.
+#
 def enrichModule (module, env, self):
 	reqMethod = env['REQUEST_METHOD']
 	module.http = lambda: None 
@@ -49,6 +58,18 @@ def enrichModule (module, env, self):
 	# import exceptions
 
 
+######################################################################################
+#
+# Splunge's enhanced exec module function.
+#
+# This function tries to do as little as possible, so it delegates the actual module
+# execution to the modules own exec() method, as it should.
+# 
+# The only difference, is that this function captures the dir() of the module before
+# and after. This lets the function detect which attributes have been added by module
+# execution, which it assumes are of interest to the user. If no .pyp template file is
+# defined, then the response body consists of name/value pairs of all these attributes.
+#
 def execModule (module):
 	attrs1 = set(dir(module))
 	module.exec()
@@ -57,18 +78,10 @@ def execModule (module):
 	args = {'http': module.http}
 	for attr in newAttrs:
 		val = getattr(module, attr)
-		if not callablet(val) and not inspect.isclass(val):
+		# We don't want to include functions or classes
+		if not callable(val) and not inspect.isclass(val):
 			args[attr] = getattr(module, attr)
 	return args
-
-
-def execTemplate (templatePath, args):
-	jloader = jinja2.FileSystemLoader(os.getcwd())
-	jenv = jinja2.Environment()
-	templateName = os.path.basename(templatePath)
-	jtemplate = jloader.load(jenv, templateName)
-	s = jtemplate.render(args)
-	return s 
 
 
 def getModulePath (env):
@@ -85,11 +98,22 @@ def getTemplatePath (env):
 	return templatePath
 
 
+# Shorthand for invoking jinja on a template string
 def renderString (s, args):
 	jenv = jinja2.Environment()
 	jtemplate = jenv.from_string(s)
 	s = jtemplate.render(args)
 	return s
+
+
+# Shorthand for invoking jinja on a template path
+def renderTemplate (templatePath, args):
+	jloader = jinja2.FileSystemLoader(os.getcwd())
+	jenv = jinja2.Environment()
+	templateName = os.path.basename(templatePath)
+	jtemplate = jloader.load(jenv, templateName)
+	s = jtemplate.render(args)
+	return s 
 
 
 def validateMethod (method, methods):
@@ -166,7 +190,7 @@ class Application ():
 				else:
 					print("templatePath=" + templatePath)
 					print("About to execute template ...")
-					self.response.text = execTemplate(templatePath, args)
+					self.response.text = renderTemplate(templatePath, args)
 		except GeneralClientEx as ex:
 			print(ex)
 			headers = [
