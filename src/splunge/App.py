@@ -11,6 +11,7 @@ from splunge import InvalidMethodEx
 from splunge import ModuleNotFoundEx 
 from splunge import MagicLoader
 from splunge import PathString
+from splunge import types
 # from splunge import extracts
 
 
@@ -39,28 +40,6 @@ def createAndEnhanceModule (moduleName, path):
 
 ######################################################################################
 #
-# This is the magic, which allows python modules in a splunge app to have 'global'
-# functions without doing any explicit imports. Who the heck wants to do imports?
-#
-# Note there is more value here than mere namespace pollution. E.g., instead of 
-# maintaining a response object, and having to call response.headers.append(), you 
-# can just call addHeader(). Nice.
-#
-def enrichModule (module, env, self):
-	reqMethod = env['REQUEST_METHOD']
-	module.http = lambda: None 
-	module.http.env = env
-	module.http.method = env['REQUEST_METHOD']
-	module.http.path = PathString(env['PATH_INFO'])
-	# module.http.pathParts = env['PATH_INFO'][1:].split('/')
-	module.addHeader = lambda x, y: self.response.headers.append((x, y))
-	module.validateMethod = lambda x: validateMethod(reqMethod, x) 
-	module.setContentType = lambda x: self.response.headers.append(('Content-type', x))
-	# import exceptions
-
-
-######################################################################################
-#
 # Splunge's enhanced exec module function.
 #
 # This function tries to do as little as possible, so it delegates the actual module
@@ -83,13 +62,6 @@ def execModule (module):
 		if not callable(val) and not inspect.isclass(val):
 			args[attr] = getattr(module, attr)
 	return args
-
-
-def getModulePath (env):
-	path = env['PATH_INFO']
-	moduleFilename = path[1:].partition('/')[0] + '.py'
-	modulePath = os.path.join(os.getcwd(), moduleFilename)
-	return modulePath
 
 
 def getTemplatePath (env):
@@ -160,38 +132,11 @@ class Application ():
 		self.env = env
 		self.startResponse = start_response
 		self.response = Response()
+		print("path=" + self.getPath())
 		try:
-			modulePath = getModulePath(env)
-			print("modulePath={}".format(modulePath))
-
-			try:
-				module = MagicLoader.loadModule(modulePath)
-				print("module={}".format(module))
-				enrichModule(module, env, self)
-				args = execModule(module)
-			except ModuleNotFoundEx as ex:
-				print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
-				args = {}
-			if '_' in args:
-				if isinstance(args['_'], bytes):
-					self.response.text = args['_']
-				else:
-					self.response.text = renderString(str(args['_']), args)
-			else:
-				templatePath = getTemplatePath(env)
-				print("templatePath={}".format(templatePath))
-				if not os.path.isfile(templatePath):
-					print("template path was not found")
-					self.response.headers.append(('Content-Type', 'text/plain'))
-					for name in sorted(args):
-						value = args[name]
-						# print("type({})={}".format(value, type(value)))
-						if not callable(value):
-							self.response.text += "{} = {}\n".format(name, value)
-				else:
-					print("templatePath=" + templatePath)
-					print("About to execute template ...")
-					self.response.text = renderTemplate(templatePath, args)
+			self.handleRequest()
+			if self.args:
+				self.handleArgs()
 		except GeneralClientEx as ex:
 			print(ex)
 			headers = [
@@ -224,35 +169,15 @@ class Application ():
 			self.startResponse("500", headers, sys.exc_info())
 			self.response.text = "An error has occured on the server."
 		else:
+			# Check if content type header was explicitly set. If it was not then set it to text/html
 			for (key, val) in self.response.headers:
 				if key.lower() == 'content-type':
 					break
 			else:
 				self.response.headers.append(('Content-Type', 'text/html'))
 			self.startResponse('200 OK', self.response.headers)
-#	extractId = parts[2]
-#	datestr = parts[3]
-	
-#	try:
-#		utils.validateRequestMethod(env, ['GET'])
-#		dtRange = dateRangeParser.getDateRange(datestr)
-#		(dtStart, dtEnd) = dtRange
-#		resp += "<table>"
-#		resp += "<tr> <td>extractId</td> <td>{}</td> </tr>".format(extractId)
-#		resp += "<tr> <td>datestr</td> <td>{}</td> </tr>".format(datestr)
-#		resp += "<tr> <td>dtStart</td> <td>{}</td> </tr>".format(dtStart)
-#		resp += "<tr> <td>dtEnd</td> <td>{}</td> </tr>".format(dtEnd)
-#		resp += "</table>"
-#	except Exception as ex:
-#		headers = [('Content-type', 'text/plain')]
-#		start_response('500 Oops', headers, sys.exc_info())
-#		resp = ""
-#		resp += str(ex) + '\r'
-#		resp += "\r"
-#		(exType, exInst, tb) = sys.exc_info()
-#		lines = utils.tracebackAsLines(tb)
-#		for line in lines:
-#			resp += line + "\r"
+
+		
 	def __iter__ (self):
 		print("__iter__ being called")
 		if isinstance(self.response.text, bytes):
@@ -260,6 +185,197 @@ class Application ():
 		else:
 			content = self.response.text.encode('utf-8')
 		yield content
+
+	
+	######################################################################################
+	#
+	# This is the magic, which allows python modules in a splunge app to have 'global'
+	# functions without doing any explicit imports. Who the heck wants to do imports?
+	#
+	# Note there is more value here than mere namespace pollution. E.g., instead of 
+	# maintaining a response object, and having to call response.headers.append(), you 
+	# can just call addHeader(). Nice.
+	#
+	def enrichModule (self, module):
+		reqMethod = self.env['REQUEST_METHOD']
+		# Assigning a null lambda is apparently an acceptable Python idiom for creating an anonymous object
+		module.http = lambda: None 
+		module.http.env = self.env
+		module.http.method = self.env['REQUEST_METHOD']
+		module.http.path = PathString(self.env['PATH_INFO'])
+		# module.http.pathParts = env['PATH_INFO'][1:].split('/')
+		module.addHeader = lambda x, y: self.response.headers.append((x, y))
+		module.validateMethod = lambda x: validateMethod(reqMethod, x) 
+		module.setContentType = lambda x: self.response.headers.append(('Content-type', x))
+		# import exceptions
+
+
+	# Translate the path from the URL, to the local file or resource being referred to
+	def getLocalPath (self):
+		path = self.getPath()
+		relPath = "{}{}".format(os.getcwd(), path)
+		return relPath		
+
+
+	def getModulePath (self):
+		path = self.getPath()
+		moduleFilename = path[1:].partition('/')[0] + '.py'
+		modulePath = os.path.join(os.getcwd(), moduleFilename)
+		return modulePath
+
+
+	# Append .py to the path, then append the path to the working dir, and that's the python path
+	def getPythonPath (self):
+		localPath = self.getLocalPath()
+		pythonPath = "{}.py".format(localPath)
+		return pythonPath		
+
+
+	# Append .pyp to the path, then append the path to the working dir, and that's the python path
+	def getTemplatePath (self):
+		localPath = self.getLocalPath()
+		templatePath = "{}.pyp".format(localPath)
+		return templatePath		
+
+
+	def getPath (self):
+		path = self.env['PATH_INFO'].strip()
+		return path
+
+
+	def handleArgs (self):
+		if '_' in self.args:
+		elif self.isTemplateFile():
+			self.handleTemplateFile()
+		else:
+ 			print("template path was not found")
+ 			self.response.headers.append(('Content-Type', 'text/plain'))
+ 			for name in sorted(self.args):
+ 				value = self.args.get(name, '')
+ 				if not callable(value):
+ 					self.response.text += "{} = {}\n".format(name, value)
+
+
+	def handleRequest (self):
+		if self.isDefault():
+			self.handleDefaultPath()
+		elif self.isPythonFile():
+			self.handlePythonFile()
+		elif self.isTemplateFile():
+			self.handleTemplateFile()
+		else:
+			self.handleStaticContent()
+
+
+	def handleShortcutResponse (self):
+		if isinstance(args['_'], bytes):
+			self.response.text = args['_']
+		else:
+			self.response.text = renderString(str(args['_']), args)
+
+
+
+	def handleDefaultPath (self):
+		print("Handling default path")
+		self.setContentType('text/plain')
+		self.addResponseLine("/")
+		self.args = None
+
+
+	def handlePythonFile (self):
+		modulePath = self.getModulePath()
+		print("modulePath=".format(modulePath))
+		module = MagicLoader.loadModule(modulePath)
+		print("module={}".format(module))
+		self.enrichModule(module)
+		self.args = execModule(module)
+
+
+	def handleStaticContent (self):
+		localPath = self.getLocalPath()
+		print("localPath={}".format(localPath))
+		(root, ext) = os.path.splitext(localPath)
+		defaultContentType = "application/octet-stream"
+		if not ext:
+			contentType = defaultContentType
+		else:			
+			contentType = types.map.get(ext, defaultContentType)
+		print("contentType={}".format(contentType))
+		self.setContentType(contentType)
+		content = open(localPath, 'rb', buffering=0).readall()
+		self.response.text = content
+		self.args = None
+
+
+	def handleTemplateFile (self):
+ 		templatePath = self.getTemplatePath()
+ 		print("templatePath={}".format(templatePath))
+ 		print("templatePath=" + templatePath)
+ 		print("About to execute template ...")
+ 		self.response.text = renderTemplate(templatePath, self.args)
+
+
+	def isDefault (self):
+		flag = (self.getPath() == '/')
+		return flag
+
+
+	def isPythonFile (self):
+		path = self.getPythonPath()
+		print("pythonPath={}".format(path))
+		flag = os.path.isfile(path)
+		return flag
+
+
+	def isTemplateFile (self):
+		path = self.getTemplatePath()
+		print("templatePath={}".format(path))
+		flag = (self.getPath().endswith('.pyp'))
+		return flag
+
+
+	def setContentType (self, contentType):
+		self.response.headers.append(('Content-Type', contentType))
+	
+
+	def addResponseLine (self, s):
+		self.response.text += s
+		self.response.text += "\r\n"
+
+
+# 	def misc ():
+# 		print("modulePath={}".format(modulePath))
+# 		if not modulePath:
+# 			print("modulePath didn't exist")
+# 		try:
+# 			handleModulePath(modulePath)
+# 			module = MagicLoader.loadModule(modulePath)
+# 			print("module={}".format(module))
+# 			enrichModule(module, env, self)
+# 			args = execModule(module)
+# 		except ModuleNotFoundEx as ex:
+# 			print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
+# 			args = {}
+# 		if '_' in args:
+# 			if isinstance(args['_'], bytes):
+# 				self.response.text = args['_']
+# 			else:
+# 				self.response.text = renderString(str(args['_']), args)
+# 		else:
+# 			templatePath = getTemplatePath(env)
+# 			print("templatePath={}".format(templatePath))
+# 			if not os.path.isfile(templatePath):
+# 				print("template path was not found")
+# 				self.response.headers.append(('Content-Type', 'text/plain'))
+# 				for name in sorted(args):
+# 					value = args[name]
+# 					# print("type({})={}".format(value, type(value)))
+# 					if not callable(value):
+# 						self.response.text += "{} = {}\n".format(name, value)
+# 			else:
+# 				print("templatePath=" + templatePath)
+# 				print("About to execute template ...")
+# 				self.response.text = renderTemplate(templatePath, args)
 
 
 # 	def generatePage (self):
@@ -318,4 +434,61 @@ class Application ():
 # 			jenv = jinja2.Environment()
 # 			jtemplate = jloader.load(jenv, 'extracts.pyp')
 # 			self.response.text = jtemplate.render(args)
+#			modulePath = self.getModulePath()
+#			print("modulePath={}".format(modulePath))
+#			if not modulePath:
+#				print("modulePath didn't exist")
+#			try:
+#				handleModulePath(modulePath)
+#				module = MagicLoader.loadModule(modulePath)
+#				print("module={}".format(module))
+#				enrichModule(module, env, self)
+#				args = execModule(module)
+#			except ModuleNotFoundEx as ex:
+#				print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
+#				args = {}
+#			if '_' in args:
+#				if isinstance(args['_'], bytes):
+#					self.response.text = args['_']
+#				else:
+#					self.response.text = renderString(str(args['_']), args)
+# 			else:
+# 				templatePath = getTemplatePath(env)
+# 				print("templatePath={}".format(templatePath))
+# 				if not os.path.isfile(templatePath):
+# 					print("template path was not found")
+# 					self.response.headers.append(('Content-Type', 'text/plain'))
+# 					for name in sorted(args):
+# 						value = args[name]
+# 						# print("type({})={}".format(value, type(value)))
+# 						if not callable(value):
+# 							self.response.text += "{} = {}\n".format(name, value)
+# 				else:
+# 					print("templatePath=" + templatePath)
+# 					print("About to execute template ...")
+# 					self.response.text = renderTemplate(templatePath, args)
+
+#	extractId = parts[2]
+#	datestr = parts[3]
+	
+#	try:
+#		utils.validateRequestMethod(env, ['GET'])
+#		dtRange = dateRangeParser.getDateRange(datestr)
+#		(dtStart, dtEnd) = dtRange
+#		resp += "<table>"
+#		resp += "<tr> <td>extractId</td> <td>{}</td> </tr>".format(extractId)
+#		resp += "<tr> <td>datestr</td> <td>{}</td> </tr>".format(datestr)
+#		resp += "<tr> <td>dtStart</td> <td>{}</td> </tr>".format(dtStart)
+#		resp += "<tr> <td>dtEnd</td> <td>{}</td> </tr>".format(dtEnd)
+#		resp += "</table>"
+#	except Exception as ex:
+#		headers = [('Content-type', 'text/plain')]
+#		start_response('500 Oops', headers, sys.exc_info())
+#		resp = ""
+#		resp += str(ex) + '\r'
+#		resp += "\r"
+#		(exType, exInst, tb) = sys.exc_info()
+#		lines = utils.tracebackAsLines(tb)
+#		for line in lines:
+#			resp += line + "\r"
 
