@@ -1,3 +1,6 @@
+class FaviconEx(Exception):
+	def __init__ (self): pass
+
 class InvalidMethodEx(Exception):
 	def __init__ (self, badMethod, validMethods):
 		self.badMethod = badMethod

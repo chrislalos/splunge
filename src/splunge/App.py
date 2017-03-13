@@ -6,6 +6,7 @@ import os.path
 import sys
 import traceback
 import jinja2
+from splunge import FaviconEx
 from splunge import GeneralClientEx
 from splunge import InvalidMethodEx
 from splunge import ModuleNotFoundEx 
@@ -137,6 +138,15 @@ class Application ():
 			self.handleRequest()
 			if self.args:
 				self.handleArgs()
+		except FaviconEx as ex:
+			print(ex)
+			errmsg = "The Favicon feature (favicon.ico) is not supported here, my friend"
+			headers = [
+				('Content-type', 'text/plain'),
+				('Warning', errmsg)
+			]
+			self.startResponse("410 {}".format(errmsg), headers, sys.exc_info())
+			self.response.text = errmsg
 		except GeneralClientEx as ex:
 			print(ex)
 			headers = [
@@ -245,6 +255,7 @@ class Application ():
 
 	def handleArgs (self):
 		if '_' in self.args:
+			self.handleShortcutResponse()
 		elif self.isTemplateFile():
 			self.handleTemplateFile()
 		else:
@@ -259,6 +270,8 @@ class Application ():
 	def handleRequest (self):
 		if self.isDefault():
 			self.handleDefaultPath()
+		elif self.isFavicon():
+			self.handleFavicon()
 		elif self.isPythonFile():
 			self.handlePythonFile()
 		elif self.isTemplateFile():
@@ -280,6 +293,10 @@ class Application ():
 		self.setContentType('text/plain')
 		self.addResponseLine("/")
 		self.args = None
+
+
+	def handleFavicon (self):
+		raise FaviconEx()
 
 
 	def handlePythonFile (self):
@@ -319,6 +336,13 @@ class Application ():
 		flag = (self.getPath() == '/')
 		return flag
 
+
+
+	def isFavicon (self):
+		print("*** in isFavicon(): self.getPath().lower() == {}".format(self.getPath().lower()))
+		flag = (self.getPath().lower() == '/favicon.ico')
+		return flag
+		
 
 	def isPythonFile (self):
 		path = self.getPythonPath()
