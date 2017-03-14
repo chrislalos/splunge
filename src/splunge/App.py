@@ -256,15 +256,14 @@ class Application ():
 	def handleArgs (self):
 		if '_' in self.args:
 			self.handleShortcutResponse()
-		elif self.isTemplateFile():
-			self.handleTemplateFile()
 		else:
- 			print("template path was not found")
- 			self.response.headers.append(('Content-Type', 'text/plain'))
- 			for name in sorted(self.args):
- 				value = self.args.get(name, '')
- 				if not callable(value):
- 					self.response.text += "{} = {}\n".format(name, value)
+			self.handleTemplateFile()
+#  			print("template path was not found")
+#  			self.response.headers.append(('Content-Type', 'text/plain'))
+#  			for name in sorted(self.args):
+#  				value = self.args.get(name, '')
+#  				if not callable(value):
+#  					self.response.text += "{} = {}\n".format(name, value)
 
 
 	def handleRequest (self):
