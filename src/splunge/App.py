@@ -5,8 +5,10 @@ import imp
 import inspect
 import os
 import os.path
+from pprint import pprint
 import sys
 import traceback
+import urllib.parse
 import jinja2
 from splunge import FaviconEx
 from splunge import GeneralClientEx
@@ -208,6 +210,42 @@ class Application ():
 		yield content
 
 	
+	def createGetArgs (self):
+		args = {}
+		qs = self.env['QUERY_STRING']
+		print("QUERY_STRING={}".format(qs))
+		d = urllib.parse.parse_qs(qs)
+		pprint(d)
+		for key, v in d.items():
+			if v:
+				if len(v) == 1:
+					value = v[0]
+				else:
+					value = v
+				args[key] = value
+		return args
+					
+
+
+	def createPostArgs (self):
+		args = {}
+
+
+	def createHttpObject (self):
+		http = lambda: None 
+		http.env = self.env
+		http.method = self.env['REQUEST_METHOD']
+		http.path = PathString(self.env['PATH_INFO'])
+		if http.method.lower() == 'get':
+			http.args = self.createGetArgs()
+		elif http.method.lower() == 'post':
+			http.args = self.createPostArgs()
+		else:
+			http.args = {}
+		return http
+
+
+
 	######################################################################################
 	#
 	# This is the magic, which allows python modules in a splunge app to have 'global'
@@ -220,11 +258,7 @@ class Application ():
 	def enrichModule (self, module):
 		reqMethod = self.env['REQUEST_METHOD']
 		# Assigning a null lambda is apparently an acceptable Python idiom for creating an anonymous object
-		module.http = lambda: None 
-		module.http.env = self.env
-		module.http.method = self.env['REQUEST_METHOD']
-		module.http.path = PathString(self.env['PATH_INFO'])
-		# module.http.pathParts = env['PATH_INFO'][1:].split('/')
+		module.http = self.createHttpObject()
 		module.addHeader = lambda x, y: self.response.headers.append((x, y))
 		module.validateMethod = lambda x: validateMethod(reqMethod, x) 
 		module.setContentType = lambda x: self.response.headers.append(('Content-type', x))
@@ -274,7 +308,7 @@ class Application ():
 			self.handlePythonFile(localPath)
 		elif Application.isTemplateFile(self.path):
 			localPath = self.getLocalPath()
-			self.handleTemplateFile(localPath, None)
+			self.handleTemplateFile(localPath)
 		elif self.isStaticContent():
 			self.handleStaticContent()
 		else:
@@ -345,9 +379,12 @@ class Application ():
 
 
 	def handleTemplateFile (self, path, args=None):
- 		print("templatePath={}".format(path))
- 		print("About to execute template ...")
- 		self.response.text = renderTemplate(path, args)
+		print("templatePath={}".format(path))
+		print("About to execute template ...")
+		if not args:
+			args = {}
+			args['http'] = self.createHttpObject()
+		self.response.text = renderTemplate(path, args)
 
 
 	@staticmethod
