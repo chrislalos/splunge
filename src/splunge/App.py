@@ -1,7 +1,9 @@
 # import urllib.parse
 
+import errno
 import imp
 import inspect
+import os
 import os.path
 import sys
 import traceback
@@ -235,12 +237,6 @@ class Application ():
 		return relPath		
 
 
-	def getModulePath (self):
-		moduleFilename = self.path[1:].partition('/')[0] + '.py'
-		modulePath = os.path.join(os.getcwd(), moduleFilename)
-		return modulePath
-
-
 	# Append .py to the path, then append the path to the working dir, and that's the python path
 	def inferPythonPath (self):
 		localPath = self.getLocalPath()
@@ -274,12 +270,25 @@ class Application ():
 		elif Application.isFavicon(self.path):
 			self.handleFavicon()
 		elif self.isPythonFile():
-			self.handlePythonFile()
+			localPath = self.getLocalPath()
+			self.handlePythonFile(localPath)
 		elif Application.isTemplateFile(self.path):
 			localPath = self.getLocalPath()
 			self.handleTemplateFile(localPath, None)
-		else:
+		elif self.isStaticContent():
 			self.handleStaticContent()
+		else:
+			pythonPath = self.inferPythonPath()
+			if os.path.isfile(pythonPath):
+				self.handlePythonFile(pythonPath)
+			else:
+				templatePath = self.inferTemplatePath()
+				print("*** templatePath={}".format(templatePath))
+				if os.path.isfile(templatePath):
+					self.handleTemplateFile(templatePath)
+				else:
+					localPath = self.getLocalPath()
+					raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), localPath)
 
 
 	def handleShortcutResponse (self, args):
@@ -300,10 +309,8 @@ class Application ():
 		raise FaviconEx()
 
 
-	def handlePythonFile (self):
-		modulePath = self.getModulePath()
-		print("modulePath=".format(modulePath))
-		module = MagicLoader.loadModule(modulePath)
+	def handlePythonFile (self, path):
+		module = MagicLoader.loadModule(path)
 		print("module={}".format(module))
 		self.enrichModule(module)
 		args = execModule(module)
@@ -337,7 +344,7 @@ class Application ():
 		self.response.text = content
 
 
-	def handleTemplateFile (self, path, args):
+	def handleTemplateFile (self, path, args=None):
  		print("templatePath={}".format(path))
  		print("About to execute template ...")
  		self.response.text = renderTemplate(path, args)
@@ -357,9 +364,13 @@ class Application ():
 		
 
 	def isPythonFile (self):
-		path = self.inferPythonPath()
-		print("pythonPath={}".format(path))
-		flag = os.path.isfile(path)
+		flag = (self.path.endswith('.py'))
+		return flag
+
+
+	def isStaticContent (self):
+		localPath = self.getLocalPath()
+		flag = os.path.isfile(localPath)
 		return flag
 
 
