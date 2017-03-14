@@ -147,6 +147,13 @@ class Application ():
 			]
 			self.startResponse("410 {}".format(errmsg), headers, sys.exc_info())
 			self.response.text = errmsg
+		except FileNotFoundError as ex:
+			print(ex)
+			headers = [
+				('Content-type', 'text/plain'),
+			]
+			self.startResponse('404 File Not Found', headers, sys.exc_info())
+			self.response.text = str(ex)
 		except GeneralClientEx as ex:
 			print(ex)
 			headers = [
