@@ -313,6 +313,7 @@ class Application ():
 			self.handleStaticContent()
 		else:
 			pythonPath = self.inferPythonPath()
+			print("*** pythonPath={}".format(pythonPath))
 			if os.path.isfile(pythonPath):
 				self.handlePythonFile(pythonPath)
 			else:
