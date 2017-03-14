@@ -65,11 +65,11 @@ def execModule (module):
 	return args
 
 
-def getTemplatePath (env):
-	path = env['PATH_INFO']
-	templateFilename = path[1:].partition('/')[0] + '.pyp'
-	templatePath = os.path.join(os.getcwd(), templateFilename)
-	return templatePath
+# def inferTemplatePath (env):
+# 	path = env['PATH_INFO']
+# 	templateFilename = path[1:].partition('/')[0] + '.pyp'
+# 	templatePath = os.path.join(os.getcwd(), templateFilename)
+# 	return templatePath
 
 
 # Shorthand for invoking jinja on a template string
@@ -86,6 +86,8 @@ def renderTemplate (templatePath, args):
 	jenv = jinja2.Environment()
 	templateName = os.path.basename(templatePath)
 	jtemplate = jloader.load(jenv, templateName)
+	if not args:
+		args = {}
 	s = jtemplate.render(args)
 	return s 
 
@@ -133,11 +135,11 @@ class Application ():
 		self.env = env
 		self.startResponse = start_response
 		self.response = Response()
-		print("path=" + self.getPath())
+		self.path = self.env['PATH_INFO'].strip()
+
+		print("path=" + self.path)
 		try:
 			self.handleRequest()
-			if self.args:
-				self.handleArgs()
 		except FaviconEx as ex:
 			print(ex)
 			errmsg = "The Favicon feature (favicon.ico) is not supported here, my friend"
@@ -194,7 +196,7 @@ class Application ():
 				self.response.headers.append(('Content-Type', 'text/html'))
 			self.startResponse('200 OK', self.response.headers)
 
-		
+
 	def __iter__ (self):
 		print("__iter__ being called")
 		if isinstance(self.response.text, bytes):
@@ -229,42 +231,35 @@ class Application ():
 
 	# Translate the path from the URL, to the local file or resource being referred to
 	def getLocalPath (self):
-		path = self.getPath()
-		relPath = "{}{}".format(os.getcwd(), path)
+		relPath = "{}{}".format(os.getcwd(), self.path)
 		return relPath		
 
 
 	def getModulePath (self):
-		path = self.getPath()
-		moduleFilename = path[1:].partition('/')[0] + '.py'
+		moduleFilename = self.path[1:].partition('/')[0] + '.py'
 		modulePath = os.path.join(os.getcwd(), moduleFilename)
 		return modulePath
 
 
 	# Append .py to the path, then append the path to the working dir, and that's the python path
-	def getPythonPath (self):
+	def inferPythonPath (self):
 		localPath = self.getLocalPath()
 		pythonPath = "{}.py".format(localPath)
 		return pythonPath		
 
 
-	# Append .pyp to the path, then append the path to the working dir, and that's the python path
-	def getTemplatePath (self):
+	# Get the local version of the http path, append .pyp, and that's the template path
+	def inferTemplatePath (self):
 		localPath = self.getLocalPath()
 		templatePath = "{}.pyp".format(localPath)
 		return templatePath		
 
 
-	def getPath (self):
-		path = self.env['PATH_INFO'].strip()
-		return path
-
-
-	def handleArgs (self):
-		if '_' in self.args:
-			self.handleShortcutResponse()
+	def handleArgs (self, args):
+		if '_' in args:
+			self.handleShortcutResponse(args)
 		else:
-			self.handleTemplateFile()
+			self.handleTemplateFile(args)
 #  			print("template path was not found")
 #  			self.response.headers.append(('Content-Type', 'text/plain'))
 #  			for name in sorted(self.args):
@@ -274,19 +269,20 @@ class Application ():
 
 
 	def handleRequest (self):
-		if self.isDefault():
+		if Application.isDefault(self.path):
 			self.handleDefaultPath()
-		elif self.isFavicon():
+		elif Application.isFavicon(self.path):
 			self.handleFavicon()
 		elif self.isPythonFile():
 			self.handlePythonFile()
-		elif self.isTemplateFile():
-			self.handleTemplateFile()
+		elif Application.isTemplateFile(self.path):
+			localPath = self.getLocalPath()
+			self.handleTemplateFile(localPath, None)
 		else:
 			self.handleStaticContent()
 
 
-	def handleShortcutResponse (self):
+	def handleShortcutResponse (self, args):
 		if isinstance(args['_'], bytes):
 			self.response.text = args['_']
 		else:
@@ -298,7 +294,6 @@ class Application ():
 		print("Handling default path")
 		self.setContentType('text/plain')
 		self.addResponseLine("/")
-		self.args = None
 
 
 	def handleFavicon (self):
@@ -311,7 +306,20 @@ class Application ():
 		module = MagicLoader.loadModule(modulePath)
 		print("module={}".format(module))
 		self.enrichModule(module)
-		self.args = execModule(module)
+		args = execModule(module)
+		if '_' in args:
+			self.handleShortcutResponse(args)
+		else:
+			templatePath = self.inferTemplatePath()
+			if os.path.isfile(templatePath):
+				self.handleTemplateFile(templatePath, args)
+			else:
+  				print("template path was not found")
+  				self.response.headers.append(('Content-Type', 'text/plain'))
+  				for name in sorted(args):
+  					value = args.get(name, '')
+  					if not callable(value):
+  						self.response.text += "{} = {}\n".format(name, value)
 
 
 	def handleStaticContent (self):
@@ -327,40 +335,37 @@ class Application ():
 		self.setContentType(contentType)
 		content = open(localPath, 'rb', buffering=0).readall()
 		self.response.text = content
-		self.args = None
 
 
-	def handleTemplateFile (self):
- 		templatePath = self.getTemplatePath()
- 		print("templatePath={}".format(templatePath))
- 		print("templatePath=" + templatePath)
+	def handleTemplateFile (self, path, args):
+ 		print("templatePath={}".format(path))
  		print("About to execute template ...")
- 		self.response.text = renderTemplate(templatePath, self.args)
+ 		self.response.text = renderTemplate(path, args)
 
 
-	def isDefault (self):
-		flag = (self.getPath() == '/')
+	@staticmethod
+	def isDefault (path):
+		flag = (path == '/')
 		return flag
 
 
 
-	def isFavicon (self):
-		print("*** in isFavicon(): self.getPath().lower() == {}".format(self.getPath().lower()))
-		flag = (self.getPath().lower() == '/favicon.ico')
+	@staticmethod
+	def isFavicon (path):
+		flag = (path.lower() == '/favicon.ico')
 		return flag
 		
 
 	def isPythonFile (self):
-		path = self.getPythonPath()
+		path = self.inferPythonPath()
 		print("pythonPath={}".format(path))
 		flag = os.path.isfile(path)
 		return flag
 
 
-	def isTemplateFile (self):
-		path = self.getTemplatePath()
-		print("templatePath={}".format(path))
-		flag = (self.getPath().endswith('.pyp'))
+	@staticmethod
+	def isTemplateFile (path):
+		flag = (path.endswith('.pyp'))
 		return flag
 
 
