@@ -140,7 +140,6 @@ class Application ():
 		self.startResponse = start_response
 		self.response = Response()
 		self.path = self.env['PATH_INFO'].strip()
-
 		print("path=" + self.path)
 		try:
 			self.handleRequest()
@@ -152,14 +151,14 @@ class Application ():
 				('Warning', errmsg)
 			]
 			self.startResponse("410 {}".format(errmsg), headers, sys.exc_info())
-			self.response.text = errmsg
+			self.response.body = errmsg
 		except FileNotFoundError as ex:
 			print(ex)
 			headers = [
 				('Content-type', 'text/plain'),
 			]
 			self.startResponse('404 File Not Found', headers, sys.exc_info())
-			self.response.text = str(ex)
+			self.response.body = str(ex)
 		except GeneralClientEx as ex:
 			print(ex)
 			headers = [
@@ -167,7 +166,7 @@ class Application ():
 				('Warning', ex.getWarningHeaderValue())
 			]
 			self.startResponse('400 Oops', headers, sys.exc_info())
-			self.response.text = str(ex)
+			self.response.body = str(ex)
 		except InvalidMethodEx as ex:
 			print(ex)
 			headers = [
@@ -175,7 +174,7 @@ class Application ():
 				("Allow", ex.getAllowHeaderValue())
 			]
 			self.startResponse("405", headers, sys.exc_info())
-			self.response.text = str(ex)
+			self.response.body = str(ex)
 		except jinja2.exceptions.TemplateNotFound as ex:
 			msg = "Template file not found: {}".format(ex.message)
 			headers = [
@@ -183,14 +182,14 @@ class Application ():
 				("Warning", msg)
 			]
 			self.startResponse("404", headers, sys.exc_info())
-			self.response.text = msg 
+			self.response.body = msg 
 		except Exception as ex:
 			traceback.print_exc()
 			headers = [
 				("Content-type", "text/plain")
 			]
 			self.startResponse("500", headers, sys.exc_info())
-			self.response.text = "An error has occured on the server."
+			self.response.body = "An error has occured on the server."
 		else:
 			# Check if content type header was explicitly set. If it was not then set it to text/html
 			for (key, val) in self.response.headers:
@@ -203,10 +202,10 @@ class Application ():
 
 	def __iter__ (self):
 		print("__iter__ being called")
-		if isinstance(self.response.text, bytes):
-			content = self.response.text
+		if isinstance(self.response.body, bytes):
+			content = self.response.body
 		else:
-			content = self.response.text.encode('utf-8')
+			content = self.response.body.encode('utf-8')
 		yield content
 
 	
@@ -259,6 +258,7 @@ class Application ():
 		reqMethod = self.env['REQUEST_METHOD']
 		# Assigning a null lambda is apparently an acceptable Python idiom for creating an anonymous object
 		module.http = self.createHttpObject()
+		module.response = self.response
 		module.addHeader = lambda x, y: self.response.headers.append((x, y))
 		module.validateMethod = lambda x: validateMethod(reqMethod, x) 
 		module.setContentType = lambda x: self.response.headers.append(('Content-type', x))
@@ -328,9 +328,9 @@ class Application ():
 
 	def handleShortcutResponse (self, args):
 		if isinstance(args['_'], bytes):
-			self.response.text = args['_']
+			self.response.body = args['_']
 		else:
-			self.response.text = renderString(str(args['_']), args)
+			self.response.body = renderString(str(args['_']), args)
 
 
 
@@ -345,23 +345,26 @@ class Application ():
 
 
 	def handlePythonFile (self, path):
+		self.response.body = None
 		module = MagicLoader.loadModule(path)
 		print("module={}".format(module))
 		self.enrichModule(module)
 		args = execModule(module)
-		if '_' in args:
-			self.handleShortcutResponse(args)
-		else:
-			templatePath = self.inferTemplatePath()
-			if os.path.isfile(templatePath):
-				self.handleTemplateFile(templatePath, args)
+		if not self.response.body:
+			print("No body!")
+			if '_' in args:
+				self.handleShortcutResponse(args)
 			else:
-  				print("template path was not found")
-  				self.response.headers.append(('Content-Type', 'text/plain'))
-  				for name in sorted(args):
-  					value = args.get(name, '')
-  					if not callable(value):
-  						self.response.text += "{} = {}\n".format(name, value)
+				templatePath = self.inferTemplatePath()
+				if os.path.isfile(templatePath):
+					self.handleTemplateFile(templatePath, args)
+				else:
+  					print("template path was not found")
+  					self.response.headers.append(('Content-Type', 'text/plain'))
+  					for name in sorted(args):
+  						value = args.get(name, '')
+  						if not callable(value):
+  							self.response.body += "{} = {}\n".format(name, value)
 
 
 	def handleStaticContent (self):
@@ -376,7 +379,7 @@ class Application ():
 		print("contentType={}".format(contentType))
 		self.setContentType(contentType)
 		content = open(localPath, 'rb', buffering=0).readall()
-		self.response.text = content
+		self.response.body = content
 
 
 	def handleTemplateFile (self, path, args=None):
@@ -385,7 +388,7 @@ class Application ():
 		if not args:
 			args = {}
 			args['http'] = self.createHttpObject()
-		self.response.text = renderTemplate(path, args)
+		self.response.body = renderTemplate(path, args)
 
 
 	@staticmethod
@@ -418,161 +421,20 @@ class Application ():
 		return flag
 
 
+	def getContentType (self):
+		a = [v for (k,v) in self.response.headers if k.lower() == 'content-type']
+		if a:
+			contentType = a[0]
+		else:
+			contentType = None
+
+
 	def setContentType (self, contentType):
 		self.response.headers.append(('Content-Type', contentType))
 	
 
 	def addResponseLine (self, s):
-		self.response.text += s
-		self.response.text += "\r\n"
+		self.response.body += s
+		self.response.body += "\r\n"
 
-
-# 	def misc ():
-# 		print("modulePath={}".format(modulePath))
-# 		if not modulePath:
-# 			print("modulePath didn't exist")
-# 		try:
-# 			handleModulePath(modulePath)
-# 			module = MagicLoader.loadModule(modulePath)
-# 			print("module={}".format(module))
-# 			enrichModule(module, env, self)
-# 			args = execModule(module)
-# 		except ModuleNotFoundEx as ex:
-# 			print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
-# 			args = {}
-# 		if '_' in args:
-# 			if isinstance(args['_'], bytes):
-# 				self.response.text = args['_']
-# 			else:
-# 				self.response.text = renderString(str(args['_']), args)
-# 		else:
-# 			templatePath = getTemplatePath(env)
-# 			print("templatePath={}".format(templatePath))
-# 			if not os.path.isfile(templatePath):
-# 				print("template path was not found")
-# 				self.response.headers.append(('Content-Type', 'text/plain'))
-# 				for name in sorted(args):
-# 					value = args[name]
-# 					# print("type({})={}".format(value, type(value)))
-# 					if not callable(value):
-# 						self.response.text += "{} = {}\n".format(name, value)
-# 			else:
-# 				print("templatePath=" + templatePath)
-# 				print("About to execute template ...")
-# 				self.response.text = renderTemplate(templatePath, args)
-
-
-# 	def generatePage (self):
-# 		path = self.env['PATH_INFO']
-# 		parts = path.split('/')
-# 		extractId = parts[2]
-# 		datestr = parts[3]
-# 		dtRange = DateRangeParser.getDateRange(datestr)
-# 		(dtStart, dtEnd) = dtRange
-# 		args = {
-# 			'extractId': extractId,
-# 			'dtStart': dtStart,
-# 			'dtEnd': dtEnd
-# 		}
-# 
-# 		jloader = jinja2.FileSystemLoader('/home/ubuntu/dev/py/splunge/templates')
-# 		jenv = jinja2.Environment()
-# 		jtemplate = jloader.load(jenv, 'extracts.pyp')
-# 		self.response.text = jtemplate.render(args)
-# 
-# 	def dumpParts (self):
-# 		for i, part in enumerate(parts):
-# 			self.response.text += "{} => {}<br>".format(i, part)
-# 
-# 	def validateParts (self):
-# 		path = self.env['PATH_INFO']
-# 		parts = path.split('/')
-# 		if len(parts) < 4 or len(parts[0]) > 0 or not DateRangeParser.isValid(parts[3]):
-# 			msg = "URL path must be of form /extract/[extractId]/YYMMDD or /extract/[extractId]/YYMMDD-YYMMDD"
-# 			raise GeneralClientEx(msg)
-
-# 			path = env['PATH_INFO']
-# 			parts = path.split('/')
-# 			moduleStub = parts[1]	
-# #			moduleName = 'splunge.{}'.format(moduleStub)
-# #			modulePath = 'splunge/{}.py'.format(moduleStub)
-# #			module = createAndEnhanceModule(moduleName, modulePath)
-# 			filename = '{}.py'.format(moduleStub)
-# 			args = {}
-# 			g = {}
-# 			g['validateMethod'] = validateMethod
-# 			g['app'] = self 
-# 			g['args'] = args
-# 			with open(filename) as f:
-# 				code = compile(f.read(), filename, 'exec')
-# 				exec(code, g)
-# #			module.validateMethod = validateMethod
-# #			module.app = self
-# #			args = []
-# #			module.args = args
-# #			validate = getattr(module, 'validate')
-# #			generatePage = getattr(module, 'generatePage')
-# #			validate(self)
-# 			self.startResponse('200 OK', [('Content-type', 'text/html')])
-# 			jloader = jinja2.FileSystemLoader('/home/ubuntu/dev/py/splunge/templates')
-# 			jenv = jinja2.Environment()
-# 			jtemplate = jloader.load(jenv, 'extracts.pyp')
-# 			self.response.text = jtemplate.render(args)
-#			modulePath = self.getModulePath()
-#			print("modulePath={}".format(modulePath))
-#			if not modulePath:
-#				print("modulePath didn't exist")
-#			try:
-#				handleModulePath(modulePath)
-#				module = MagicLoader.loadModule(modulePath)
-#				print("module={}".format(module))
-#				enrichModule(module, env, self)
-#				args = execModule(module)
-#			except ModuleNotFoundEx as ex:
-#				print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
-#				args = {}
-#			if '_' in args:
-#				if isinstance(args['_'], bytes):
-#					self.response.text = args['_']
-#				else:
-#					self.response.text = renderString(str(args['_']), args)
-# 			else:
-# 				templatePath = getTemplatePath(env)
-# 				print("templatePath={}".format(templatePath))
-# 				if not os.path.isfile(templatePath):
-# 					print("template path was not found")
-# 					self.response.headers.append(('Content-Type', 'text/plain'))
-# 					for name in sorted(args):
-# 						value = args[name]
-# 						# print("type({})={}".format(value, type(value)))
-# 						if not callable(value):
-# 							self.response.text += "{} = {}\n".format(name, value)
-# 				else:
-# 					print("templatePath=" + templatePath)
-# 					print("About to execute template ...")
-# 					self.response.text = renderTemplate(templatePath, args)
-
-#	extractId = parts[2]
-#	datestr = parts[3]
-	
-#	try:
-#		utils.validateRequestMethod(env, ['GET'])
-#		dtRange = dateRangeParser.getDateRange(datestr)
-#		(dtStart, dtEnd) = dtRange
-#		resp += "<table>"
-#		resp += "<tr> <td>extractId</td> <td>{}</td> </tr>".format(extractId)
-#		resp += "<tr> <td>datestr</td> <td>{}</td> </tr>".format(datestr)
-#		resp += "<tr> <td>dtStart</td> <td>{}</td> </tr>".format(dtStart)
-#		resp += "<tr> <td>dtEnd</td> <td>{}</td> </tr>".format(dtEnd)
-#		resp += "</table>"
-#	except Exception as ex:
-#		headers = [('Content-type', 'text/plain')]
-#		start_response('500 Oops', headers, sys.exc_info())
-#		resp = ""
-#		resp += str(ex) + '\r'
-#		resp += "\r"
-#		(exType, exInst, tb) = sys.exc_info()
-#		lines = utils.tracebackAsLines(tb)
-#		for line in lines:
-#			resp += line + "\r"
 
