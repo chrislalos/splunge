@@ -3,21 +3,24 @@ import sys
 
 def runBehindNginx (args):
 	for arg in args:
-		print(arg)
+		print(args)
 
 
 def runLocally (args):
 	print("*** running locally ***")
 
 
-def parseArgs ():
+def parseArgs (argv):
 	pass
 
 
-if __name__ == '__main__':
-	# print("Usage: splunge [hostname]")
-	args = parseArgs()
-	if len(sys.argv) > 1:
-		runBehindNginx(sys.argv[1:])
+def main (argv):
+	args = parseArgs(argv)
+	if args.host:
+		runBehindNginx(args)
 	else:
-		runLocally(sys.argv[1:])
+		runLocally(args)
+
+if __name__ == '__main__':
+	main(sys.argv[1:])
+
