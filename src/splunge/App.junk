@@ -1,0 +1,150 @@
+# 	def misc ():
+# 		print("modulePath={}".format(modulePath))
+# 		if not modulePath:
+# 			print("modulePath didn't exist")
+# 		try:
+# 			handleModulePath(modulePath)
+# 			module = MagicLoader.loadModule(modulePath)
+# 			print("module={}".format(module))
+# 			enrichModule(module, env, self)
+# 			args = execModule(module)
+# 		except ModuleNotFoundEx as ex:
+# 			print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
+# 			args = {}
+# 		if '_' in args:
+# 			if isinstance(args['_'], bytes):
+# 				self.response.text = args['_']
+# 			else:
+# 				self.response.text = renderString(str(args['_']), args)
+# 		else:
+# 			templatePath = getTemplatePath(env)
+# 			print("templatePath={}".format(templatePath))
+# 			if not os.path.isfile(templatePath):
+# 				print("template path was not found")
+# 				self.response.headers.append(('Content-Type', 'text/plain'))
+# 				for name in sorted(args):
+# 					value = args[name]
+# 					# print("type({})={}".format(value, type(value)))
+# 					if not callable(value):
+# 						self.response.text += "{} = {}\n".format(name, value)
+# 			else:
+# 				print("templatePath=" + templatePath)
+# 				print("About to execute template ...")
+# 				self.response.text = renderTemplate(templatePath, args)
+
+
+# 	def generatePage (self):
+# 		path = self.env['PATH_INFO']
+# 		parts = path.split('/')
+# 		extractId = parts[2]
+# 		datestr = parts[3]
+# 		dtRange = DateRangeParser.getDateRange(datestr)
+# 		(dtStart, dtEnd) = dtRange
+# 		args = {
+# 			'extractId': extractId,
+# 			'dtStart': dtStart,
+# 			'dtEnd': dtEnd
+# 		}
+# 
+# 		jloader = jinja2.FileSystemLoader('/home/ubuntu/dev/py/splunge/templates')
+# 		jenv = jinja2.Environment()
+# 		jtemplate = jloader.load(jenv, 'extracts.pyp')
+# 		self.response.text = jtemplate.render(args)
+# 
+# 	def dumpParts (self):
+# 		for i, part in enumerate(parts):
+# 			self.response.text += "{} => {}<br>".format(i, part)
+# 
+# 	def validateParts (self):
+# 		path = self.env['PATH_INFO']
+# 		parts = path.split('/')
+# 		if len(parts) < 4 or len(parts[0]) > 0 or not DateRangeParser.isValid(parts[3]):
+# 			msg = "URL path must be of form /extract/[extractId]/YYMMDD or /extract/[extractId]/YYMMDD-YYMMDD"
+# 			raise GeneralClientEx(msg)
+
+# 			path = env['PATH_INFO']
+# 			parts = path.split('/')
+# 			moduleStub = parts[1]	
+# #			moduleName = 'splunge.{}'.format(moduleStub)
+# #			modulePath = 'splunge/{}.py'.format(moduleStub)
+# #			module = createAndEnhanceModule(moduleName, modulePath)
+# 			filename = '{}.py'.format(moduleStub)
+# 			args = {}
+# 			g = {}
+# 			g['validateMethod'] = validateMethod
+# 			g['app'] = self 
+# 			g['args'] = args
+# 			with open(filename) as f:
+# 				code = compile(f.read(), filename, 'exec')
+# 				exec(code, g)
+# #			module.validateMethod = validateMethod
+# #			module.app = self
+# #			args = []
+# #			module.args = args
+# #			validate = getattr(module, 'validate')
+# #			generatePage = getattr(module, 'generatePage')
+# #			validate(self)
+# 			self.startResponse('200 OK', [('Content-type', 'text/html')])
+# 			jloader = jinja2.FileSystemLoader('/home/ubuntu/dev/py/splunge/templates')
+# 			jenv = jinja2.Environment()
+# 			jtemplate = jloader.load(jenv, 'extracts.pyp')
+# 			self.response.text = jtemplate.render(args)
+#			modulePath = self.getModulePath()
+#			print("modulePath={}".format(modulePath))
+#			if not modulePath:
+#				print("modulePath didn't exist")
+#			try:
+#				handleModulePath(modulePath)
+#				module = MagicLoader.loadModule(modulePath)
+#				print("module={}".format(module))
+#				enrichModule(module, env, self)
+#				args = execModule(module)
+#			except ModuleNotFoundEx as ex:
+#				print('Module {} not found - skipping pre-processing'.format(ex.moduleName))
+#				args = {}
+#			if '_' in args:
+#				if isinstance(args['_'], bytes):
+#					self.response.text = args['_']
+#				else:
+#					self.response.text = renderString(str(args['_']), args)
+# 			else:
+# 				templatePath = getTemplatePath(env)
+# 				print("templatePath={}".format(templatePath))
+# 				if not os.path.isfile(templatePath):
+# 					print("template path was not found")
+# 					self.response.headers.append(('Content-Type', 'text/plain'))
+# 					for name in sorted(args):
+# 						value = args[name]
+# 						# print("type({})={}".format(value, type(value)))
+# 						if not callable(value):
+# 							self.response.text += "{} = {}\n".format(name, value)
+# 				else:
+# 					print("templatePath=" + templatePath)
+# 					print("About to execute template ...")
+# 					self.response.text = renderTemplate(templatePath, args)
+
+#	extractId = parts[2]
+#	datestr = parts[3]
+	
+#	try:
+#		utils.validateRequestMethod(env, ['GET'])
+#		dtRange = dateRangeParser.getDateRange(datestr)
+#		(dtStart, dtEnd) = dtRange
+#		resp += "<table>"
+#		resp += "<tr> <td>extractId</td> <td>{}</td> </tr>".format(extractId)
+#		resp += "<tr> <td>datestr</td> <td>{}</td> </tr>".format(datestr)
+#		resp += "<tr> <td>dtStart</td> <td>{}</td> </tr>".format(dtStart)
+#		resp += "<tr> <td>dtEnd</td> <td>{}</td> </tr>".format(dtEnd)
+#		resp += "</table>"
+#	except Exception as ex:
+#		headers = [('Content-type', 'text/plain')]
+#		start_response('500 Oops', headers, sys.exc_info())
+#		resp = ""
+#		resp += str(ex) + '\r'
+#		resp += "\r"
+#		(exType, exInst, tb) = sys.exc_info()
+#		lines = utils.tracebackAsLines(tb)
+#		for line in lines:
+#			resp += line + "\r"
+
+

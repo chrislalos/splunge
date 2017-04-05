@@ -25,14 +25,14 @@ from splunge import types
 # To run splunge:
 #
 # cd yourWebAppFolder
-# gunicorn -b localhost:somePortNumber splunge.App:Application (listen on a port)
+# gunicorn -b localhost:portNumber splunge.App:Application (listen on a TCP socket)
 #
 #    or
 #
 # gunicorn -b unix:/tmp/splunge splunge.App:Application (listen on a Unix socket)
 #
 # In the likely event you run splunge behind nginx, use the Unix socket variant. 
-# However the socket method can be handy for quick testing
+# However the TCP socket method can be handy for quick testing
 #
 ######################################################################################
 
@@ -351,7 +351,6 @@ class Application ():
 		self.enrichModule(module)
 		args = execModule(module)
 		if not self.response.body:
-			print("No body!")
 			if '_' in args:
 				self.handleShortcutResponse(args)
 			else:
