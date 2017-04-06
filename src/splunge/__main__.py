@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pprint import pprint
 import sys
+import subprocess
 
 def runBehindNginx (args):
 	for arg in args:
@@ -14,6 +15,7 @@ def runLocally (args):
 	else:
 		cmd = "gunicorn -b localhost splunge.App:Application".format(args.port)
 	print(cmd)
+	subprocess.run(cmd)
 
 
 def parseArgs (argv):

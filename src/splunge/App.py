@@ -201,7 +201,6 @@ class Application ():
 
 
 	def __iter__ (self):
-		print("__iter__ being called")
 		if isinstance(self.response.body, bytes):
 			content = self.response.body
 		else:
