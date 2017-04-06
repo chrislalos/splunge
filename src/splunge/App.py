@@ -338,7 +338,7 @@ class Application ():
 		self.response.body = ""
 		print("Handling default path")
 		self.setContentType('text/plain')
-		self.addResponseLine("/")
+		self.addResponseLine("[splunge]")
 
 
 	def handleFavicon (self):
