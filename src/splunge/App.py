@@ -335,6 +335,7 @@ class Application ():
 
 
 	def handleDefaultPath (self):
+		self.response.body = None
 		print("Handling default path")
 		self.setContentType('text/plain')
 		self.addResponseLine("/")
