@@ -335,7 +335,7 @@ class Application ():
 
 
 	def handleDefaultPath (self):
-		self.response.body = None
+		self.response.body = ""
 		print("Handling default path")
 		self.setContentType('text/plain')
 		self.addResponseLine("/")
@@ -346,25 +346,24 @@ class Application ():
 
 
 	def handlePythonFile (self, path):
-		self.response.body = None
+		self.response.body = ""
 		module = MagicLoader.loadModule(path)
 		print("module={}".format(module))
 		self.enrichModule(module)
 		args = execModule(module)
-		if not self.response.body:
-			if '_' in args:
-				self.handleShortcutResponse(args)
+		if '_' in args:
+			self.handleShortcutResponse(args)
+		else:
+			templatePath = self.inferTemplatePath()
+			if os.path.isfile(templatePath):
+				self.handleTemplateFile(templatePath, args)
 			else:
-				templatePath = self.inferTemplatePath()
-				if os.path.isfile(templatePath):
-					self.handleTemplateFile(templatePath, args)
-				else:
-  					print("template path was not found")
-  					self.response.headers.append(('Content-Type', 'text/plain'))
-  					for name in sorted(args):
-  						value = args.get(name, '')
-  						if not callable(value):
-  							self.response.body += "{} = {}\n".format(name, value)
+  				print("template path was not found")
+  				self.response.headers.append(('Content-Type', 'text/plain'))
+  				for name in sorted(args):
+  					value = args.get(name, '')
+  					if not callable(value):
+  						self.response.body += "{} = {}\n".format(name, value)
 
 
 	def handleStaticContent (self):
