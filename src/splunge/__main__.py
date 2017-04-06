@@ -1,4 +1,5 @@
-import argparse
+from argparse import ArgumentParser
+from pprint import pprint
 import sys
 
 def runBehindNginx (args):
@@ -8,19 +9,29 @@ def runBehindNginx (args):
 
 def runLocally (args):
 	print("*** running locally ***")
+	if args.port:
+		cmd = "gunicorn -b localhost:{} splunge.App:Application".format(args.port)
+	else:
+		cmd = "gunicorn -b localhost splunge.App:Application".format(args.port)
+	print(cmd)
 
 
 def parseArgs (argv):
-	pass
+	parser = ArgumentParser(add_help=False)
+	parser.add_argument('-h', '--host', required=False)
+	parser.add_argument('-p', '--port', required=False)
+	args = parser.parse_args(argv)
+	return args
 
 
-def main (argv):
-	args = parseArgs(argv)
+def main ():
+	args = parseArgs(sys.argv[1:])
+	pprint(args)
 	if args.host:
 		runBehindNginx(args)
 	else:
 		runLocally(args)
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	main()
 

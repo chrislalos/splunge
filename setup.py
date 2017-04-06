@@ -10,7 +10,8 @@ setuptools.setup(name='splunge',
                  author_email='chris.lalos@gmail.com',
                  install_requires=['gunicorn', 'jinja2'],
                  packages=setuptools.find_packages('src'),
-                 package_dir={'': 'src'}),
+                 package_dir={'': 'src'},
                  entry_points=
-                 	{'console_scripts': ['splunge = splunge']}
+                 	{'console_scripts': ['splunge = splunge.__main__:main']}
+                 )
 #                 packages=setuptools.find_packages(exclude=['tests']))
