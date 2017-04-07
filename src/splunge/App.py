@@ -410,7 +410,8 @@ class Application ():
 			print('*** underscore')
 			pprint(underscore)
 			if not hasattr(underscore, '__dict__'):
-				self.response.body = renderString(underscore, args)
+				s = str(underscore)
+				self.response.body = renderString(s, args)
 			else:
 				print("This is an object, so we are going to treat it like one")
 				d = underscore.__dict__
