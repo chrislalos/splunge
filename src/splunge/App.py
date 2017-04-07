@@ -106,7 +106,28 @@ def validateMethod (method, methods):
 class Response:
 	def __init__ (self):
 		self.text = ""
+		self.statusCode = 200
+		self.statusMessage = "OK"
 		self.headers = []
+	
+	def addHeader (self, *args):
+		headerTuple = argsToTuple(*args, length=2)
+		self.headers.append(headerTuple)
+
+	def hasHeader (self, name):
+		found = False
+		name = name.lower()
+		for (key, val) in self.headers:
+			if key.lower() == name:
+				found = True
+				break
+		return found
+
+
+	def redirect (self, url):
+		self.statusCode = 303
+		self.statusMessage = "Response Page to POST"
+		self.addHeader("Location", url)
 
 
 ###########################################################################################
@@ -144,7 +165,6 @@ class Application ():
 		try:
 			self.handleRequest()
 		except FaviconEx as ex:
-			print(ex)
 			errmsg = "The Favicon feature (favicon.ico) is not supported here, my friend"
 			headers = [
 				('Content-type', 'text/plain'),
@@ -192,12 +212,10 @@ class Application ():
 			self.response.body = "An error has occured on the server."
 		else:
 			# Check if content type header was explicitly set. If it was not then set it to text/html
-			for (key, val) in self.response.headers:
-				if key.lower() == 'content-type':
-					break
-			else:
-				self.response.headers.append(('Content-Type', 'text/html'))
-			self.startResponse('200 OK', self.response.headers)
+			if not self.response.hasHeader('Content-Type'):
+				self.response.addHeader('Content-Type', 'text/html')
+			status = "{} {}".format(self.response.statusCode, self.response.statusMessage)
+			self.startResponse(status, self.response.headers)
 
 
 	def __iter__ (self):
@@ -259,7 +277,6 @@ class Application ():
 		return http
 
 
-
 	######################################################################################
 	#
 	# This is the magic, which allows python modules in a splunge app to have 'global'
@@ -274,9 +291,10 @@ class Application ():
 		# Assigning a null lambda is apparently an acceptable Python idiom for creating an anonymous object
 		module.http = self.createHttpObject()
 		module.response = self.response
-		module.addHeader = lambda x, y: self.response.headers.append((x, y))
-		module.validateMethod = lambda x: validateMethod(reqMethod, x) 
-		module.setContentType = lambda x: self.response.headers.append(('Content-type', x))
+		module.addHeader = lambda name, value: self.response.addHeader(name, value)
+		module.validateMethod = lambda validMethods: validateMethod(reqMethod, validMethods)
+		module.redirect = lambda url: { self.response.redirect(url) }
+		module.setContentType = lambda contentType: self.response.addHeader('Content-type', contentType)
 		# import exceptions
 
 
@@ -354,7 +372,12 @@ class Application ():
 
 
 	def handleFavicon (self):
-		raise FaviconEx()
+		errmsg = "The Favicon feature (favicon.ico) is not supported here, my friend"
+		self.response.addHeader('Content-type', 'text/plain')
+		self.response.addHeader('Warning', errmsg)
+		self.response.statusCode = 410
+		self.response.statusMessage = errmsg
+		self.response.body = ""
 
 
 	def handlePythonFile (self, path):
@@ -473,3 +496,14 @@ class Application ():
 		self.response.body += "\r\n"
 
 
+
+def argsToTuple (*args, length):
+	print("*** args: {}".format(args))
+	print("len(args)={}".format(len(args)))
+	if len(args) == length:
+		t = tuple(args)
+	elif len(args) == 1 and isinstance(args[0], (list, tuple)) and len(args[0]) == length:
+		t = tuple(args[0])
+	else:
+		raise Exception("Arguments must either be {} value(s) or a list or tuple {} element(s) long".format(length, length))
+	return t

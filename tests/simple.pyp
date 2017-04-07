@@ -3,5 +3,5 @@
 simpleTemplate
 http.path = {{ http.path }}
 
-/body>
+</body>
 </html>
