@@ -225,8 +225,16 @@ class Application ():
 					
 
 
+	# http://wsgi.tutorial.codepoint.net/parsing-the-request-post
 	def createPostArgs (self):
-		args = {}
+		if not 'CONTENT_LENGTH' in self.env:
+			contentLength = 0
+		else:
+			contentLength = int(self.env.get('CONTENT_LENGTH'))
+		f = self.env['wsgi.input']
+		qs = f.read(contentLength)
+		args = urllib.parse.parse_qs(qs)
+		return args
 
 
 	def createHttpObject (self):
