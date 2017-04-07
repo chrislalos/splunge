@@ -16,9 +16,9 @@ def runLocally (args):
 	gunicornPath = os.path.join(pyFolder, 'gunicorn')
 	print("gunicornPath={}".format(gunicornPath))
 	if args.port:
-		cmd = "{} -b localhost:{} splunge.App:Application".format(gunicornPath, args.port)
+		cmd = '"{} -b localhost:{} splunge.App:Application"'.format(gunicornPath, args.port)
 	else:
-		cmd = "{} -b localhost splunge.App:Application".format(gunicornPath, args.port)
+		cmd = '"{} -b localhost splunge.App:Application"'.format(gunicornPath, args.port)
 	print(cmd)
 	subprocess.run(cmd)
 
