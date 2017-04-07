@@ -10,10 +10,14 @@ def runBehindNginx (args):
 
 def runLocally (args):
 	print("*** running locally ***")
+	pyPath = sys.executable
+	pyFolder = os.path.dirname(pyPath)
+	gunicornPath = os.path.join(pyFolder, 'gunicorn')
+	print("gunicornPath={}".gunicornPath)
 	if args.port:
-		cmd = "gunicorn -b localhost:{} splunge.App:Application".format(args.port)
+		cmd = "{} -b localhost:{} splunge.App:Application".format(gunicornPath, args.port)
 	else:
-		cmd = "gunicorn -b localhost splunge.App:Application".format(args.port)
+		cmd = "{} -b localhost splunge.App:Application".format(gunicornPath, args.port)
 	print(cmd)
 	subprocess.run(cmd)
 
