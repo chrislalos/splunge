@@ -4,6 +4,25 @@ import os
 import sys
 import subprocess
 
+
+APP = 'splunge.App:Application'
+
+
+def createAddress (args):
+	if args.port:
+		addr = 'localhost:{}'.format(args.port)
+	else:
+		addr = 'localhost'
+	return addr
+
+
+def createGunicornPath ():
+	pyPath = sys.executable
+	pyFolder = os.path.dirname(pyPath)
+	gunicornPath = os.path.join(pyFolder, 'gunicorn')
+	return gunicornPath
+
+
 def runBehindNginx (args):
 	for arg in args:
 		print(args)
@@ -11,16 +30,11 @@ def runBehindNginx (args):
 
 def runLocally (args):
 	print("*** running locally ***")
-	pyPath = sys.executable
-	pyFolder = os.path.dirname(pyPath)
-	gunicornPath = os.path.join(pyFolder, 'gunicorn')
-	print("gunicornPath={}".format(gunicornPath))
-	if args.port:
-		cmd = '{} -b localhost:{} splunge.App:Application'.format(gunicornPath, args.port)
-	else:
-		cmd = '{} -b localhost splunge.App:Application'.format(gunicornPath)
-	print(cmd)
-	subprocess.run(cmd)
+	gunicornPath = createGunicornPath()
+	addr = createAddress(args)
+	cmdArgs = [gunicornPath, "-b", addr, APP]
+	pprint(cmdArgs)
+	subprocess.run(cmdArgs)
 
 
 def parseArgs (argv):
@@ -40,5 +54,6 @@ def main ():
 		runLocally(args)
 
 if __name__ == '__main__':
-	main()
+	main
+	(
 
