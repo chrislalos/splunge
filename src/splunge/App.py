@@ -234,7 +234,15 @@ class Application ():
 		f = self.env['wsgi.input']
 		qs = f.read(contentLength)
 		args = urllib.parse.parse_qs(qs)
-		return args
+		postData = {}
+		for key, val in args.items():
+			postKey = key.decode()
+			if len(val) == 1:
+				postVal = val[0].decode()
+			else:
+				postVal = [el.decode() for el in val]
+			postData[postKey] = postVal
+		return postData
 
 
 	def createHttpObject (self):
