@@ -14,7 +14,7 @@ def runLocally (args):
 	pyPath = sys.executable
 	pyFolder = os.path.dirname(pyPath)
 	gunicornPath = os.path.join(pyFolder, 'gunicorn')
-	print("gunicornPath={}".gunicornPath)
+	print("gunicornPath={}".format(gunicornPath))
 	if args.port:
 		cmd = "{} -b localhost:{} splunge.App:Application".format(gunicornPath, args.port)
 	else:
