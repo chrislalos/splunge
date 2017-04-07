@@ -64,7 +64,7 @@ def execModule (module):
 	for attr in newAttrs:
 		val = getattr(module, attr)
 		# We don't want to include functions or classes
-		if not callable(val) and not inspect.isclass(val):
+		if not callable(val): # and not inspect.isclass(val)
 			args[attr] = getattr(module, attr)
 	return args
 
@@ -230,7 +230,7 @@ class Application ():
 
 
 	def createHttpObject (self):
-		http = lambda: None 
+		http = type('', (), {})()                      # Creates an anonymous class and instantiates it
 		http.env = self.env
 		http.method = self.env['REQUEST_METHOD']
 		http.path = PathString(self.env['PATH_INFO'])
@@ -299,38 +299,35 @@ class Application ():
 
 	def handleRequest (self):
 		if Application.isDefault(self.path):
+			print("*** handleDefaultPath()")
 			self.handleDefaultPath()
 		elif Application.isFavicon(self.path):
+			print("*** handleFavicon()")
 			self.handleFavicon()
 		elif self.isPythonFile():
+			print("*** handlePythonFile()")
 			localPath = self.getLocalPath()
 			self.handlePythonFile(localPath)
 		elif Application.isTemplateFile(self.path):
+			print("*** handleTemplateFile()")
 			localPath = self.getLocalPath()
 			self.handleTemplateFile(localPath)
 		elif self.isStaticContent():
+			print("*** handleStaticContent()")
 			self.handleStaticContent()
 		else:
 			pythonPath = self.inferPythonPath()
-			print("*** pythonPath={}".format(pythonPath))
 			if os.path.isfile(pythonPath):
+				print("*** handlePythonFile()")
 				self.handlePythonFile(pythonPath)
 			else:
 				templatePath = self.inferTemplatePath()
-				print("*** templatePath={}".format(templatePath))
 				if os.path.isfile(templatePath):
+					print("*** handleTemplateFile()")
 					self.handleTemplateFile(templatePath)
 				else:
 					localPath = self.getLocalPath()
 					raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), localPath)
-
-
-	def handleShortcutResponse (self, args):
-		if isinstance(args['_'], bytes):
-			self.response.body = args['_']
-		else:
-			self.response.body = renderString(str(args['_']), args)
-
 
 
 	def handleDefaultPath (self):
@@ -351,6 +348,7 @@ class Application ():
 		self.enrichModule(module)
 		args = execModule(module)
 		if '_' in args:
+			print("Underscore detected - handling shortcut response")
 			self.handleShortcutResponse(args)
 		else:
 			templatePath = self.inferTemplatePath()
@@ -363,6 +361,29 @@ class Application ():
   					value = args.get(name, '')
   					if not callable(value):
   						self.response.body += "{} = {}\n".format(name, value)
+
+
+	def handleShortcutResponse (self, args):
+		underscore = args['_']
+		if isinstance(underscore, bytes):
+			self.response.body = underscore
+		else:
+			print('*** underscore')
+			pprint(underscore)
+			if not hasattr(underscore, '__dict__'):
+				self.response.body = renderString(underscore, args)
+			else:
+				print("This is an object, so we are going to treat it like one")
+				d = underscore.__dict__
+				pprint(d)
+				attrKeys = [key for key in d if not callable(d[key])]
+				self.addResponseLine("<table>")
+				for key in attrKeys:
+					val = d[key]
+					print("{}={}".format(key, val))
+					line = "<tr> <td>{}</td> <td>{}</td> </tr>".format(key, val)
+					self.addResponseLine(line)
+				self.addResponseLine("</table>")
 
 
 	def handleStaticContent (self):
