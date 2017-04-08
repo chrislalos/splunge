@@ -2,4 +2,7 @@
 **/*.egg-info
 **/*.pyc
 dist
+src/*.html
+src/*.py
+src/*.pyp
 
