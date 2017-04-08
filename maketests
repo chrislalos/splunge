@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export tests=/home/chrissy/git/splunge/tests
+export src=/home/chrissy/git/splunge/src
+parallel 'ln -sf {} $src/$(basename {})' ::: $(find $tests -maxdepth 1 -type f -print)
