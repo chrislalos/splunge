@@ -214,7 +214,7 @@ class Application ():
 			if not self.response.hasHeader('Content-Type'):
 				self.response.addHeader('Content-Type', 'text/html')
 		statusLine = self.response.getStatus()
-		response()
+		self.respond()
 
 
 
@@ -449,11 +449,10 @@ class Application ():
 
 	def respond (self):
 		status = self.response.getStatus()
-		if not self.response.exc_info:
-			self.startResponse(status, self.response.headers)
-		else:
+		if hasattr(self.response, 'exc_info'):
 			self.startResponse(status, self.response.headers, self.response.exc_info)
-
+		else:
+			self.startResponse(status, self.response.headers)
 
 
 	@staticmethod
