@@ -122,7 +122,7 @@ class Response:
 		self.setStatus(statusCode, shortMsg)
 		self.setContentType('text/plain')
 		self.addHeader('Warning', shortMsg)
-		self.response.body = longMsg
+		self.body = longMsg
 		self.exc_info = sys.exc_info()
 
 	def hasHeader (self, name):
