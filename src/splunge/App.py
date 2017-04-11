@@ -86,10 +86,11 @@ def renderString (s, args):
 
 # Shorthand for invoking jinja on a template path
 def renderTemplate (templatePath, args):
-	jloader = jinja2.FileSystemLoader(os.getcwd())
-	jenv = jinja2.Environment()
+	print("*** {}".format(os.getcwd()))
+	jloader = jinja2.FileSystemLoader(os.getcwd(), followlinks=True)
+	jenv = jinja2.Environment(loader=jloader)
 	templateName = os.path.basename(templatePath)
-	jtemplate = jloader.load(jenv, templateName)
+	jtemplate = jenv.get_template(templateName)
 	if not args:
 		args = {}
 	s = jtemplate.render(args)
