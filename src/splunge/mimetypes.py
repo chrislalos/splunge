@@ -82,7 +82,9 @@ map = {
         '.ppt'    : 'application/vnd.ms-powerpoint',
         '.ps'     : 'application/postscript',
         '.pwz'    : 'application/vnd.ms-powerpoint',
+        '.py'     : 'application/x-python-code',      # JCL
         '.pyc'    : 'application/x-python-code',
+        '.pyp'    : 'application/x-splunge-template', # JCL
         '.pyo'    : 'application/x-python-code',
         '.qt'     : 'video/quicktime',
         '.ra'     : 'audio/x-pn-realaudio',

@@ -1,6 +1,5 @@
 class PathString (str):
 	def __new__ (cls, s):
-		print(type(super()))
 		self = super().__new__(cls, s)
 		if s is None:
 			self.parts = []

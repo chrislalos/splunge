@@ -1,0 +1,84 @@
+I hate WSGI.
+
+It is absolutely ridiculous.
+
+WSGI is CGI for Python. I know it's not exactly CGI, it's lower-level than CGI, it does more than CGI ... but come on, it's CGI for Python.
+
+CGI is simple. 20 years ago tons of people wrote Perl scripts which worked directly with CGI and essentially comprised the entire World Wide Web. These people barely had an Internet to teach them how to do it, but they were able to do it anyway. Because CGI was really just a standard protocol, for a Web server to give an application HTTP headers, the URL & Query String, and Post Data, and not much else. I mean, HTTP is pretty simple, and so defining a protocol for HTTP to provide everything is pretty simple.
+
+Or so I thought. Until I looked at WSGI.
+
+Now in fairness, HTTP has evolved since CGI. And WSGIs authors chose to accomodate a number of existing Web frameworks in coming up with their spec. That made their job harder. (But then again, no one made them present a clean-sheet spec with tons of baggage, when they could have simply worked with the framework authors, who I am sure could have made their frameworks fit the new spec with very little effort ... so for me this was just a bad choice rather than a challenge.)
+
+In writing you this doc I will be reading PEP 3333 (not PEP 333 or PEP 444) for maybe the 5th time. Every time I read it I learn a little bit more, but I still end up completely confused, and I never seem to retain anything. If anything it just seems weirder and weirder every time I read it.
+
+Anyway, here's WSGI.
+
+When you write a Web application, WSGI dictates the rules you have to follow, so the Web server can talk to your application and you can talk back to the Web server. So you never fool with sockets or any details of the HTTP protocol unless you want to. The Web server is following WSGIs rules so you do too.
+
+And again, this was really easy under CGI, yet for some reason under WSGI, which has decades of examples to draw from and only has to serve a single language ... well, judge for yourself.
+
+Here are the rules of CGI for your application.
+
+First of all, you need to write your Web application as a class. Or as a method. Or as an object of a class. Seriously, you can be any of the 3. I guess they thought giving you a choice would make things easier, but that would imply they know absolutely nothing about standards, or even about life in general. Because your boss ordering to do things '1 of 3 ways' is never easier than if they just tell you.
+
+So anyway, rule 1: write an object, class, or function, whichever you prefer.
+
+And whichever when you do, you need to expect 2 arguments, env and start_response.
+
+env is pretty simple - for the most part it is a dictionary of CGI-type stuff. The HTTP method, the query string, any POST data, etc is all in there. POST data is kind of weird; it's passed via wsgi.input, which is a 'file-like object' containing the data, and it is ok with WSGI if it doesn't specify the content length (sigh) so you may know how much data you have or you may not. (God forbid WSGI forces implementors to provide a content length.) But for the most part env isn't too bad.
+
+start_response is another story.
+
+(In fairness to Python, there is a successor to PEP 3333, which is PEP 444, and PEP 444 eliminates start_response entirely. Granted PEP 444 stalled in 2010 due to a lack of a champion. But if nothing else, 444 suggests the WSGI itself knows that start_response is terrible)
+
+start_response is a callable, which means it's (more or less) a function. And it expects three arguments: status, headers, and exc_info. status and headers are straightforward. exc_info is not. It's optional, and should be there only if there are errors, but only some errors. Honestly the error handling part of the spec around exc_info might be my least favorite.
+
+Did I mention that start_response is a callable? That means it gets called. That means it has a return value. And that return value is ... a callable. Known as write(), this is a function that you would call if you wanted to talk directly to the server. Except you aren't supposed to use it. It's there for backward compatability (you're catching on), but you should never call it yourself. Ever. Well, unless you have to, and you might. But otherwise never use it.
+
+So you have to write a function, or a class with an init, or a class which is instantiated into an object with a __call__ method ... but one way or another you have to write a function. And that function takes two arguments, one of which is a function. And that function to your function returns a function. But don't call that function, unless you have to.
+
+And yet somehow none of that is sufficient to let you write output. For that let's look at ...
+
+Rule #2: Your function, or object, or class, must return an iterable, which is used by the server to read your response and send it to the client. Which is how you actually return a Web page or whatever.
+
+So all that crap under Rule #1 *isn't even how you specify your response to the server*. For that you do something else. For that you ... be iterable.
+
+How should you be iterable? Well you can return an iterable. Or you can be iterable by implementing __iter__. And probably other ways too. Again, your boss is giving you lots of alternatives, thinking that's making your life easier.
+
+Good lord.
+
+And here's my favorite part. I can't believe I almost forgot about this part.
+
+You can return a string.
+
+You can totally return a string.
+
+Because a string's an iterable. It is a sequence of characters, and iterating over a string returns its characters one at a time.
+
+But it's actually the worst possible thing you can do. Because if your response is a 64K string, and you return it as a string, the server will call your object 65,536 times, getting a character each time, and possibly writing one character at a time back to the client. Does that sound fast to you?
+
+The preferred method is to return a list, which contains a string as its one element. This will operate normally.
+
+But returning a string will work. Very badly.
+
+So the simplest, most intuitive, most natural way to return normal HTTP content, is the absolute worst performing, yet is perfectly legal so you'll never know you did something wrong.
+
+I can't make this up.
+
+STRINGS, UNICODE, BYTES, WHATEVER
+
+This part isn't really WSGIs fault. It's Python's fault. In Python 2, strings were strings. In Python 3 that changed: all strings are unicode. If you want a sequence of bytes, that's a bytestring. Since WSGI is entriely a 'string-like things' protocol - because HTTP/S is - unicode vs bytestrings vs str is kind of a big deal. 
+
+I think the entire PEP 333 => PEP 3333 effort was to come up with a standard that worked OK for both Python 2 and Python 3. I have no doubt they did the best they could or close to it. But it's still a pain.
+
+ERROR HANDLING
+
+
+
+
+THE SPEC ITSELF
+
+It just isn't a great document. It's a 'stream of consciousness spec', rambling all over the place, perhaps ultimately covering everything. It discusses middleware constantly, interjecting it haphazardly throughout and confusing everything, because middleware is an inherently confusing concept if you don't write middleware ... and most people don't write middleware. Enough with the middleware. Why am I even reading the word middleware before an Appendix or otherwise clearly marked "Not everyone has any reason to read this part" section. Argh.
+
+

@@ -1,0 +1,8 @@
+Create mock env, req, and resp objects
+* Reread spec to see what's up with start_response
+
+Work back up the stack - start testing execution paths around processing python files, and make sure it does
+the right thing
+
+Look into integrating unit testing in, to see if I can get expected results
+* Test response headers and that sort of thing

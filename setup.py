@@ -4,7 +4,7 @@ import setuptools
 setuptools.setup(name='splunge',
                  description='Relentelessly simple Python web framework.',
                  keywords='python web wsgi gunicorn django pyramid mako',
-                 version='0.0.1',
+                 version='0.0.2',
                  url='https://github.com/beantaxi/splunge',
                  author='Chris Lalos',
                  author_email='chris.lalos@gmail.com',
