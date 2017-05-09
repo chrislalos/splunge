@@ -1,0 +1,4 @@
+#!/bin/bash
+
+path=$1
+kill -s SIGHUP "$(pgrep gunicorn | head -n 1)" && curl -L "localhost:8321/$path"

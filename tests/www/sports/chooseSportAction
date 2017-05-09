@@ -1,0 +1,5 @@
+# If the session does not exist,
+#   create the session
+#   set the cookie
+# pop the url off the stack
+# redirect

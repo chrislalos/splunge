@@ -1,3 +1,7 @@
+import urllib.parse
+import os.path
+from splunge import PathString
+
 class Request:
 	def __init__ (self, env):
 		self.env = env

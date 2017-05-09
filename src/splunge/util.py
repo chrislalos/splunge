@@ -1,12 +1,15 @@
 import contextlib
+from http.cookies import SimpleCookie
 from importlib.machinery import FileFinder
 from importlib.machinery import SourceFileLoader
 import importlib.util
+import inspect
 import io
 import jinja2
 import os.path
 import sys
-
+from splunge import mimetypes
+from splunge.ExecModuleState import ExecModuleState
 
 def argsToTuple (*args, length):
 #	print('*** args: {}'.format(args), file=sys.stderr)
@@ -22,22 +25,51 @@ def argsToTuple (*args, length):
 
 
 def createHttpObject (req):
-		http = type('', (), {})()                      # Creates an anonymous class and instantiates it
-		http.env = req.env
-		http.method = req.method
-		http.path = req.path
-		http.args = req.args
-		return http
+	http = type('', (), {})()                      # Creates an anonymous class and instantiates it
+	http.env = req.env
+	http.method = req.method
+	http.path = req.path
+	http.args = req.args
+	return http
+
+
+def createModule (req, resp):
+	# create the module path and load the module using machinery
+	modulePath = '{}.py'.format(req.localPath)
+	moduleSpec = loadModuleSpec(modulePath)
+	module = importlib.util.module_from_spec(moduleSpec)
+	# create the extras and add them
+	moduleExtras = createModuleExtras(req, resp)
+	module.__dict__.update(moduleExtras.__dict__)
+	return module
 
 
 def createModuleExtras (req, resp):
-	moduleExtras = type('ModuleExtras', (), {})
+	def addCookie (name, value, **kwargs): 
+		cookiejar = SimpleCookie()
+		cookiejar[name] = value
+		cookie = cookiejar[name]
+		cookie.update(kwargs)
+		headerName = 'Set-Cookie'
+		headerValue = cookie.OutputString()
+		print('*** Adding cookie: {}: {}'.format(headerName, headerValue))
+		resp.setHeader(headerName, headerValue)
+	
+	def pypinfo (env):
+		for key, value in sorted(env.items()):
+			print('{}={}'.format(key, value))
+		return None
+
+	moduleExtras = type('ModuleExtras', (), {})()
 	moduleExtras.http = createHttpObject(req)
 	moduleExtras.response = resp
-	moduleExtras.addHeader =      lambda name, value: resp.addHeader(name, value)
+	moduleExtras.addCookie =      lambda name, value: addCookie(name, value)
+	moduleExtras.pypinfo =        lambda: pypinfo(req.env)
+	# moduleExtras.pypinfo =        lambda: None
 	moduleExtras.validateMethod = lambda validMethods: validateMethod(req.method, validMethods)
-	moduleExtras.redirect =       lambda url: { response.redirect(url) }
-	moduleExtras.setContentType = lambda contentType: response.setContentType(contentType)
+	moduleExtras.redirect =       lambda url: { resp.redirect(url) }
+	moduleExtras.setContentType = lambda contentType: resp.setContentType(contentType)
+	moduleExtras.setHeader =      lambda name, value: resp.setHeader(name, value)
 	return moduleExtras
 		# import exceptions
 
@@ -62,49 +94,67 @@ def createModuleExtras (req, resp):
 # One is by writing to stdout, which is a quick and cheap way of writing a response.
 # The other is by setting _ to either binary content, a data structure, or a template string.
 def execModule (module):
-	attrs1 = set(dir(module))
-	f = io.StringIO()
-	with contextlib.redirect_stdout(f):
-		module.exec()
-	attrs2 = set(dir(module))
-	newAttrs = [el for el in attrs2 if el not in attrs1 and el != '__builtins__']
-	args = {'http': module.http}
-	for attr in newAttrs:
-		val = getattr(module, attr)
-		# We don't want to include functions or classes
-		if not callable(val): # and not inspect.isclass(val)
-			args[attr] = getattr(module, attr)
-	return args
+	attrsBefore = set(dir(module))
+	newStdout = io.StringIO()
+	with contextlib.redirect_stdout(newStdout):
+		module.__spec__.loader.exec_module(module)
+	moduleState = ExecModuleState()
+	print('*** dir(moduleState)')
+	print(dir(moduleState))
+	moduleState.args = getModuleArgs(module, attrsBefore)
+	moduleState.shortcut = getattr(module, '_', None) 
+	if not isIoEmpty(newStdout):
+		print('*** newStdout is not empty')
+		moduleState.stdout = newStdout
+#	else:
+#		moduleState.stdout = None
+	return moduleState
+
+# def execModule (module):
+# 	attrs1 = set(dir(module))
+# 	f = io.StringIO()
+# 	with contextlib.redirect_stdout(f):
+# 		module.exec()
+# 	attrs2 = set(dir(module))
+# 	newAttrs = [el for el in attrs2 if el not in attrs1 and el != '__builtins__']
+# 	args = {'http': module.http}
+# 	for attr in newAttrs:
+# 		val = getattr(module, attr)
+# 		# We don't want to include functions or classes
+# 		if not callable(val): # and not inspect.isclass(val)
+# 			args[attr] = getattr(module, attr)
+# 	return args
+
 
 
 def execModuleSpec (moduleSpec, moduleExtras):
 	module = importlib.util.module_from_spec(moduleSpec)
-	if moduleExtras:
-		module.__dict__.update(moduleExtras.__dict__)
-	attrs1 = set(dir(module))
-	f = io.StringIO()
-	with contextlib.redirect_stdout(f):
-		moduleSpec.loader.exec_module(module)
-	bHasShortcut = hasattr(module, '_') 
-	bHasStdout = hasStdout(f)
-	bGotoTemplate = not (bHasShortcut or bHasStdout)
-	setattr(moduleSpec, 'gotoTemplate', bGotoTemplate)
-	setattr(moduleSpec, 'hasShortcut', bHasShortcut)
-	setattr(moduleSpec, 'hasStdout', bHasStdout)
-	setattr(moduleSpec, 'stdout', f)
+	moduleState = execModule(module)
+	return moduleState
+	
+	
+def getMimeType (path):
+	defaultMimeType = 'application/octet-steam'
+	(_, ext) = os.path.splitext(path)
+	if not ext:
+		mimeType = defaultMimeType
+	else:
+		mimeType = mimetypes.map.get(ext, defaultMimeType)
+	return mimeType
+
+
+def getModuleArgs (module, attrsBefore):
 	args = {}
-	if hasattr(module, 'http'):
-		args['http'] = module.http
 	attrs2 = set(dir(module))
-	newAttrs = [el for el in attrs2 if el not in attrs1 and el != '__builtins__']
+	newAttrs = [el for el in attrs2 if el not in attrsBefore and el not in ['__builtins__', 'http']]
 	for attr in newAttrs:
 		val = getattr(module, attr)
 		# We don't want to include functions or classes
-		if not callable(val): # and not inspect.isclass(val)
-			args[attr] = getattr(module, attr)
-	setattr(moduleSpec, 'args', args)
-	
-	
+		if not callable(val) and not inspect.isclass(val):
+			args[attr] = val
+	return args
+
+
 def loadModuleSpec (path):
 	# Simple filename / path stuff
 	(folder, filename) = os.path.split(path)
@@ -122,14 +172,14 @@ def loadModuleSpec (path):
 	return spec
 
 
-def hasStdout (stringIO):
-	markCur = stringIO.tell()
-	stringIO.seek(0, io.SEEK_END)
-	markEnd = stringIO.tell()
-#	print("markEnd={}".format(markEnd))
-	flag = (markEnd > 0)
-	stringIO.seek(markCur, io.SEEK_SET)
-	return flag
+# Check if an IO is empty, by moving to the end and confirming it is zero. 
+# (This saves the cursor position before checking, and restores it afterwards)
+def isIoEmpty (anIo):
+	cur = anIo.tell()
+	end = anIo.seek(0, io.SEEK_END)
+	isEmpty = (end == 0)
+	anIo.seek(cur, io.SEEK_SET)
+	return isEmpty
 
 
 # Shorthand for invoking jinja on a template string
@@ -143,9 +193,10 @@ def renderString (s, args):
 # Shorthand for invoking jinja on a template path
 def renderTemplate (templatePath, args):
 #	print("*** {}".format(os.getcwd()), file=sys.stderr)
-	jloader = jinja2.FileSystemLoader(os.getcwd(), followlinks=True)
+	cwd = os.getcwd()
+	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)
 	jenv = jinja2.Environment(loader=jloader)
-	templateName = os.path.basename(templatePath)
+	templateName = os.path.relpath(templatePath, cwd)
 	jtemplate = jenv.get_template(templateName)
 	if not args:
 		args = {}

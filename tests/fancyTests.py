@@ -37,7 +37,7 @@ def createStartResponse ():
 
 
 
-# This assume you are loading a file in the root folder of where splunge is running
+# This assumes you are loading a file in the root folder of where splunge is running
 @unittest.skip("(I am a humble base class)")
 class BaseTests:
 	class TestFile (unittest.TestCase):
