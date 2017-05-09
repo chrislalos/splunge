@@ -23,6 +23,21 @@ def argsToTuple (*args, length):
 	return t
 
 
+def createCookie (name, value, *, comment=None, domain=None, expires=None, httpOnly=True,
+	               maxAge=None, path='/', secure=False, version=1):
+	cookieJar = SimpleCookie()
+	cookieJar[name] = value
+	cookie = cookieJar[name]
+	if comment: cookie['comment'] = comment
+	if domain: cookie['domain'] = domain
+	if expires: cookie['expires'] = expires
+	if httpOnly: cookie['httponly'] = httpOnly
+	if maxAge: cookie['max-age'] = maxAge
+	if path: cookie['path'] = path
+	if secure: cookie['secure'] = secure
+	if version: cookie['version'] = version
+	return cookie
+
 
 def createHttpObject (req):
 	http = type('', (), {})()                      # Creates an anonymous class and instantiates it

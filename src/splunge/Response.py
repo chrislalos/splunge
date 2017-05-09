@@ -1,5 +1,6 @@
 import os.path
 import pickle
+from cookies import Cookie, Cookies
 from . import util
 from .Headers import Headers
 
@@ -66,7 +67,6 @@ class Response:
 		self.add(fData)
 
 
-
 	def addLine (self, line, encoding='latin-1'):
 		if not self.iter:
 			self.iter = []
@@ -82,6 +82,9 @@ class Response:
 	def clearHeaders (self):
 		self._headers.clear()
 
+
+	def deleteHeaders (self, name):
+		self._headers.deleteAll(name)
 
 	def header (self, name):
 		value = self._headers[name]
@@ -108,6 +111,22 @@ class Response:
 		self.statusMessage = 'Response Page to POST'
 		self.setHeader('Location', url)
 
+	
+	def setCookie (self, name, value, **kwargs):
+		#
+		jar = Cookies()
+		headers = self.headers('Set-Cookie')
+		if headers:
+			for header in headers:
+				jar.parse_response(header)
+		cookie = Cookie(name, value, **kwargs)
+		if name in jar:
+			jar.pop(name)
+		jar.add(cookie)
+		#
+		self.deleteHeaders('Set-Cookie')
+		cookies = [cookie for _, cookie in jar.items()]
+		for cookie in cookies:
+			cookieString = cookie.render_response()
+			self.addHeader('Set-Cookie', cookieString)
 
-	def setContentType (self, contentType):
-		self.setHeader('Content-type', contentType)

@@ -4,11 +4,11 @@ import setuptools
 setuptools.setup(name='splunge',
                  description='Relentelessly simple Python web framework.',
                  keywords='python web wsgi gunicorn django pyramid mako',
-                 version='0.0.2',
+                 version='0.0.3',
                  url='https://github.com/beantaxi/splunge',
                  author='Chris Lalos',
                  author_email='chris.lalos@gmail.com',
-                 install_requires=['gunicorn', 'jinja2'],
+                 install_requires=['cookies', 'unicorn', 'jinja2'],
                  packages=setuptools.find_packages('src'),
                  package_dir={'': 'src'},
                  entry_points=

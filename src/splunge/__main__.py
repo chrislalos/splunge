@@ -5,7 +5,7 @@ import sys
 import subprocess
 
 
-APP = 'splunge.App:Application'
+APP = 'splunge.App2:application'
 
 
 def createAddress (args):

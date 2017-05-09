@@ -1,4 +1,5 @@
 from pprint import pprint
+from cookies import Cookies
 from splunge.Headers import Headers
 
 def setup (name=None, value=None, *, d=None):
@@ -130,6 +131,28 @@ def testDeleteI ():
 	assert not headers[nameLower]
 
 
+def testDeleteMany ():
+	name = 'Set-Cookie'
+	value1 = 'likes=cheese'
+	value2 = 'hates=life'
+	headers = setup()
+	headers.add(name, value1)
+	headers.add(name, value2)
+	tuples = headers.asTuples(name)
+	assert 2 == len(tuples)
+	jar = Cookies()
+	for t in tuples:
+		(_, cookieString) = t
+		jar.parse_response(cookieString)
+	assert 'likes' in jar
+	assert 'cheese' == jar['likes'].value
+	assert 'hates' in jar
+	assert 'life' == jar['hates'].value
+	headers.deleteAll(name)
+	tuples = headers.asTuples(name)
+	assert 0 == len(tuples)
+
+
 def test_nonExistentHeader ():
 	headers = Headers()
 	assert 'bogusHeader' not in headers
@@ -174,6 +197,3 @@ def test_tuples2 ():
 	headers.add(name, value3)
 	tuples = headers.asTuples()
 	assert tuples == tuplesControl
-
-	
-

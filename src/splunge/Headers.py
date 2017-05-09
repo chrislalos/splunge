@@ -76,19 +76,27 @@ class Headers (UserDict):
 				self[key] = a
 
 
-	def asTuples (self):
-		tuples = []
-		for k,v in sorted(self.items()):
-			if not isinstance(v, list):
-				tuples.append((k, v))
+	def asTuples (self, key=None):
+		if key:
+			values = self[key]
+			if not values:
+				tuples = []
 			else:
-				theseTuples = [(k, v2) for v2 in sorted(v)]
-				tuples.extend(theseTuples)
+				tuples = [(key, value) for value in values]
+		else:
+			tuples = []
+			for k,v in sorted(self.items()):
+				if not isinstance(v, list):
+					tuples.append((k, v))
+				else:
+					theseTuples = [(k, v2) for v2 in sorted(v)]
+					tuples.extend(theseTuples)
 		return sorted(tuples)
 	
 	
+	def deleteAll (self, name):
+		self.pop(name)
+
+
 	def set (self, key, value):
 		self[key] = value
-
-
-

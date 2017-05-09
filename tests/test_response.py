@@ -1,6 +1,7 @@
 import os.path
 import pickle
 import tempfile
+from cookies import Cookie, Cookies
 import pytest
 from splunge import util
 from splunge.Response import Response
@@ -113,7 +114,7 @@ def test_setStatus ():
 	assert statusCode == resp.statusCode
 	assert statusMessage == resp.statusMessage
 
-# Set status twice, check status
+# Set status twiceeck status
 def test_setStatusTwice ():
 	resp = Response()
 	statusCode = 999
@@ -212,4 +213,64 @@ def test_fileDownload ():
 	assert 1 == len(resp.iter)
 	assert LENGTH == len(resp.iter[0])
 	assert data == resp.iter[0]
+
+### Cookies
+
+def _testCookie (header, name, value):
+	cookie = Cookie.from_string(header)
+	assert name == cookie.name
+	assert value == cookie.value
+
+
+def _testCookies (headers, args):
+	jar = Cookies()
+	for header in headers:
+		jar.parse_response(header)
+	for (name, value) in args:
+		cookie = jar[name]
+		assert cookie is not None
+		assert value == cookie.value
+
+
+# Add a cookie, test headers
+def test_setCookie ():
+	resp = Response()
+	name = 'likes'
+	value = 'cheese'
+	#
+	resp.setCookie(name, value)
+	#
+	cookieHeader = resp.header('Set-Cookie')
+	assert cookieHeader is not None
+	_testCookie(cookieHeader, name, value)
+
+
+# Add a cookie, test headers
+def test_setCookies ():
+	resp = Response()
+	data = [('likes', 'cheese'), ('hates', 'face'), ('notSure', 'beer')]
+	for (name, value) in data:
+		resp.setCookie(name, value)
+	#
+	cookieHeaders = resp.headers('Set-Cookie')
+	assert isinstance(cookieHeaders, list)
+	assert len(data) == len(cookieHeaders)
+	_testCookies(cookieHeaders, data)
+
+
+#
+def test_setCookieTwice ():
+	resp = Response()
+	name = 'likes'
+	value = 'cheese'
+	value2 = 'cats'
+	resp.setCookie(name, value)
+	resp.setCookie(name, value2)
+	#
+	cookieHeaders = resp.headers('Set-Cookie')
+	assert isinstance(cookieHeaders, list)
+	assert 1 == len(cookieHeaders)
+	args= [(name, value2)]
+	_testCookies(cookieHeaders, args)
+
 

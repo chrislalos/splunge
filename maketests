@@ -2,4 +2,4 @@
 
 export wwwtests=/home/chrissy/git/splunge/tests/www
 export src=/home/chrissy/git/splunge/src
-parallel 'ln -sf {} $src/$(basename {})' ::: $(find $wwwtests -maxdepth 1 -type f -print)
+parallel 'ln -sf {} $src/$(basename {})' ::: $(find $wwwtests -mindepth 1 -maxdepth 1 -type d -print)
