@@ -177,6 +177,7 @@ HandlerMap = {'application/x-python-code': PythonSourceHandler,
 # Determine the appropriate handler for the path entered by the user
 # 
 def getHandler (req):
+	print("req.localPath={}".format(req.localPath))
 	ext = req.getPathExtension()
 	# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
 	if not ext and not os.path.isfile(req.localPath):
