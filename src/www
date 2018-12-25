@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DEFAULT_PORT=1313
+
+port=${1:-$DEFAULT_PORT}
+echo "\$port=$port"
+echo Running splunge on port $port... 
+# gunicorn -b localhost:$port splunge.App:Application
+gunicorn -b localhost:$port splunge.App2:application
