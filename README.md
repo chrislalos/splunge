@@ -24,4 +24,3 @@ Some URLs to visit (or curl)
 - https://localhost:1313/masters-of-models
 
 #### Todo
-1. Add a `.pyp` page to the sample
