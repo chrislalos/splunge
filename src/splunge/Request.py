@@ -59,11 +59,14 @@ class Request:
 			args = self.createGetArgs()
 		elif self.method.lower() == 'post':
 			args = self.createPostArgs()
-		else:
+		else: 
 			args = {}
 		return args
 
-
+	def getPathExtension (self):
+		(_, ext) = os.path.splitext(self.localPath)
+		print("ext={}".format(ext))
+		return ext
 
 
 

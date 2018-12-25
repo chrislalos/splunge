@@ -48,21 +48,27 @@ class PythonCodeHandler:
 		moduleSpec = util.loadModuleSpec(modulePath)
 		print("moduleSpec={}".format(moduleSpec))
 		moduleExtras = util.createModuleExtras(req, resp)
+		# Now, execute the enriched module
 		moduleState = util.execModuleSpec(moduleSpec, moduleExtras)
 		req.args = moduleState.args
+		# If the module wrote to stdout, use the stdout concent as the response
 		if moduleState.hasStdout:
 			s = moduleState.stdout.getvalue()
 			resp.iter = [s.encode('latin-1')]
 			done = True
+		# If the module assigned a value to underscore ('_'), treat the _ value as the response
 		elif moduleState.hasShortcut:
 			s = util.renderString(req.args['_'], moduleState.args)
 			resp.iter = [s.encode('latin-1')]
 			done = True
+                # If there's no template, print out all module variables as the response
+                # ? Is the content type here going to be a problem? Doesn't this need to be text/plain?
 		elif not templatePath:
 			for key, val in req.args.items():
 				line = '{}={}'.format(key, val)
 				resp.addLine(line)
 			done = True
+                # Use PythonTemplateHandler to render the template
 		else:
 			req.args = moduleState.args
 			handler = PythonTemplateHandler(req.args)
@@ -168,25 +174,30 @@ HandlerMap = {'application/x-python-code': PythonSourceHandler,
              }
 
 
-
+# Determine the appropriate handler for the path entered by the user
+# 
 def getHandler (req):
-	(_, ext) = os.path.splitext(req.localPath)
-	print("ext={}".format(ext))
-	# If there is no extension and the file does not exist, treat it as a Python module
+	ext = req.getPathExtension()
+	# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
 	if not ext and not os.path.isfile(req.localPath):
+                # If it exists (as a file) when we append .py, use PythonHandler
 		modulePath = '{}.py'.format(req.localPath)
 		if os.path.isfile(modulePath):
 			handlerClass = PythonHandler
+                # If it exists (as a file) when we append .pyp, use PythonTemplateHandler
 		else:		
 			templatePath = '{}.pyp'.format(req.localPath)
 			if os.path.isfile(templatePath):
 				handlerClass = PythonTemplateHandler
 			else:
 				handlerClass = None
+	# It it has an extension, get the mime type appropriate to its extension
 	else:
-		# Defaults: mimetype=None, handlerClass=FileHandler
+		# If the mimeType doesn't exist, use None.
+                # If the mimeType exists, and it does not have a handler in HandlerMap, use FileHandler 
 		mimetype = mimetypes.map.get(ext, None)
-		handlerClass = HandlerMap.get(mimetype, FileHandler)
+		handlerClass = HandlerMap.get(mimetype, FileHandler)i
+	# If there is a handlerClass, instantiate it and return it. Otherwise return None.
 	print("handlerClass={}".format(handlerClass))
 	if not handlerClass:
 		handler = None
@@ -195,6 +206,7 @@ def getHandler (req):
 	return handler
 
 
+# Write the stacktrace to the response, so that it appears in the browser (useful for debugging)
 def captureTraceback (resp, exc_info=None):
 	if not exc_info:
 		exc_info = sys.exc_info()
@@ -208,12 +220,13 @@ def captureTraceback (resp, exc_info=None):
 	resp.addLine(exLine)
 
 
+# Extract the relevant bits from a traceback line and format said relevant bits
 def formatTracebackLine (tbTuple):
 	(filename, lineNumber, functionName, text) = tbTuple
 	tbLine = '{}:{} {}(): {}'.format(filename, lineNumber, functionName, text)
 	return tbLine
 
-
+# Handle 404s
 def handleFileNotFound (req, resp):
 	resp.status = (404, 'File Not Found')
 	resp.clearHeaders()
@@ -230,6 +243,7 @@ def handleInternalError (resp):
 	captureTraceback(resp)
 
 
+# Define the functions required by WSGI (in PEP 444)
 class Application:
 	def __init__ (self):
 		self.sessionMap = {}
@@ -240,6 +254,7 @@ class Application:
 			resp = Response()
 			req = Request(env)
 			handler = getHandler(req)
+			# ? Do I really want to treat handler.handleRequest() => None, as a 404, in all circumstances?
 			if not handler or not handler.handleRequest(req, resp):
 				handleFileNotFound(req, resp)	
 		except:
