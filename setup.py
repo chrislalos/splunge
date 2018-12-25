@@ -8,10 +8,10 @@ setuptools.setup(name='splunge',
                  url='https://github.com/beantaxi/splunge',
                  author='Chris Lalos',
                  author_email='chris.lalos@gmail.com',
-                 install_requires=['cookies', 'unicorn', 'jinja2'],
+                 install_requires=['cookies', 'gunicorn', 'jinja2', 'pygments'],
                  packages=setuptools.find_packages('src'),
                  package_dir={'': 'src'},
-                 scripts=['src/runSplungeOnPort'],
+                 scripts=['src/runSplungeOnPort', 'src/www'],
                  entry_points=
                  	{'console_scripts': ['splunge = splunge.__main__:main']}
                  )

@@ -7,4 +7,6 @@ dist
 src/*.html
 src/*.py
 src/*.pyp
-
+bin/
+include/
+lib/
