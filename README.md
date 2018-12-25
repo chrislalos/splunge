@@ -11,15 +11,17 @@ Run the splunge startup script
 Make files and folders and such
 
 #### Todo
-* Include a sample app!
-** HTML
-** Plain ole python
-** Templated python, with ... mako or whatever it is I ended up using for templating
-* Improve the startup experience
-** Favor pip install, even if it is the distro (e.g. pip install ~/dev/git/splunge)
-** Consider including gunicorn in the distro, to be completely self-contained
-*** Licensing?
-*** Would this actually work?
-** See if it's possible to put the run commands on the path, as part of the installation (perhaps this can be part of pip install)
-
-*** Look up # http://wsgi.tutorial.codepoint.net/parsing-the-request-post
+1. Include a sample app!
+* HTML
+* Plain ole python
+    * Plain ole values
+    * Assign to _ (underscore shortcut)
+    * Write to stdout
+* Templated python, with ... mako or whatever it is I ended up using for templating
+2. Improve the startup experience
+* Favor pip install, even if it is the distro (e.g. pip install ~/dev/git/splunge)
+* Consider including gunicorn in the distro, to be completely self-contained
+    * Licensing?
+    * Would this actually work?
+* See if it's possible to put the run commands on the path, as part of the installation (perhaps this can be part of pip install)
+3. Look up # http://wsgi.tutorial.codepoint.net/parsing-the-request-post
