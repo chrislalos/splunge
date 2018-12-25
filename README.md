@@ -3,25 +3,21 @@ Splunge is designed to be the world's easiest Python Web framework. Pyramid and 
 
 Splunge is ruthlessly simple.
 
-- getting started -
+## Getting Started
 
-Install splunge (with pip or whatever; I guess I might need an egg or something for this, or run a private pypy)
-Create a folder
-Run the splunge startup script
-Make files and folders and such
+1. `git clone https://github.com/beantaxi/splunge`
+2.  `virtualenv ~/dev/venv/splunge-test`
+3.  `pip install splunge`
+4. `cd sample-site`
+5. `www`
+
+This will run splunge inside the sample web site - the sample web site will be online!
+
+Some URLs to visit (or curl)
+- https://localhost:1313/index.html
+- https://localhost:1313/set-underscore
+- https://localhost:1313/some-values
+- https://localhost:1313/write-to-stdout
 
 #### Todo
-1. Include a sample app!
-* HTML
-* Plain ole python
-    * Plain ole values
-    * Assign to _ (underscore shortcut)
-    * Write to stdout
-* Templated python, with ... mako or whatever it is I ended up using for templating
-2. Improve the startup experience
-* Favor pip install, even if it is the distro (e.g. pip install ~/dev/git/splunge)
-* Consider including gunicorn in the distro, to be completely self-contained
-    * Licensing?
-    * Would this actually work?
-* See if it's possible to put the run commands on the path, as part of the installation (perhaps this can be part of pip install)
-3. Look up # http://wsgi.tutorial.codepoint.net/parsing-the-request-post
+1. Add a `.pyp` page to the sample
