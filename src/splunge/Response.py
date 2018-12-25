@@ -5,128 +5,128 @@ from . import util
 from .Headers import Headers
 
 class Response:
-	def __init__ (self):
-		self.status = (200, 'OK')
-		self._headers = Headers()
-		self.exc_info = None
-		self.iter = None
+    def __init__ (self):
+        self.status = (200, 'OK')
+        self._headers = Headers()
+        self.exc_info = None
+        self.iter = None
 	
-	@property
-	def contentLength (self): return self._headers.contentLength
-	@contentLength.setter
-	def contentLength (self, value): self._headers.contentLength = value
+    @property
+    def contentLength (self): return self._headers.contentLength
+    @contentLength.setter
+    def contentLength (self, value): self._headers.contentLength = value
 
-	@property
-	def contentType (self): return self._headers.contentType
-	@contentType.setter
-	def contentType (self, value): self._headers.contentType = value
+    @property
+    def contentType (self): return self._headers.contentType
+    @contentType.setter
+    def contentType (self, value): self._headers.contentType = value
 
-	@property 
-	def status (self): return '{} {}'.format(self.statusCode, self.statusMessage)
-	@status.setter
-	def status (self, value): (self.statusCode, self.statusMessage) = value
+    @property 
+    def status (self): return '{} {}'.format(self.statusCode, self.statusMessage)
+    @status.setter
+    def status (self, value): (self.statusCode, self.statusMessage) = value
 
 #	@property
 #	def headers (self): return [(key, val) for key, val in self.headerMap.items()]
 
-	def setHeader (self, name, value):
-		self.headerMap[name] = value
+#	def setHeader (self, name, value):
+#		self.headerMap[name] = value
 
-	def setHeaders (self, newHeaderMap):
-		self.headerMap.clear()
-		self.headerMap.update(newHeaderMap)
+#	def setHeaders (self, newHeaderMap):
+#		self.headerMap.clear()
+#		self.headerMap.update(newHeaderMap)
 
-	def addHeader (self, name, value):
-		self._headers.add(name, value)
+    def addHeader (self, name, value):
+        self._headers.add(name, value)
+
+    def hasHeader (self, name):
+        return name in self._headers
+
+    def setHeader (self, name, value):
+        self._headers.set(name, value)
+
+
+    def add (self, data):
+        if not self.iter:
+            self.iter = []
+        if not isinstance(data, bytes):
+            data = pickle.dumps(data)
+        self.iter.append(data)
 		
-	def hasHeader (self, name):
-		return name in self._headers
 
-	def setHeader (self, name, value):
-		self._headers.set(name, value)
-
-
-	def add (self, data):
-		if not self.iter:
-			self.iter = []
-		if not isinstance(data, bytes):
-			data = pickle.dumps(data)
-		self.iter.append(data)
-		
-
-	def addDownload (self, path, filename=None):
-		with open(path, 'rb') as f:
-			fData = f.read()
-		if not filename:
-			(_, filename) = os.path.split(path)
-		mimeType = util.getMimeType(path)
-		self.contentType = mimeType
-		self.contentLength = len(fData)
-		contentDisposition = "attachment: filename='{}'".format(filename)
-		self._headers.set('Content-Disposition', contentDisposition)
-		self.add(fData)
+    def addDownload (self, path, filename=None):
+        with open(path, 'rb') as f:
+            fData = f.read()
+            if not filename:
+                (_, filename) = os.path.split(path)
+                mimeType = util.getMimeType(path)
+                self.contentType = mimeType
+                self.contentLength = len(fData)
+                contentDisposition = "attachment: filename='{}'".format(filename)
+                self._headers.set('Content-Disposition', contentDisposition)
+                self.add(fData)
 
 
-	def addLine (self, line, encoding='latin-1'):
-		if not self.iter:
-			self.iter = []
-		encodedLine = '{}\r\n'.format(line).encode(encoding)
-		self.iter.append(encodedLine)
+    def addLine (self, line, encoding='latin-1'):
+        if not self.iter:
+            self.iter = []
+        encodedLine = '{}\r\n'.format(line).encode(encoding)
+        self.iter.append(encodedLine)
 
 
-	def addLines (self, lines, *, encoding='latin-1'):
-		for line in lines:
-			self.addLine(line, encoding=encoding)
+    def addLines (self, lines, *, encoding='latin-1'):
+        for line in lines:
+            self.addLine(line, encoding=encoding)
 
 
-	def clearHeaders (self):
-		self._headers.clear()
+    def clearHeaders (self):
+        self._headers.clear()
 
 
-	def deleteHeaders (self, name):
-		self._headers.deleteAll(name)
+    def deleteHeaders (self, name):
+        self._headers.deleteAll(name)
 
-	def header (self, name):
-		value = self._headers[name]
-		if not value:
-			return None
-		if isinstance(value, list):
-			raise Exception('Multiple values for {}'.format(name))
-		return value
+    def header (self, name):
+        value = self._headers[name]
+        if not value:
+            return None
+        if isinstance(value, list):
+            raise Exception('Multiple values for {}'.format(name))
+        return value
 
 	
-	def headers (self, name=None):
-		if not name:
-			return self._headers.asTuples()
-		value = self._headers[name]
-		if not value:
-			return None
-		if not isinstance(value, list):
-			value = [value]
-		return value
+    def headers (self, name=None):
+        if not name:
+            return self._headers.asTuples()
+        value = self._headers[name]
+        if not value:
+            return None
+        if not isinstance(value, list):
+            value = [value]
+        return value
 
 
-	def redirect (self, url):
-		self.statusCode = 303
-		self.statusMessage = 'Response Page to POST'
-		self.setHeader('Location', url)
+    def redirect (self, url):
+        self.statusCode = 303
+        self.statusMessage = 'Response Page to POST'
+        self.setHeader('Location', url)
 
-	
-	def setCookie (self, name, value, **kwargs):
-		#
-		jar = Cookies()
-		headers = self.headers('Set-Cookie')
-		if headers:
-			for header in headers:
-				jar.parse_response(header)
-		cookie = Cookie(name, value, **kwargs)
-		if name in jar:
-			jar.pop(name)
-		jar.add(cookie)
-		#
-		self.deleteHeaders('Set-Cookie')
-		cookies = [cookie for _, cookie in jar.items()]
-		for cookie in cookies:
-			cookieString = cookie.render_response()
-			self.addHeader('Set-Cookie', cookieString)
+
+    def setCookie (self, name, value, **kwargs):
+    #
+        jar = Cookies()
+        headers = self.header('Set-Cookie')
+        if headers:
+            for header in headers:
+                jar.parse_response(header)
+        cookie = Cookie(name, value, **kwargs)
+        if name in jar:
+            jar.pop(name)
+        jar.add(cookie)
+    #
+        self.deleteHeaders('Set-Cookie')
+        cookies = [cookie for _, cookie in jar.items()]
+        for cookie in cookies:
+            cookieString = cookie.render_response()
+            self.addHeader('Set-Cookie', cookieString)
 

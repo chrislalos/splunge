@@ -196,7 +196,7 @@ def getHandler (req):
 		# If the mimeType doesn't exist, use None.
                 # If the mimeType exists, and it does not have a handler in HandlerMap, use FileHandler 
 		mimetype = mimetypes.map.get(ext, None)
-		handlerClass = HandlerMap.get(mimetype, FileHandler)i
+		handlerClass = HandlerMap.get(mimetype, FileHandler)
 	# If there is a handlerClass, instantiate it and return it. Otherwise return None.
 	print("handlerClass={}".format(handlerClass))
 	if not handlerClass:
@@ -245,24 +245,24 @@ def handleInternalError (resp):
 
 # Define the functions required by WSGI (in PEP 444)
 class Application:
-	def __init__ (self):
-		self.sessionMap = {}
+    def __init__ (self):
+        self.sessionMap = {}
 
-
-	def __call__ (self, env, start_response):
-		try:
-			resp = Response()
-			req = Request(env)
-			handler = getHandler(req)
-			# ? Do I really want to treat handler.handleRequest() => None, as a 404, in all circumstances?
-			if not handler or not handler.handleRequest(req, resp):
-				handleFileNotFound(req, resp)	
-		except:
-			handleInternalError(resp)
-		print("*** headers")
-		for key, value in sorted(resp.headers):
-			print("{}: {}".format(key, value))
-		start_response(resp.status, resp.headers, resp.exc_info)
-		return resp.iter
+    def __call__ (self, env, start_response):
+        print("I'm in call()!")
+        try:
+            resp = Response()
+            print("self.headers={}".format(resp.headers))
+            req = Request(env)
+            handler = getHandler(req)
+            # ? Do I really want to treat handler.handleRequest() => None, as a 404, in all circumstances?
+            if not handler or not handler.handleRequest(req, resp):
+                handleFileNotFound(req, resp)	
+        except:
+            handleInternalError(resp)
+        for key, value in sorted(resp.headers()):
+            print("{}: {}".format(key, value))
+        start_response(resp.status, resp.headers(), resp.exc_info)
+        return resp.iter
 
 application = Application()
