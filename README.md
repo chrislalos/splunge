@@ -16,11 +16,11 @@ Splunge is ruthlessly simple. It's not really even a framework. You can write a 
 This will run splunge inside the sample web site - the sample web site will be online!
 
 Some URLs to visit (or curl)
-- https://localhost:1313/index.html
-- https://localhost:1313/set-underscore
-- https://localhost:1313/some-values
-- https://localhost:1313/write-to-stdout
-- https://localhost:1313/simple-template
-- https://localhost:1313/masters-of-models
+- http://localhost:1313/index.html
+- http://localhost:1313/set-underscore
+- http://localhost:1313/some-values
+- http://localhost:1313/write-to-stdout
+- http://localhost:1313/simple-template
+- http://localhost:1313/masters-of-models
 
 #### Todo
