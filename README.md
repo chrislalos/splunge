@@ -1,17 +1,42 @@
 # splunge
-Splunge is designed to be the world's easiest Python Web framework. Pyramid and Django are fine, but they are not ruthlessly simple.
+Splunge is the world's easiest Python Web framework. Simpler than Django ... simpler than Pyramid ... even simpler than Flask.
 
-Splunge is ruthlessly simple. It's not really even a framework. You can write a Web site using splunge, without really using splunge. You can just write the same Python code you'd write anyway.
+Splunge isn't really even a framework. You just write Python code, do calculations, assign results to variables, and print() them -- or don't -- and `splunge` takes care of making the data available over HTTP, as a simple Web page.
 
-`splunge` is designed for Python hackers whose focus is on computation and data processing, who then want to make results available on the Web. At present it's not designed for next-gen Web applications, or even database-driven Web apps. But if you process large amounts of data, and want to make it available on the Web, 
+Need something fancier? `splunge` uses Jinja templates, the most popular Python Web-template language and the most commonly used with more traditional frameworks. Presenting content with splunge is quite similar to presenting content with larger frameworks.
+
+`splunge` is not (currently!) designed for next-gen Web experiences or database-driven applications. But if you process large amounts of data, you want to make it available on the Web, and you want to spend zero time learning Python Web frameworks, then splunge is for you.
+
+## Features
+
+`splunge` was born from the desire to make a few uses cases very simple
+
+- Do some calculations, save the values to a few variables, display them
+- Do some calculations, only show the final results, skipping immediately variable
+- Take an existing Python script, which outputs results via `print()`, and turn it into a Web page
+- Display a Python script's source code in the browser
+- Support simple templating through Jinja, without forcing `render_template()` or any template-specific coding
+- DO NOT force the developer to define routes. The route for `hello.py` is `/hello`, and the route for its source code is `/hello.py`.
+
+
+## Under the Hood
+
+`splunge` is a base-bones implementation of the WSGI specification, according to [PEP 444](https://www.python.org/dev/peps/pep-0444/). It uses [gunicorn](https://gunicorn.org/) to handle incoming connections, which made writing `splunge` a lot easier.
+
+`splunge` uses Python's built-in module import machinery to custom-load Python scripts as modules. This is how splunge 'enriches' Python scripts to be more HTTP-aware saving the author from tedious imports.
+
+`splunge` also uses jinja for templating, Pygments for syntax highlighting, and various other 3rd party modules for other features. The size of the splunge codebase is fairly small.
 
 ## Getting Started
 
+The easiest way to get started with `splunge`, is to clone the repo, install `splunge` from your local folder using `pip`, and then start up the splunge web server.
+
 1. `git clone https://github.com/beantaxi/splunge`
-2.  `virtualenv --python $(which python3) ~/dev/venv/splunge-test`
-3.  `pip install splunge`
-4. `cd sample-site`
-5. `www`
+1. `cd splunge`
+1.  `python -m venv `*`your-path-to-a-venv-folder`*
+1.  `pip install splunge`
+1. `cd sample-site`
+1. `www`
 
 This will run splunge inside the sample web site - the sample web site will be online!
 
@@ -24,3 +49,6 @@ Some URLs to visit (or curl)
 - http://localhost:1313/masters-of-models
 
 #### Todo
+
+HTTPS support
+DataFrames as HTML tables
