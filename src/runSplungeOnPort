@@ -4,11 +4,13 @@ DEFAULT_PORT=1313
 
 port=${1:-$DEFAULT_PORT}
 echo "\$port=$port"
-echo Running splunge on port $port... 
+LOGS_FOLDER=/tmp/splunge/log
+mkdir -p "$LOGS_FOLDER"
+echo Running splunge on port $port (check logs in $LOGS_FOLDER) ... 
 # gunicorn -b localhost:$port splunge.App:Application
 gunicorn --bind localhost:$port \
-         --access-logfile /tmp/splunge/log/access.log \
-         --error-logfile /tmp/splunge/log/errors.log \
+         --access-logfile "$LOGS_FOLDER/access.log" \
+         --error-logfile "$LOGS_FOLDER/errors.log" \
          --workers 3 \
          --umask 007 \
          --reload \
