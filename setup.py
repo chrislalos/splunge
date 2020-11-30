@@ -11,7 +11,7 @@ setuptools.setup(name='splunge',
                  install_requires=['cookies', 'gunicorn', 'jinja2', 'pygments'],
                  packages=setuptools.find_packages('src'),
                  package_dir={'': 'src'},
-                 scripts=['src/runSplungeOnPort', 'src/www'],
+                 scripts=['src/runSplungeOnPort', 'src/runSplungeOnUnixSocket', 'src/www'],
                  entry_points=
                  	{'console_scripts': ['splunge = splunge.__main__:main']}
                  )

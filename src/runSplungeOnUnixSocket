@@ -1,8 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-DEFAULT_PORT=1313
+DEFAULT_UDS_PATH=/tmp/splunge.sock
 
-port=${1:-$DEFAULT_PORT}
-echo "\$port=$port"
-echo Running splunge on port $port... 
-gunicorn -b unix:/tmp/splunge splunge.App:Application
+UDS_PATH=${1:-$DEFAULT_UDS_PATH}
+echo "\$UDS_PATH=$UDS_PATH"
+echo Running splunge on UDS_PATH $UDS_PATH... 
+gunicorn --bind "unix:$UDS_PATH"
+         --access-logfile /tmp/splunge/log/access.log \
+         --error-logfile /tmp/splunge/log/errors.log \
+         --workers 3 \
+         --umask 007 \
+         --reload \
+         splunge.App2:application
