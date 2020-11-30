@@ -4,10 +4,12 @@ DEFAULT_UDS_PATH=/tmp/splunge.sock
 
 UDS_PATH=${1:-$DEFAULT_UDS_PATH}
 echo "\$UDS_PATH=$UDS_PATH"
-echo Running splunge on UDS_PATH $UDS_PATH... 
+LOGS_FOLDER=/tmp/splunge/log
+mkdir -p "$LOGS_FOLDER"
+echo Running splunge on UDS_PATH $UDS_PATH (check logs in $LOGS_FOLDER) ...
 gunicorn --bind "unix:$UDS_PATH" \
-         --access-logfile /tmp/splunge/log/access.log \
-         --error-logfile /tmp/splunge/log/errors.log \
+         --access-logfile "$LOGS_FOLDER/access.log" \
+         --error-logfile "$LOGS_FOLDER/errors.log" \
          --workers 3 \
          --umask 007 \
          --reload \
