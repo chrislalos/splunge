@@ -6,7 +6,7 @@ UDS_PATH=${1:-$DEFAULT_UDS_PATH}
 echo "\$UDS_PATH=$UDS_PATH"
 LOGS_FOLDER=/tmp/splunge/log
 mkdir -p "$LOGS_FOLDER"
-echo Running splunge on UDS_PATH $UDS_PATH (check logs in $LOGS_FOLDER) ...
+echo "Running splunge on UDS_PATH $UDS_PATH (check logs in $LOGS_FOLDER) ..."
 gunicorn --bind "unix:$UDS_PATH" \
          --access-logfile "$LOGS_FOLDER/access.log" \
          --error-logfile "$LOGS_FOLDER/errors.log" \
