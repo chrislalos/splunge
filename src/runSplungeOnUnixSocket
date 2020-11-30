@@ -5,7 +5,7 @@ DEFAULT_UDS_PATH=/tmp/splunge.sock
 UDS_PATH=${1:-$DEFAULT_UDS_PATH}
 echo "\$UDS_PATH=$UDS_PATH"
 echo Running splunge on UDS_PATH $UDS_PATH... 
-gunicorn --bind "unix:$UDS_PATH"
+gunicorn --bind "unix:$UDS_PATH" \
          --access-logfile /tmp/splunge/log/access.log \
          --error-logfile /tmp/splunge/log/errors.log \
          --workers 3 \
