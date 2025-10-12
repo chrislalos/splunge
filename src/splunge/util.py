@@ -10,6 +10,8 @@ import os.path
 import sys
 from splunge import mimetypes
 from splunge.ExecModuleState import ExecModuleState
+from splunge.Exceptions import InvalidMethodEx
+
 
 def argsToTuple (*args, length):
 #	print('*** args: {}'.format(args), file=sys.stderr)
@@ -89,9 +91,13 @@ def createModuleExtras (req, resp):
 		# import exceptions
 
 
+def create_file_finder (folder, extension):
+	loaderArgs = (SourceFileLoader, extension)
+	finder = FileFinder(folder, loaderArgs)
+	return finder
 
 
-######################################################################################
+################################################################################
 #
 # Splunge's enhanced exec module function.
 #
@@ -148,6 +154,14 @@ def execModuleSpec (moduleSpec, moduleExtras):
 	return moduleState
 	
 	
+def get_file_extension(path, *, with_dot=False):
+	(folder, filename) = os.path.split(path)
+	(_, dot, extension) = filename.rpartition('.')
+	print("(moduleName, dot, extension)=({}, {}, {})".format(_, dot, extension))
+	if with_dot:
+		return dot+extension
+	return extension
+
 def getMimeType (path):
 	defaultMimeType = 'application/octet-steam'
 	(_, ext) = os.path.splitext(path)

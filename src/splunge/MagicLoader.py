@@ -20,37 +20,45 @@
 
 from importlib.machinery import FileFinder
 from importlib.machinery import SourceFileLoader
+import splunge
 import importlib.util 
 import os.path
 
 def loadModule (path):
 	# Simple filename / path stuff
 	(folder, filename) = os.path.split(path)
-	print("folder=" + folder)
-	print("filename=" + filename)
+	# print("folder=" + folder)
+	# print("filename=" + filename)
 	(moduleName, dot, extension) = filename.rpartition('.')
-	print("(moduleName, dot, extension)=({}, {}, {})".format(moduleName, dot, extension))
+	# print("(moduleName, dot, extension)=({}, {}, {})".format(moduleName, dot, extension))
+	ext = splunge.util.get_file_extension(path)
+
 	# Enter the weirdness: pass a (loader class, file extension) tuple, wrapped in a list, to
 	# the c'tor of importlib's FileFinder. Use the file finder to 'find' a module spec (which
 	# is sort of metainfo on a module), then use import machinery to turn the spec into a 
 	# module.
-	loaderArgs = (SourceFileLoader, [dot+extension])
-	finder = FileFinder(folder, loaderArgs)
+	# loaderArgs = (SourceFileLoader, ext)
+	# finder = FileFinder(folder, loaderArgs)
+	finder = splunge.urilcreate_file_finder
 	spec = finder.find_spec(moduleName)
 	print("spec=" + str(spec))
 	if not spec:
-		raise ModuleNotFoundEx(moduleName)
+		raise splunge.ModuleNotFoundEx(moduleName)
 	module = importlib.util.module_from_spec(spec)
 	print("module=" + str(module))
+
 	# And now a final weird trick: In python loaders are responsible for execution as well,
 	# which seems like an unnecessary coupling. They get away with it because import = load+execute
 	# and so decoupling load and execution is not a priority for Python. But it is for splunge.
 	# So as a bit of syntactic sugar we add an 'exec' function to the module, which is just a lambda
 	# that calls exec_module() on the loader.
 	# @todo Think about the implications, of clobbering exec() if exec() happened to exist in the module.
-	loader = spec.loader
+	# @note I think modules are assigned a spec field upon loading so this next statement might not be necessary
+	# @note If none of the local variables here are necessary for module execution, then this lambda assignment
+	#       could happen at module enrichment time ... or skipped in favor of an explicit call.
+	#       ie module.__spec__.loader.exec_module(module)
 	module.moduleSpec = spec
-	module.exec = lambda: loader.exec_module(module)
+	module.exec = lambda: spec.loader.exec_module(module)
 	return module
 
 

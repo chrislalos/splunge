@@ -68,7 +68,7 @@ class PythonCodeHandler:
 				line = '{}={}'.format(key, val)
 				resp.addLine(line)
 			done = True
-                # Use PythonTemplateHandler to render the template
+		# Use PythonTemplateHandler to render the template
 		else:
 			req.args = moduleState.args
 			handler = PythonTemplateHandler(req.args)
@@ -181,11 +181,11 @@ def getHandler (req):
 	ext = req.getPathExtension()
 	# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
 	if not ext and not os.path.isfile(req.localPath):
-                # If it exists (as a file) when we append .py, use PythonHandler
+		# If it exists (as a file) when we append .py, use PythonHandler
 		modulePath = '{}.py'.format(req.localPath)
 		if os.path.isfile(modulePath):
 			handlerClass = PythonHandler
-                # If it exists (as a file) when we append .pyp, use PythonTemplateHandler
+		# If it exists (as a file) when we append .pyp, use PythonTemplateHandler
 		else:		
 			templatePath = '{}.pyp'.format(req.localPath)
 			if os.path.isfile(templatePath):
@@ -195,7 +195,7 @@ def getHandler (req):
 	# It it has an extension, get the mime type appropriate to its extension
 	else:
 		# If the mimeType doesn't exist, use None.
-                # If the mimeType exists, and it does not have a handler in HandlerMap, use FileHandler 
+		# If the mimeType exists, and it does not have a handler in HandlerMap, use FileHandler 
 		mimetype = mimetypes.map.get(ext, None)
 		handlerClass = HandlerMap.get(mimetype, FileHandler)
 	# If there is a handlerClass, instantiate it and return it. Otherwise return None.
@@ -243,6 +243,9 @@ def handleInternalError (resp):
 	resp.setHeader('Content-type', 'text/plain')
 	captureTraceback(resp)
 
+def getPathExtension (path):
+	(_, ext) = os.path.splitext(path)
+	return ext
 
 # Define the functions required by WSGI (in PEP 444)
 class Application:
@@ -256,7 +259,7 @@ class Application:
             print("self.headers={}".format(resp.headers))
             req = Request(env)
             handler = getHandler(req)
-            # ? Do I really want to treat handler.handleRequest() => None, as a 404, in all circumstances?
+            # @note Do I really want to treat handler.handleRequest() => None/False, as a 404, in all circumstances?
             if not handler or not handler.handleRequest(req, resp):
                 handleFileNotFound(req, resp)	
         except:

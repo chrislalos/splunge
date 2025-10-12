@@ -1,6 +1,5 @@
 import os.path
 import pickle
-from cookies import Cookie, Cookies
 from . import util
 from .Headers import Headers
 
@@ -112,21 +111,21 @@ class Response:
         self.setHeader('Location', url)
 
 
-    def setCookie (self, name, value, **kwargs):
-    #
-        jar = Cookies()
-        headers = self.header('Set-Cookie')
-        if headers:
-            for header in headers:
-                jar.parse_response(header)
-        cookie = Cookie(name, value, **kwargs)
-        if name in jar:
-            jar.pop(name)
-        jar.add(cookie)
-    #
-        self.deleteHeaders('Set-Cookie')
-        cookies = [cookie for _, cookie in jar.items()]
-        for cookie in cookies:
-            cookieString = cookie.render_response()
-            self.addHeader('Set-Cookie', cookieString)
+    # def setCookie (self, name, value, **kwargs):
+    # #
+        # jar = Cookies()
+        # headers = self.header('Set-Cookie')
+        # if headers:
+            # for header in headers:
+                # jar.parse_response(header)
+        # cookie = Cookie(name, value, **kwargs)
+        # if name in jar:
+            # jar.pop(name)
+        # jar.add(cookie)
+    # #
+        # self.deleteHeaders('Set-Cookie')
+        # cookies = [cookie for _, cookie in jar.items()]
+        # for cookie in cookies:
+            # cookieString = cookie.render_response()
+            # self.addHeader('Set-Cookie', cookieString)
 
