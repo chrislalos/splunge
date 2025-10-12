@@ -32,7 +32,7 @@ def test_start_response (env, headers, exc_info=None):
 def testModuleFile (file):
 	path = os.path.abspath(file)
 #	print('path={}'.format(path))
-	moduleSpec = splunge.util.loadModuleSpec(path)
+	moduleSpec = splunge.util.load_module_spec(path)
 #	pprint(moduleSpec)
 	splunge.util.execModuleSpec(moduleSpec, None)
 #	pprint(moduleSpec)
@@ -55,7 +55,7 @@ def testModuleFile (file):
 def testModuleExtras (file):
 	path = os.path.abspath(file)
 #	print('path={}'.format(path))
-	moduleSpec = splunge.util.loadModuleSpec(path)
+	moduleSpec = splunge.util.load_module_spec(path)
 #	pprint(moduleSpec)
 	splunge.util.execModuleSpec(moduleSpec, moduleExtras)
 #	pprint(moduleSpec)

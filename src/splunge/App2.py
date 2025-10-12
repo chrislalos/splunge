@@ -45,7 +45,7 @@ class PythonCodeHandler:
 		# Get module spec
 		modulePath = '{}.py'.format(req.localPath)
 		# Load and enrich the module
-		moduleSpec = util.loadModuleSpec(modulePath)
+		moduleSpec = util.load_module_spec(modulePath)
 		print("moduleSpec={}".format(moduleSpec))
 		moduleExtras = util.createModuleExtras(req, resp)
 		# Now, execute the enriched module

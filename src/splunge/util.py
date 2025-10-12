@@ -53,7 +53,7 @@ def createHttpObject (req):
 def createModule (req, resp):
 	# create the module path and load the module using machinery
 	modulePath = '{}.py'.format(req.localPath)
-	moduleSpec = loadModuleSpec(modulePath)
+	moduleSpec = load_module_spec(modulePath)
 	module = importlib.util.module_from_spec(moduleSpec)
 	# create the extras and add them
 	moduleExtras = createModuleExtras(req, resp)
@@ -147,12 +147,10 @@ def execModule (module):
 # 	return args
 
 
-
 def execModuleSpec (moduleSpec, moduleExtras):
 	module = importlib.util.module_from_spec(moduleSpec)
 	moduleState = execModule(module)
 	return moduleState
-	
 	
 def get_file_extension(path, *, with_dot=False):
 	(folder, filename) = os.path.split(path)
@@ -161,6 +159,11 @@ def get_file_extension(path, *, with_dot=False):
 	if with_dot:
 		return dot+extension
 	return extension
+
+def get_folder(path):
+	(folder, filename) = os.path.split(path)
+	return folder
+
 
 def getMimeType (path):
 	defaultMimeType = 'application/octet-steam'
@@ -184,7 +187,17 @@ def getModuleArgs (module, attrsBefore):
 	return args
 
 
-def loadModuleSpec (path):
+# Check if an IO is empty, by moving to the end and confirming it is zero. 
+# (This saves the cursor position before checking, and restores it afterwards)
+def isIoEmpty (anIo):
+	cur = anIo.tell()
+	end = anIo.seek(0, io.SEEK_END)
+	isEmpty = (end == 0)
+	anIo.seek(cur, io.SEEK_SET)
+	return isEmpty
+
+
+def load_module_spec (path):
 	# Simple filename / path stuff
 	(folder, filename) = os.path.split(path)
 	print("folder=" + folder, file=sys.stderr)
@@ -199,16 +212,6 @@ def loadModuleSpec (path):
 	finder = FileFinder(folder, loaderArgs)
 	spec = finder.find_spec(moduleName)
 	return spec
-
-
-# Check if an IO is empty, by moving to the end and confirming it is zero. 
-# (This saves the cursor position before checking, and restores it afterwards)
-def isIoEmpty (anIo):
-	cur = anIo.tell()
-	end = anIo.seek(0, io.SEEK_END)
-	isEmpty = (end == 0)
-	anIo.seek(cur, io.SEEK_SET)
-	return isEmpty
 
 
 # Shorthand for invoking jinja on a template string
@@ -231,6 +234,12 @@ def renderTemplate (templatePath, args):
 		args = {}
 	s = jtemplate.render(args)
 	return s 
+
+def split_module_path(path):
+	# Simple filename / path stuff
+	(folder, filename) = os.path.split(path)
+	(moduleName, ext) = os.path.splitext(filename)
+	return folder, moduleName, ext
 
 
 def validateMethod (method, methods):
