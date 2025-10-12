@@ -10,6 +10,7 @@ from splunge.PathString import PathString
 from splunge import MagicLoader
 from splunge.App import Application
 from splunge.App2 import Application
+from splunge.MagicLoader import 
 
 __all__ = ['Application', 'MagicLoader']
 

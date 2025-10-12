@@ -57,7 +57,6 @@ def loadModule (path):
 	# @note If none of the local variables here are necessary for module execution, then this lambda assignment
 	#       could happen at module enrichment time ... or skipped in favor of an explicit call.
 	#       ie module.__spec__.loader.exec_module(module)
-	module.moduleSpec = spec
 	module.exec = lambda: spec.loader.exec_module(module)
 	return module
 
