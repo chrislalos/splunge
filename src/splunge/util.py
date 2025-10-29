@@ -52,7 +52,7 @@ def createHttpObject (req):
 
 def createModule (req, resp):
 	# create the module path and load the module using machinery
-	modulePath = '{}.py'.format(req.localPath)
+	modulePath = f'{req.localPath}.py'
 	moduleSpec = load_module_spec(modulePath)
 	module = importlib.util.module_from_spec(moduleSpec)
 	# create the extras and add them
@@ -223,7 +223,7 @@ def renderString (s, args):
 
 
 # Shorthand for invoking jinja on a template path
-def renderTemplate (templatePath, args):
+def renderTemplate (templatePath, args={}):
 #	print("*** {}".format(os.getcwd()), file=sys.stderr)
 	cwd = os.getcwd()
 	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)

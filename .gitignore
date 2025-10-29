@@ -8,5 +8,6 @@ src/*.html
 src/*.py
 src/*.pyp
 bin/
+build/
 include/
 lib/

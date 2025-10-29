@@ -67,6 +67,3 @@ class Request:
 		(_, ext) = os.path.splitext(self.localPath)
 		print("ext={}".format(ext))
 		return ext
-
-
-
