@@ -1,0 +1,233 @@
+[2025-10-29 19:28:49 -0500] [16398] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 19:28:49 -0500] [16398] [INFO] Listening at: http://127.0.0.1:1313 (16398)
+[2025-10-29 19:28:49 -0500] [16398] [INFO] Using worker: sync
+[2025-10-29 19:28:49 -0500] [16400] [INFO] Booting worker with pid: 16400
+[2025-10-29 19:28:49 -0500] [16401] [INFO] Booting worker with pid: 16401
+[2025-10-29 19:28:49 -0500] [16400] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:28:49 -0500] [16401] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:28:49 -0500] [16401] [INFO] Worker exiting (pid: 16401)
+[2025-10-29 19:28:49 -0500] [16400] [INFO] Worker exiting (pid: 16400)
+[2025-10-29 19:28:49 -0500] [16398] [ERROR] Worker (pid:16401) exited with code 3
+[2025-10-29 19:29:19 -0500] [16398] [ERROR] Shutting down: Master
+[2025-10-29 19:29:19 -0500] [16398] [ERROR] Reason: Worker failed to boot.
+[2025-10-29 19:30:29 -0500] [17249] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 19:30:29 -0500] [17249] [INFO] Listening at: http://127.0.0.1:1313 (17249)
+[2025-10-29 19:30:29 -0500] [17249] [INFO] Using worker: sync
+[2025-10-29 19:30:29 -0500] [17264] [INFO] Booting worker with pid: 17264
+[2025-10-29 19:30:29 -0500] [17264] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:30:29 -0500] [17264] [INFO] Worker exiting (pid: 17264)
+[2025-10-29 19:30:29 -0500] [17249] [ERROR] Worker (pid:17264) exited with code 3
+[2025-10-29 19:30:29 -0500] [17249] [ERROR] Shutting down: Master
+[2025-10-29 19:30:29 -0500] [17249] [ERROR] Reason: Worker failed to boot.
+[2025-10-29 19:33:47 -0500] [19201] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 19:33:47 -0500] [19201] [INFO] Listening at: http://127.0.0.1:1313 (19201)
+[2025-10-29 19:33:47 -0500] [19201] [INFO] Using worker: sync
+[2025-10-29 19:33:47 -0500] [19202] [INFO] Booting worker with pid: 19202
+[2025-10-29 19:33:47 -0500] [19202] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:33:47 -0500] [19202] [INFO] Worker exiting (pid: 19202)
+[2025-10-29 19:33:47 -0500] [19201] [ERROR] Worker (pid:19202) exited with code 3
+[2025-10-29 19:33:47 -0500] [19201] [ERROR] Shutting down: Master
+[2025-10-29 19:33:47 -0500] [19201] [ERROR] Reason: Worker failed to boot.
+[2025-10-29 19:34:46 -0500] [19689] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 19:34:46 -0500] [19689] [INFO] Listening at: http://127.0.0.1:1313 (19689)
+[2025-10-29 19:34:46 -0500] [19689] [INFO] Using worker: sync
+[2025-10-29 19:34:46 -0500] [19690] [INFO] Booting worker with pid: 19690
+[2025-10-29 19:34:46 -0500] [19690] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:34:46 -0500] [19690] [INFO] Worker exiting (pid: 19690)
+[2025-10-29 19:34:46 -0500] [19691] [INFO] Booting worker with pid: 19691
+[2025-10-29 19:34:46 -0500] [19689] [ERROR] Worker (pid:19690) exited with code 3
+[2025-10-29 19:34:46 -0500] [19691] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+    ~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/chris/tmp/venv/hello-splunge/lib/python3.13/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'fun'
+[2025-10-29 19:34:46 -0500] [19691] [INFO] Worker exiting (pid: 19691)
+[2025-10-29 19:34:46 -0500] [19689] [ERROR] Worker (pid:19691) exited with code 3

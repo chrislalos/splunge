@@ -1,0 +1,11 @@
+[2025-10-29 19:37:00 -0500] [20797] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 19:37:00 -0500] [20797] [INFO] Listening at: http://127.0.0.1:1313 (20797)
+[2025-10-29 19:37:00 -0500] [20797] [INFO] Using worker: sync
+[2025-10-29 19:37:00 -0500] [20798] [INFO] Booting worker with pid: 20798
+[2025-10-29 19:37:00 -0500] [20800] [INFO] Booting worker with pid: 20800
+[2025-10-29 19:37:00 -0500] [20801] [INFO] Booting worker with pid: 20801
+[2025-10-29 19:37:09 -0500] [20797] [INFO] Handling signal: int
+[2025-10-29 19:37:09 -0500] [20800] [INFO] Worker exiting (pid: 20800)
+[2025-10-29 19:37:09 -0500] [20801] [INFO] Worker exiting (pid: 20801)
+[2025-10-29 19:37:09 -0500] [20798] [INFO] Worker exiting (pid: 20798)
+[2025-10-29 19:37:09 -0500] [20797] [INFO] Shutting down: Master

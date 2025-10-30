@@ -1,31 +1,23 @@
-import os.path
 import urllib.parse
-from splunge import pathTests, PathString
+import os.path
+from splunge import PathString
 
 class Request:
 	def __init__ (self, env):
 		self.env = env
+		self._args = self.getArgs()
+
+	@property
+	def args (self): return self._args
+	@args.setter
+	def args (self, value): self._args = value
+	@property
+	def localPath (self): return '{}{}'.format(os.getcwd(), self.path)
+	@property
+	def method (self): return self.env['REQUEST_METHOD']
+	@property
+	def path (self): return PathString(self.env['PATH_INFO'].strip())
 	
-	@property
-	def args (self):
-		return self.getArgs()
-
-	# Translate the path from the URL, to the local file or resource being referred to
-	@property 
-	def localPath (self):
-		relPath = os.path.join(os.getcwd(), self.path)
-		return relPath		
-
-	@property
-	def method (self):
-		return env['REQUEST_METHOD']
-
-
-	@property
-	def path (self):
-		return PathString(self.env['PATH_INFO'].strip())
-
-		
 	def createGetArgs (self):
 		args = {}
 		qs = self.env['QUERY_STRING']
@@ -44,7 +36,7 @@ class Request:
 
 	# http://wsgi.tutorial.codepoint.net/parsing-the-request-post
 	def createPostArgs (self):
-		if not 'CONTNT_LENGTH' in self.env:
+		if not 'CONTENT_LENGTH' in self.env:
 			contentLength = 0
 		else:
 			contentLength = int(self.env.get('CONTENT_LENGTH'))
@@ -62,41 +54,16 @@ class Request:
 		return postData
 
 
-	def getArgs (self): 
+	def getArgs (self):
 		if self.method.lower() == 'get':
 			args = self.createGetArgs()
 		elif self.method.lower() == 'post':
 			args = self.createPostArgs()
-		else:
+		else: 
 			args = {}
 		return args
 
-
-	# Append .py to the path, then append the path to the working dir, and that's the python path
-	def inferPythonPath (self):
-		localPath = self.localPath
-		pythonPath = '{}.py'.format(localPath)
-		return pythonPath		
-
-	
-	# Get the local version of the http path, append .pyp, and that's the template path
-	def inferTemplatePath (self):
-		localPath = self.localPath
-		templatePath = '{}.pyp'.format(localPath)
-		return templatePath		
-
-	
-	def isDefault (self): return pathTests.isDefault(self.path)
-	def isFavicon (self): return pathTests.isFavicon(self.path)
-	def isPythonFile (self): return pathTests.isPythonFile(self.path)
-	def isTemplateFile (self): return pathTests.isTemplateFile(self.path)
-
-	def isStaticContent (self):
-#		print("self.localPath={}".format(self.localPath))
-		flag = os.path.isfile(self.localPath)
-		return flag
-
-
-
-
-
+	def getPathExtension (self):
+		(_, ext) = os.path.splitext(self.localPath)
+		print("ext={}".format(ext))
+		return ext
