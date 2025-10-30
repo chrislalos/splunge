@@ -9,3 +9,15 @@
 [2025-10-29 19:37:09 -0500] [20801] [INFO] Worker exiting (pid: 20801)
 [2025-10-29 19:37:09 -0500] [20798] [INFO] Worker exiting (pid: 20798)
 [2025-10-29 19:37:09 -0500] [20797] [INFO] Shutting down: Master
+[2025-10-29 20:10:38 -0500] [28610] [INFO] Starting gunicorn 23.0.0
+[2025-10-29 20:10:38 -0500] [28610] [INFO] Listening at: http://127.0.0.1:1313 (28610)
+[2025-10-29 20:10:38 -0500] [28610] [INFO] Using worker: sync
+[2025-10-29 20:10:38 -0500] [28611] [INFO] Booting worker with pid: 28611
+[2025-10-29 20:10:38 -0500] [28612] [INFO] Booting worker with pid: 28612
+[2025-10-29 20:10:38 -0500] [28613] [INFO] Booting worker with pid: 28613
+[2025-10-29 22:39:24 -0500] [28610] [INFO] Handling signal: winch
+[2025-10-29 22:45:15 -0500] [28610] [INFO] Handling signal: int
+[2025-10-29 22:45:15 -0500] [28613] [INFO] Worker exiting (pid: 28613)
+[2025-10-29 22:45:15 -0500] [28612] [INFO] Worker exiting (pid: 28612)
+[2025-10-29 22:45:15 -0500] [28611] [INFO] Worker exiting (pid: 28611)
+[2025-10-29 22:45:15 -0500] [28610] [INFO] Shutting down: Master

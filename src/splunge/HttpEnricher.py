@@ -13,21 +13,6 @@ def enrich_module(module, wsgi):
 	return module
 
 
-def validate_method (method, methods):
-	''' Check if a method exists in a collection of methods.
-
-	If the arg under test is None, return False.
-	If the 'collection of methods' is just a single string, fake it.
-	This function is case insensitive.
-	'''
-	if not method or not methods:
-		return False
-	if isinstance(methods, str):
-		methods = [ methods ]
-	if not method.lower() in [s.lower() for s in methods]:
-		return False
-	return True
-
 class HttpEnricher:
 	def __init__(self, wsgi):
 		self.wsgi = wsgi
@@ -51,4 +36,4 @@ class HttpEnricher:
 		self.resp.headers.add('Content-Type', contentType)
 
 	def validate_method(self, method, methods):
-		return validate_method(method, methods)
+		return util.validate_method(method, methods)

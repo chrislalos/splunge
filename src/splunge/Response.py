@@ -1,15 +1,6 @@
 from http.cookies import SimpleCookie
 from . import Headers
-
-def create_cookie_value(name, value, **kwargs):
-	d = {name: value}
-	d.update(kwargs)
-	cookie = SimpleCookie(d)
-	morsel = cookie[name]
-	cookieValue = morsel.OutputString()
-	return cookieValue
-
-
+from . import util
 class Response:
 
 	def __init__ (self):
@@ -25,8 +16,7 @@ class Response:
 
 	def add_cookie (self, name, value, **kwargs): 
 		headerName = 'Set-Cookie'
-		headerValue = create_cookie_value(name, value, **kwargs) 
-		print('*** Adding cookie: {}: {}'.format(headerName, headerValue))
+		headerValue = util.create_cookie_value(name, value, **kwargs) 
 		self.headers.add(headerName, headerValue)
 
 	def add_line (self, line, encoding='latin-1'):

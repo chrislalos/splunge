@@ -72,10 +72,6 @@ class HeadersTests(unittest.TestCase):
 		self.assertEqual(values, headers[name])
 		self.assertEqual(values, headers[nameLower])
 		self.assertEqual(values, headers[nameUpper])
-		pprint('tuplesControl')
-		pprint(tuplesControl)
-		pprint('headers.asTuples()')
-		pprint(headers.asTuples())
 		self.assertEqual(tuplesControl, headers.asTuples())
 
 

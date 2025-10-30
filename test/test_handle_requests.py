@@ -21,8 +21,6 @@ class HandleRequestTests(unittest.TestCase):
 		self.assertTrue(isDone)
 		# Test the response
 		self.assertIsNone(resp.exc_info)
-		print(f'resp.headers={resp.headers}')
-		print(f'resp.iter={resp.iter}')
 
 	def test_module(self):
 		# Create a wsgi + then create a handler for it
@@ -38,8 +36,6 @@ class HandleRequestTests(unittest.TestCase):
 		self.assertTrue(isDone)
 		# Test the response
 		self.assertIsNone(resp.exc_info)
-		print(f'resp.headers={resp.headers}')
-		print(f'resp.iter={resp.iter}')
 
 	def test_module_plus_markup(self):
 		# Create a wsgi + then create a handler for it
@@ -55,8 +51,6 @@ class HandleRequestTests(unittest.TestCase):
 		self.assertTrue(isDone)
 		# Test the response
 		self.assertIsNone(resp.exc_info)
-		print(f'resp.headers={resp.headers}')
-		print(f'resp.iter={resp.iter}')
 
 	def test_module_with_under(self):
 		# Create a wsgi + then create a handler for it
@@ -72,8 +66,6 @@ class HandleRequestTests(unittest.TestCase):
 		self.assertTrue(isDone)
 		# Test the response
 		self.assertIsNone(resp.exc_info)
-		print(f'resp.headers={resp.headers}')
-		print(f'resp.iter={resp.iter}')
 
 	def test_get_local_path(self):
 		wsgi = create_environ("/meat/foo")

@@ -5,7 +5,7 @@ from splunge import PythonModuleHandler
 
 class CreateHandlerTests(unittest.TestCase):
     def test_module(self):
-        wsgi = create_environ("/meat/foo")
+        wsgi = create_environ("/www/meat/foo")
         handler = app.create_handler(wsgi)
         self.assertIsNotNone(handler)
         self.assertIs(type(handler), PythonModuleHandler)

@@ -8,7 +8,7 @@ import re
 import sys
 from importlib.machinery import FileFinder, SourceFileLoader
 import urllib
-from ._mimetypes import mimemap
+from .mimetypes import mimemap
 from typing import NamedTuple
 from . import ModuleExecutionState
 from . import util
@@ -78,21 +78,7 @@ def is_python_module(wsgi):
 
 def app(wsgi, start_response):
 	"""Simplest possible application object"""
-	path = util.get_path(wsgi)
-	ext = util.get_path_extension(wsgi)
-	local_path = util.get_local_path(wsgi)
-	print(f"path={path} ext={ext} local_path={local_path}")
-
 	handler = create_handler(wsgi)
-	print(f"handler={handler}")
-	# data = b'Helloooooo, World!\n'
-	# status = '200 OK'
-	# response_headers = [
-	# 	('Content-type', 'text/plain'),
-	# 	('Content-Length', str(len(data)))
-	# ]
-	# start_response(status, response_headers)
-	# return iter([data])
 	(resp, done) = handler.handle_request(wsgi)
 	if done:
 		status = resp.status
@@ -100,6 +86,7 @@ def app(wsgi, start_response):
 		data = resp.iter
 		start_response(status, headers)
 		return data
+	# error
 	data = b'no clue dude'
 	status = '513 no clue dude'
 	response_headers = [

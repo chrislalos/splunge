@@ -1,4 +1,5 @@
 import contextlib
+from http.cookies import SimpleCookie
 import importlib
 import io
 import os
@@ -8,13 +9,22 @@ from typing import NamedTuple
 import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
-from ._mimetypes import mimemap
+from .mimetypes import mimemap
 from .ModuleExecutionState import ModuleExecutionState
 
 
 handler_map = {'application/x-python-code': "PythonSourceHandler",
                'application/x-splunge-template': "PythonTemplateHandler"
               }
+
+
+def create_cookie_value(name, value, **kwargs):
+	d = {name: value}
+	d.update(kwargs)
+	cookie = SimpleCookie(d)
+	morsel = cookie[name]
+	cookieValue = morsel.OutputString()
+	return cookieValue
 
 
 def create_get_args (wsgi):
@@ -194,6 +204,12 @@ def load_module_spec (path):
 	return spec
 
 
+def open_by_path (wsgi):
+	localPath = get_local_path(wsgi)
+	f = open(localPath, 'rb')
+	return f
+	
+
 def parse_query_string(qs):
 	if not qs:
 		return {}
@@ -247,6 +263,16 @@ def render_template (templatePath, args={}):
 		args = {}
 	s = jtemplate.render(args)
 	return s 
+
+
+def respond_with_file(wsgi, resp, f):
+	_32K = 32768
+	if wsgi.file_wrapper:
+		resp.iter = wsgi.file_wrapper(f, _32K)
+	else:
+		resp.iter = f
+
+
 def split_module_path(path):
 	''' Return a named tuple of the path split into a folder, module name, and extension.
 	
@@ -259,3 +285,19 @@ def split_module_path(path):
 				                         ('moduleName', str),
 				                         ('ext', str)])
 	return SplitPath(folder, moduleName, ext)
+
+
+def validate_method (method, methods):
+	''' Check if a method exists in a collection of methods.
+
+	If the arg under test is None, return False.
+	If the 'collection of methods' is just a single string, fake it.
+	This function is case insensitive.
+	'''
+	if not method or not methods:
+		return False
+	if isinstance(methods, str):
+		methods = [ methods ]
+	if not method.lower() in [s.lower() for s in methods]:
+		return False
+	return True

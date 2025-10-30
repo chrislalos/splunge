@@ -1,3 +1,5 @@
+import contextlib
+from io import StringIO
 import os
 import unittest
 from werkzeug.test import create_environ
@@ -56,13 +58,11 @@ class EnrichmentTests(unittest.TestCase):
 	def test_module_args_post_binary(self):
 		path = "/meat/foo"
 		b=b'0123456789'
-		print(f'\nb\n{b}')
 		contentType='application/octet-stream'
 		wsgi = create_environ(path, method="POST", data=b, content_type=contentType)
 		self.assertEqual(contentType, wsgi['CONTENT_TYPE'])
 		self.assertEqual(str(len(b)), wsgi['CONTENT_LENGTH'])
 		http = HttpEnricher(wsgi)
-		print(f'\nargs\n{http.args}')
 		self.assertEqual(0, len(http.args))
 
 	def test_module_local_path(self):
@@ -81,7 +81,10 @@ class EnrichmentTests(unittest.TestCase):
 		path = "/meat/foo"
 		wsgi = create_environ(path)
 		http = HttpEnricher(wsgi)
-		http.pypinfo()
+		stdout = StringIO()
+		with contextlib.redirect_stdout(stdout):
+			http.pypinfo()
+		self.assertFalse(util.is_io_empty(stdout))
 
 	def test_module_set_content_length(self):
 		path = "/meat/foo"

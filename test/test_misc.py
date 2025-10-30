@@ -6,8 +6,6 @@ from splunge import util
 class MiscTests(unittest.TestCase):
     def test_hello(self):
         self.assertEqual("hello", "hello")
-        print(f"__package__={__package__}")
-        print(f"__name__={__name__}")
 
     def test_create_cookie_value(self):
         cookie_value = util.create_cookie_value("foo", 13)

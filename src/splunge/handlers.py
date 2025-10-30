@@ -3,6 +3,20 @@ from .Response import Response
 from . import util
 from .HttpEnricher import enrich_module
 
+
+class FileHandler:
+	def handleRequest (self, wsgi):
+		done = False
+		try:
+			f = util.open_by_path(wsgi)
+			util.respond_with_file(wsgi. resp, f)
+			done = True
+		except FileNotFoundError:
+			# We want this to be handled at a higher level
+			pass
+		return done
+
+
 class PythonModuleHandler:
 	def handle_request (self, wsgi):
 		# Get local path, append .py to the path, & confirm the file exists
@@ -26,14 +40,10 @@ class PythonModuleHandler:
 		else:
 			# Get output args
 			args = util.get_module_args(module)
-			print(f'args={args}')
 			# Does _ exist? If so use it as a template
-			print(f'hasattr(args, "_")={hasattr(args, "_")}')
 			if '_' in args:
 				sTemplate = args.pop('_')
-				print(f'sTemplate={sTemplate}')
 				s = util.render_string(sTemplate, args)
-				print(f's={s}')
 				resp.add_line(s)
 			else:
 				# Does a .pyp exist? If so, create a template handler and transfer control to it
