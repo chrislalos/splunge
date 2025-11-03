@@ -13,11 +13,6 @@ from .mimetypes import mimemap
 from .ModuleExecutionState import ModuleExecutionState
 
 
-handler_map = {'application/x-python-code': "PythonSourceHandler",
-               'application/x-splunge-template': "PythonTemplateHandler"
-              }
-
-
 def create_cookie_value(name, value, **kwargs):
 	d = {name: value}
 	d.update(kwargs)
@@ -59,14 +54,6 @@ def create_wsgi_args(wsgi):
 	if method == 'post':
 		return create_post_args(wsgi)
 	return {}
-
-
-def create_mime_handler(wsgi):
-	""" Return the appropriate MIME handler for the wsgi. """
-	ext = get_path_extension(wsgi)
-	mimetype = mimemap.get(ext, None)
-	handler = handler_map.get(mimetype, "FileHandler")
-	return handler
 
 
 def exec_module(module):
@@ -267,10 +254,12 @@ def render_template (templatePath, args={}):
 
 def respond_with_file(wsgi, resp, f):
 	_32K = 32768
-	if wsgi.file_wrapper:
-		resp.iter = wsgi.file_wrapper(f, _32K)
+	if 'wsgi.file_wrapper' in wsgi:
+		resp.iter = wsgi['wsgi.file_wrapper'](f, _32K)
 	else:
-		resp.iter = f
+		with f:
+			resp.iter = [f.read()]
+		
 
 
 def split_module_path(path):

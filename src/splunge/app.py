@@ -12,7 +12,7 @@ from .mimetypes import mimemap
 from typing import NamedTuple
 from . import ModuleExecutionState
 from . import util
-from .handlers import PythonModuleHandler, PythonTemplateHandler
+from .handlers import FileHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 
 
 handler_map = {'application/x-python-code': "PythonSourceHandler",
@@ -27,16 +27,16 @@ def create_handler(wsgi):
 	elif is_python_markup(wsgi):
 		return PythonTemplateHandler()
 	elif is_mime_type(wsgi):
-		return util.create_mime_handler(wsgi)
+		return create_mime_handler(wsgi)
 	else:
-		return "unknown"
+		return FileHandler(wsgi)
 
 
 def is_mime_type(wsgi):
 	''' Check if the wsgi has a recognized MIME type. '''
 	ext = util.get_path_extension(wsgi)
-	flag = not not ext
-	return ext
+	flag = ext in mimemap
+	return flag
 
 
 def is_python_markup(wsgi):

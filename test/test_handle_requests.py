@@ -3,7 +3,7 @@ import os.path
 import unittest
 from werkzeug.test import create_environ
 from splunge import app
-from splunge import PythonModuleHandler, PythonTemplateHandler
+from splunge import FileHandler, PythonModuleHandler, PythonTemplateHandler
 from splunge import util
 from splunge import Response
 
@@ -67,6 +67,13 @@ class HandleRequestTests(unittest.TestCase):
 		# Test the response
 		self.assertIsNone(resp.exc_info)
 
-	def test_get_local_path(self):
-		wsgi = create_environ("/meat/foo")
+	def test_static_content(self):
+		wsgi = create_environ('/www/hello.html')
+		handler = app.create_handler(wsgi)
+		print(f'handler={handler}')
+		self.assertIsNotNone(handler)
+		self.assertIs(type(handler), FileHandler)
+		(resp, done) = handler.handle_request(wsgi)
+		self.assertTrue(done)
+		print(f'resp.iter={resp.iter}')
 

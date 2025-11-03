@@ -2,19 +2,34 @@ import os.path
 from .Response import Response
 from . import util
 from .HttpEnricher import enrich_module
+from .mimetypes import mimemap
+
+handler_map = {'application/x-python-code': "PythonSourceHandler",
+               'application/x-splunge-template': "PythonTemplateHandler"
+              }
+
+
+def create_mime_handler(wsgi):
+	""" Return the appropriate MIME handler for the wsgi. """
+	ext = util.get_path_extension(wsgi)
+	print(f'ext={ext}')
+	mimetype = mimemap.get(ext, None)
+	print(f'mimetype={mimetype}')
+	handler = handler_map.get(mimetype, FileHandler())
+	print(f'handler={handler}')
+	return handler
 
 
 class FileHandler:
-	def handleRequest (self, wsgi):
-		done = False
+	def handle_request (self, wsgi):
 		try:
 			f = util.open_by_path(wsgi)
-			util.respond_with_file(wsgi. resp, f)
-			done = True
+			resp = Response()
+			util.respond_with_file(wsgi, resp, f)
+			return (resp, True)
 		except FileNotFoundError:
 			# We want this to be handled at a higher level
-			pass
-		return done
+			return (None, False)
 
 
 class PythonModuleHandler:
