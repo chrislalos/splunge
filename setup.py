@@ -2,8 +2,13 @@ import setuptools
 
 
 setuptools.setup(name='splunge',
-                 version='0.1.0',
+                 entry_points={},
+                 install_requires=[
+                     'gunicorn',
+                     'jinja2',
+                     'pygments'
+                 ],
                  scripts=['scripts/www'],
-                 entry_points={}
+                 version='0.1.0',
                  )
 #                 packages=setuptools.find_packages(exclude=['tests']))

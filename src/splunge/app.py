@@ -7,12 +7,14 @@ import os
 import re
 import sys
 from importlib.machinery import FileFinder, SourceFileLoader
+import traceback
 import urllib
 from .mimetypes import mimemap
 from typing import NamedTuple
 from . import ModuleExecutionState
 from . import util
 from .handlers import FileHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
+from .Response import Response
 
 
 handler_map = {'application/x-python-code': "PythonSourceHandler",
@@ -76,10 +78,39 @@ def is_python_module(wsgi):
 	return False
 
 
+def handle_error(ex, wsgi, resp, start_response):
+	print("inside handle_error()")
+	status = "513 uhoh"
+	# data = f'oh no: {str(ex)}'.encode()
+	# resp.headers['Content-Length'] = len(data)
+	# headers = resp.headers.asTuples()
+	templatePath = os.path.abspath(f'{os.getcwd()}/err/500.pyp')
+	print(f'templatePath={templatePath}')
+	# Load the template & render it w wsgi args
+	if not os.path.exists(templatePath):
+		raise Exception(f'template path not found: {templatePath}')
+	tb = traceback.format_tb(ex.__traceback__)
+	args = {
+		"message": str(ex),
+		"traceback": tb
+	}
+	content = util.render_template(templatePath, args).encode()
+	resp.headers['Content-Length'] = len(content)
+	headers = resp.headers.asTuples()
+	start_response(status, headers)
+	return [content]
+
+
 def app(wsgi, start_response):
 	"""Simplest possible application object"""
 	handler = create_handler(wsgi)
-	(resp, done) = handler.handle_request(wsgi)
+	try:
+		(resp, done) = handler.handle_request(wsgi)
+	except Exception as ex:
+		print('error caught in app()')
+		resp = Response()
+		return handle_error(ex, wsgi, resp, start_response)
+		# raise ex
 	if done:
 		status = resp.status
 		headers = resp.headers.asTuples()

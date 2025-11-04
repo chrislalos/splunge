@@ -1,4 +1,5 @@
 import os.path
+import traceback
 from .Response import Response
 from . import util
 from .HttpEnricher import enrich_module
@@ -46,7 +47,12 @@ class PythonModuleHandler:
 		# Enrich the module
 		enrich_module(module, wsgi)
 		# Execute the module
-		module_state = util.exec_module(module)
+		try:
+			module_state = util.exec_module(module)
+		except Exception as ex:
+			print("error during execution")
+			traceback.print_tb(ex.__traceback__)
+			raise ex
 		resp = Response()
 		# Does stdout exist? If so, use it for output
 		if not util.is_io_empty(module_state.stdout):
