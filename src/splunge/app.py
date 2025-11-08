@@ -1,4 +1,5 @@
 import contextlib
+import html
 from http.cookies import SimpleCookie
 import importlib
 import inspect
@@ -89,10 +90,11 @@ def handle_error(ex, wsgi, resp, start_response):
 	# Load the template & render it w wsgi args
 	if not os.path.exists(templatePath):
 		raise Exception(f'template path not found: {templatePath}')
-	tb = traceback.format_tb(ex.__traceback__)
+	ss = traceback.extract_tb(ex.__traceback__)
+	s = "".join([html.escape(line).lstrip() for line in ss.format()])
 	args = {
 		"message": str(ex),
-		"traceback": tb
+		"traceback": s
 	}
 	content = util.render_template(templatePath, args).encode()
 	resp.headers['Content-Length'] = len(content)
