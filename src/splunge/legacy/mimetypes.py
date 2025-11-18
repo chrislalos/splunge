@@ -1,4 +1,4 @@
-mimemap = {
+map = {
         '.a'      : 'application/octet-stream',
         '.ai'     : 'application/postscript',
         '.aif'    : 'audio/x-aiff',

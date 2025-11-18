@@ -1,229 +1,245 @@
 import contextlib
 from http.cookies import SimpleCookie
-from importlib.machinery import FileFinder
-from importlib.machinery import SourceFileLoader
-import importlib.util
-import inspect
+import importlib
 import io
-import jinja2
-import os.path
+import os
+import re
 import sys
-from splunge import mimetypes
-from splunge.ExecModuleState import ExecModuleState
-from splunge.Exceptions import InvalidMethodEx
+from typing import NamedTuple
+import urllib
+from importlib.machinery import FileFinder, SourceFileLoader
+import jinja2
+from .mimetypes import mimemap
+from .ModuleExecutionState import ModuleExecutionState
 
 
-def argsToTuple (*args, length):
-#	print('*** args: {}'.format(args), file=sys.stderr)
-#	print('len(args)={}'.format(len(args)), file=sys.stderr)
-	if len(args) == length:
-		t = tuple(args)
-	elif len(args) == 1 and isinstance(args[0], (list, tuple)) and len(args[0]) == length:
-		t = tuple(args[0])
-	else:
-		raise Exception('Arguments must either be {} value(s) or a list or tuple {} element(s) long'.format(length, length))
-	return t
+def create_cookie_value(name, value, **kwargs):
+	d = {name: value}
+	d.update(kwargs)
+	cookie = SimpleCookie(d)
+	morsel = cookie[name]
+	cookieValue = morsel.OutputString()
+	return cookieValue
 
 
-def createCookie (name, value, *, comment=None, domain=None, expires=None, httpOnly=True,
-	               maxAge=None, path='/', secure=False, version=1):
-	cookieJar = SimpleCookie()
-	cookieJar[name] = value
-	cookie = cookieJar[name]
-	if comment: cookie['comment'] = comment
-	if domain: cookie['domain'] = domain
-	if expires: cookie['expires'] = expires
-	if httpOnly: cookie['httponly'] = httpOnly
-	if maxAge: cookie['max-age'] = maxAge
-	if path: cookie['path'] = path
-	if secure: cookie['secure'] = secure
-	if version: cookie['version'] = version
-	return cookie
+def create_get_args (wsgi):
+	''' Return a dictionary of query string args. '''
+	qs = wsgi['QUERY_STRING']
+	if not qs:
+		return {}
+	args = parse_query_string(qs)
+	return args
+				
+
+# http://wsgi.tutorial.codepoint.net/parsing-the-request-post
+def create_post_args (wsgi):
+	''' Return a dictionary of post data args. '''
+	# Make sure non-empty post data exists
+	postData = read_post_data(wsgi)
+	contentType = wsgi['CONTENT_TYPE']
+	if not postData or contentType != 'application/x-www-form-urlencoded':
+		return {}
+	# Assume post data is a query string and parse it
+	if type(postData) == bytes:
+		postData = postData.decode('utf-8')
+	args = parse_query_string(postData)
+	return args
 
 
-def createHttpObject (req):
-	http = type('', (), {})()                      # Creates an anonymous class and instantiates it
-	http.env = req.env
-	http.method = req.method
-	http.path = req.path
-	http.args = req.args
-	return http
+def create_wsgi_args(wsgi):
+	''' Return args (if any) based on http method. '''
+	method = wsgi['REQUEST_METHOD'].lower()
+	if method == 'get':
+		return create_get_args(wsgi)
+	if method == 'post':
+		return create_post_args(wsgi)
+	return {}
 
 
-def createModule (req, resp):
-	# create the module path and load the module using machinery
-	modulePath = f'{req.localPath}.py'
-	moduleSpec = load_module_spec(modulePath)
-	module = importlib.util.module_from_spec(moduleSpec)
-	# create the extras and add them
-	moduleExtras = createModuleExtras(req, resp)
-	module.__dict__.update(moduleExtras.__dict__)
-	return module
+def exec_module(module):
+	""" Execute an enriched module.
 
-
-def createModuleExtras (req, resp):
-	def addCookie (name, value, **kwargs): 
-		cookiejar = SimpleCookie()
-		cookiejar[name] = value
-		cookie = cookiejar[name]
-		cookie.update(kwargs)
-		headerName = 'Set-Cookie'
-		headerValue = cookie.OutputString()
-		print('*** Adding cookie: {}: {}'.format(headerName, headerValue))
-		resp.setHeader(headerName, headerValue)
-	
-	def pypinfo (env):
-		for key, value in sorted(env.items()):
-			print('{}={}'.format(key, value))
-		return None
-
-	moduleExtras = type('ModuleExtras', (), {})()
-	moduleExtras.http = createHttpObject(req)
-	moduleExtras.response = resp
-	moduleExtras.addCookie =      lambda name, value: addCookie(name, value)
-	moduleExtras.pypinfo =        lambda: pypinfo(req.env)
-	# moduleExtras.pypinfo =        lambda: None
-	moduleExtras.validateMethod = lambda validMethods: validateMethod(req.method, validMethods)
-	moduleExtras.redirect =       lambda url: { resp.redirect(url) }
-	moduleExtras.setContentType = lambda contentType: resp.setContentType(contentType)
-	moduleExtras.setHeader =      lambda name, value: resp.setHeader(name, value)
-	return moduleExtras
-		# import exceptions
-
-
-def create_file_finder (folder, extension):
-	loaderArgs = (SourceFileLoader, extension)
-	finder = FileFinder(folder, loaderArgs)
-	return finder
-
-
-################################################################################
-#
-# Splunge's enhanced exec module function.
-#
-# This function tries to do as little as possible, so it delegates the actual module
-# execution to the modules own exec() method, as it should.
-# 
-# The only difference, is that this function captures the dir() of the module before
-# and after. This lets the function detect which attributes have been added by module
-# execution, which it assumes are of interest to the user. If no .pyp template file is
-# defined, then the response body consists of name/value pairs of all these attributes.
-#
-# There are two ways that a module, once executed, can indicate that processing should
-# halt.
-#
-# One is by writing to stdout, which is a quick and cheap way of writing a response.
-# The other is by setting _ to either binary content, a data structure, or a template string.
-def execModule (module):
-	attrsBefore = set(dir(module))
-	newStdout = io.StringIO()
-	with contextlib.redirect_stdout(newStdout):
+	"""
+	# Redirect stdout to a new StringIO and execute module
+	module_stdout = io.StringIO()
+	with contextlib.redirect_stdout(module_stdout):
 		module.__spec__.loader.exec_module(module)
-	moduleState = ExecModuleState()
-	print('*** dir(moduleState)')
-	print(dir(moduleState))
-	moduleState.args = getModuleArgs(module, attrsBefore)
-	moduleState.shortcut = getattr(module, '_', None) 
-	if not isIoEmpty(newStdout):
-		print('*** newStdout is not empty')
-		moduleState.stdout = newStdout
+	# Create the module state
+	module_args = get_module_args(module)
+	module_state = ModuleExecutionState(context=module_args, stdout=module_stdout)
+	return module_state
+	# Create module state object to populate with execution results
+	# if not is_io_empty(newStdout):
+	# 	print('*** newStdout is not empty')
+	# 	module_state.stdout = newStdout
 #	else:
 #		moduleState.stdout = None
-	return moduleState
-
-# def execModule (module):
-# 	attrs1 = set(dir(module))
-# 	f = io.StringIO()
-# 	with contextlib.redirect_stdout(f):
-# 		module.exec()
-# 	attrs2 = set(dir(module))
-# 	newAttrs = [el for el in attrs2 if el not in attrs1 and el != '__builtins__']
-# 	args = {'http': module.http}
-# 	for attr in newAttrs:
-# 		val = getattr(module, attr)
-# 		# We don't want to include functions or classes
-# 		if not callable(val): # and not inspect.isclass(val)
-# 			args[attr] = getattr(module, attr)
-# 	return args
 
 
-def execModuleSpec (moduleSpec, moduleExtras):
-	module = importlib.util.module_from_spec(moduleSpec)
-	moduleState = execModule(module)
-	return moduleState
-	
-def get_file_extension(path, *, with_dot=False):
-	(folder, filename) = os.path.split(path)
-	(_, dot, extension) = filename.rpartition('.')
-	print("(moduleName, dot, extension)=({}, {}, {})".format(_, dot, extension))
-	if with_dot:
-		return dot+extension
-	return extension
-
-def get_folder(path):
-	(folder, filename) = os.path.split(path)
-	return folder
+# def addCookie (name, value, **kwargs): 
+# 	cookiejar = SimpleCookie()
+# 	cookiejar[name] = value
+# 	cookie = cookiejar[name]
+# 	cookie.update(kwargs)
+# 	headerName = 'Set-Cookie'
+# 	headerValue = cookie.OutputString()
+# 	print('*** Adding cookie: {}: {}'.format(headerName, headerValue))
+# 	resp.setHeader(headerName, headerValue)
 
 
-def getMimeType (path):
-	defaultMimeType = 'application/octet-steam'
-	(_, ext) = os.path.splitext(path)
-	if not ext:
-		mimeType = defaultMimeType
-	else:
-		mimeType = mimetypes.map.get(ext, defaultMimeType)
-	return mimeType
+
+def get_attr_names(module, attrNamesBefore=None):
+	''' Return all a module's attribute names.
+
+	Filter out 'special' attributes
+	  - all callables
+	  - all user-defined types
+	  - all __internal__ attributes, eg `__name__`
+	'''
+	rx = re.compile('__.*__')
+	attrNames= [el for el in set(dir(module))
+			    if not callable(getattr(module, el, None))
+				and not isinstance(el, type)
+				and not rx.match(el)]
+	return attrNames
 
 
-def getModuleArgs (module, attrsBefore):
-	args = {}
-	attrs2 = set(dir(module))
-	newAttrs = [el for el in attrs2 if el not in attrsBefore and el not in ['__builtins__', 'http']]
-	for attr in newAttrs:
-		val = getattr(module, attr)
-		# We don't want to include functions or classes
-		if not callable(val) and not inspect.isclass(val):
-			args[attr] = val
+def get_local_path(wsgi):
+	''' Return the local path of the resources specified by the wsgi '''
+	path = get_path(wsgi)
+	return os.path.abspath(os.getcwd() + path)
+
+
+def get_module_args (module):
+	''' Return the args set during module execution
+
+	    If the special _ attribute has been set, use that
+		If _ is not set, then use all attributes set during module execution
+	'''
+	args = get_module_attrs(module)
+	args.pop('http', None)
 	return args
+	# @note - this function needs to check for the existence of '_'
+	# args = {}
+	# # Create a set of the module's attrs post-execution, and filter
+	# attrs2 = set(dir(module))
+	# newAttrs = [el for el in attrs2 if el not in attrsBefore and el not in ['__builtins__', 'http']]
+	# for attr in newAttrs:
+	# 	val = getattr(module, attr)
+	# 	# We don't want to include functions or classes
+	# 	if not callable(val) and not inspect.isclass(val):
+	# 		args[attr] = val
+
+
+def get_module_attrs(module):
+	attrNames = get_attr_names(module)
+	attrs = {name: getattr(module, name, None) for name in attrNames}
+	return attrs
+
+def get_path (wsgi):
+	''' Return the wsgi's path. '''
+	return wsgi['PATH_INFO'].strip()
+
+
+def get_path_extension (wsgi):
+	''' Return the file extension for the wsgi. '''
+	path = get_path(wsgi)
+	(_, ext) = os.path.splitext(path)
+	return ext
 
 
 # Check if an IO is empty, by moving to the end and confirming it is zero. 
 # (This saves the cursor position before checking, and restores it afterwards)
-def isIoEmpty (anIo):
+def is_io_empty (anIo):
+	''' Check if an io (eg StringIO) is empty or not. '''
+	if not anIo:
+		return True
 	cur = anIo.tell()
 	end = anIo.seek(0, io.SEEK_END)
 	isEmpty = (end == 0)
 	anIo.seek(cur, io.SEEK_SET)
 	return isEmpty
 
+def load_module (path):
+	''' Load a python module by path using importlib machinery. '''
+	# create the module path and load the module using machinery
+	moduleSpec = load_module_spec(path)
+	if not moduleSpec:
+		raise Exception(f'No module spec found for path={path}')
+	module = importlib.util.module_from_spec(moduleSpec)
+	return module
+
 
 def load_module_spec (path):
-	# Simple filename / path stuff
-	(folder, filename) = os.path.split(path)
-	print("folder=" + folder, file=sys.stderr)
-	print("filename=" + filename, file=sys.stderr)
-	(moduleName, ext) = os.path.splitext(filename)
-	print("moduleName={}".format(moduleName, file=sys.stderr))
-	# Enter the weirdness: pass a (loader class, file extension) tuple, wrapped in a list, to
-	# the c'tor of importlib's FileFinder. Use the file finder to 'find' a module spec (which
-	# is sort of metainfo on a module), then use import machinery to turn the spec into a 
-	# module.
+	''' Return a ModuleSpec for the specified path using importlib machinery.
+	
+	The importlib machinery's process is a little weird.
+	  - Instantiate a loader class, eg importlib.machinery.SourceFileLoader
+	  - Instantiate a FileFinder from a path, the loader object, and a file extension (.py)
+	  - Use the FileFinder to lookup the spec.
+
+	It's strange to take a path, break it into a local folder and an extension,
+	create a FileFinder for the specific path and extension, and then immediately
+	use that FileFinder to return a ModuleSpec. Seems like the importlib.machinery
+	could do all that given a path. But it can't. That's what this function is for.
+	'''
+	splitPath = split_module_path(path)
+	folder, moduleName, ext = splitPath.folder, splitPath.moduleName, splitPath.ext	
 	loaderArgs = (SourceFileLoader, [ext])
 	finder = FileFinder(folder, loaderArgs)
 	spec = finder.find_spec(moduleName)
 	return spec
 
 
-# Shorthand for invoking jinja on a template string
-def renderString (s, args):
+def open_by_path (wsgi):
+	localPath = get_local_path(wsgi)
+	f = open(localPath, 'rb')
+	return f
+	
+
+def parse_query_string(qs):
+	if not qs:
+		return {}
+	args_raw = urllib.parse.parse_qs(qs)
+	args = {}
+	# Convert single-items lists into simple values
+	for key, v in args_raw.items():
+		if v:
+			if len(v) == 1:
+				value = v[0]
+			else:
+				value = v
+			args[key] = value
+	return args
+
+
+def pypinfo (wsgi):
+	for key, value in sorted(wsgi.items()):
+		print('{}={}'.format(key, value))
+	return None
+
+
+def read_post_data(wsgi):
+	# PEP 3333 says CONTENT_LENGTH may be omitted
+	contentLength = wsgi.get('CONTENT_LENGTH')
+	if not contentLength:
+		return None
+	contentLength = int(contentLength)
+	post_input = wsgi.get('wsgi.input')
+	if not post_input:
+		return None
+	d = post_input.read(contentLength)
+	return d
+
+
+def render_string(sTemplate, context):
 	jenv = jinja2.Environment()
-	jtemplate = jenv.from_string(s)
-	s = jtemplate.render(args)
+	jtemplate = jenv.from_string(sTemplate)
+	s = jtemplate.render(context)
 	return s
 
-
 # Shorthand for invoking jinja on a template path
-def renderTemplate (templatePath, args={}):
+def render_template (templatePath, args={}):
 #	print("*** {}".format(os.getcwd()), file=sys.stderr)
 	cwd = os.getcwd()
 	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)
@@ -235,16 +251,42 @@ def renderTemplate (templatePath, args={}):
 	s = jtemplate.render(args)
 	return s 
 
+
+def respond_with_file(wsgi, resp, f):
+	_32K = 32768
+	if 'wsgi.file_wrapper' in wsgi:
+		resp.iter = wsgi['wsgi.file_wrapper'](f, _32K)
+	else:
+		with f:
+			resp.iter = [f.read()]
+		
+
+
 def split_module_path(path):
-	# Simple filename / path stuff
+	''' Return a named tuple of the path split into a folder, module name, and extension.
+	
+	@note this does not validate that the path represents a module.
+	'''
+	
 	(folder, filename) = os.path.split(path)
 	(moduleName, ext) = os.path.splitext(filename)
-	return folder, moduleName, ext
+	SplitPath = NamedTuple('splitPath', [('folder', str),
+				                         ('moduleName', str),
+				                         ('ext', str)])
+	return SplitPath(folder, moduleName, ext)
 
 
-def validateMethod (method, methods):
+def validate_method (method, methods):
+	''' Check if a method exists in a collection of methods.
+
+	If the arg under test is None, return False.
+	If the 'collection of methods' is just a single string, fake it.
+	This function is case insensitive.
+	'''
+	if not method or not methods:
+		return False
 	if isinstance(methods, str):
 		methods = [ methods ]
-	if not method in [s.upper() for s in methods]:
-		raise InvalidMethodEx(method, methods)
-
+	if not method.lower() in [s.lower() for s in methods]:
+		return False
+	return True
