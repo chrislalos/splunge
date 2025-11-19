@@ -6,9 +6,9 @@ html_pre = """
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>{}</title>
 	</head>
-	<body>"""
+	<body>""".lstrip("\r\n")
 
 html_post = """
 	</body>
 </html>
-"""
+""".lstrip("\r\n")

@@ -13,7 +13,7 @@ import urllib
 from .mimetypes import mimemap
 from typing import NamedTuple
 from . import ModuleExecutionState
-from . import util
+from . import loggin, util
 from .handlers import FileHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 from .Response import Response
 
@@ -32,7 +32,7 @@ def create_handler(wsgi):
 	elif is_mime_type(wsgi):
 		return create_mime_handler(wsgi)
 	else:
-		return FileHandler(wsgi)
+		return FileHandler()
 
 
 def is_mime_type(wsgi):
@@ -104,7 +104,7 @@ def handle_error(ex, wsgi, resp, start_response):
 
 
 def app(wsgi, start_response):
-	"""Simplest possible application object"""
+	loggin.info(wsgi)
 	handler = create_handler(wsgi)
 	try:
 		(resp, done) = handler.handle_request(wsgi)

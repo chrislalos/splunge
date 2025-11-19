@@ -11,7 +11,7 @@ import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
 
-from splunge import constants
+from . import constants
 from .mimetypes import mimemap
 from .ModuleExecutionState import ModuleExecutionState
 
@@ -155,6 +155,17 @@ def get_path_extension (wsgi):
 	return ext
 
 
+def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
+	sio = io.StringIO()
+	print(textwrap.dedent(pre.format(title)), file=sio)
+	fragLines = frag.split('\n')
+	for line in fragLines:
+		print(f'\t\t{line}', file=sio)
+	print(textwrap.dedent(post), file=sio)
+	sio.seek(0)
+	return sio.read()
+
+
 # Check if an IO is empty, by moving to the end and confirming it is zero. 
 # (This saves the cursor position before checking, and restores it afterwards)
 def is_io_empty (anIo):
@@ -196,17 +207,6 @@ def load_module_spec (path):
 	finder = FileFinder(folder, loaderArgs)
 	spec = finder.find_spec(moduleName)
 	return spec
-
-
-def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
-	sio = io.StringIO()
-	print(textwrap.dedent(pre.format(title)), file=sio)
-	fragLines = frag.split('\n')
-	for line in fragLines:
-		print(f'\t\t{line}', file=sio)
-	print(textwrap.dedent(post), file=sio)
-	sio.seek(0)
-	return sio.read()
 
 
 def open_by_path (wsgi):

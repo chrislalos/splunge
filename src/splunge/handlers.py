@@ -3,7 +3,7 @@ import sys
 import traceback
 from markdown_it import MarkdownIt
 from .Response import Response
-from . import util
+from . import loggin, util
 from .HttpEnricher import enrich_module
 from .mimetypes import mimemap
 
@@ -15,17 +15,22 @@ handler_map = {'application/x-python-code': "PythonSourceHandler",
 
 def create_mime_handler(wsgi):
 	""" Return the appropriate MIME handler for the wsgi. """
-	print(f'__name__={__name__}')
-	module = sys.modules[__name__]
+	# Get MIME type from path extension
 	ext = util.get_path_extension(wsgi)
-	print(f'ext={ext}')
 	mimetype = mimemap.get(ext, None)
-	print(f'mimetype={mimetype}')
+	if mimetype is None:
+		loggin.warning("No MIME type found for extension: {ext}", ext)
+		return None
+	# Get handler class name from MIMEType + get the class from current module
 	handlerName = handler_map.get(mimetype, "FileHandler")
-	print(f'handler={handlerName}')
-	handlerClass = getattr(module, handlerName)
-	print(f'handlerClass={handlerClass}')
-	return handlerClass()
+	# print(f'handler={handlerName}')
+	module = sys.modules[__name__]
+	handlerClassName = getattr(module, handlerName, None)
+	if handlerClassName is None:
+		loggin.warning("Unable to find handler class: {handlerClassName}", handlerClassName)
+	# instantiate handler class + return instance as handler
+	handler = handlerClassName()
+	return handler
 
 
 class FileHandler:
@@ -48,7 +53,7 @@ class MarkdownHandler:
 			# @note utf-8 is harcoded here
 			content = f.read().decode('utf-8')
 			md = MarkdownIt()
-			frag = md.render(content)
+			frag = md.render(content).rstrip()
 			doc = util.html_fragment_to_doc(frag, title=title)
 		resp = Response()
 		resp.add_line(doc)
