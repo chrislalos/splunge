@@ -1,14 +1,19 @@
 #!/usr/bin/env bash -x
 
 DEFAULT_PORT=1313
-port=${1:-$DEFAULT_PORT}
+
+contentFolder=${2:-'.'}
+host=localhost
 logFolder="$HOME/tmp/splunge/log"
+port=${1:-$DEFAULT_PORT}
+
+[[ -d "$contentFolder" ]] || { printf 'Non-existent folder: %s\n' "$contentFolder" >&2; return 1; }
 mkdir -p "$logFolder/" || { printf 'Unable to create log folder %s\n' "$logFolder" &>2; return; }
-echo "Running splunge on port $port & logging to $logFolder ..."
+printf 'Splunge serving $contentFolder on %s:%d; logging to %s' "$contentFolder" "$host" "$port" "$logFolder"
 
-
-gunicorn --bind localhost:$port \
+gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
+         --chdir "$contentFolder" \
          --error-logfile "$logFolder/errors.log" \
          --workers 3 \
          --umask 007 \
