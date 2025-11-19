@@ -4,6 +4,7 @@
 **/*.swp
 .cache
 dist
+.DS_Store
 src/*.html
 src/*.py
 src/*.pyp
@@ -11,3 +12,4 @@ bin/
 build/
 include/
 lib/
+splunge.log

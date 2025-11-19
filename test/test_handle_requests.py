@@ -3,17 +3,31 @@ import os.path
 import unittest
 from werkzeug.test import create_environ
 from splunge import app
-from splunge import FileHandler, PythonModuleHandler, PythonTemplateHandler
+from splunge import FileHandler, MarkdownHandler, PythonModuleHandler, PythonTemplateHandler
 from splunge import util
 from splunge import Response
 
 class HandleRequestTests(unittest.TestCase):
+	def test_markdown(self):
+		# Create a wsgi + then create a handler for it
+		wsgi = create_environ("/www/hello.md")
+		handler = app.create_handler(wsgi)
+		self.assertIsNotNone(handler)
+		self.assertIsInstance(handler, MarkdownHandler)
+		# Execute the handler
+		(resp, isDone) = handler.handle_request(wsgi)
+		self.assertIsNotNone(resp)
+		self.assertIs(type(resp), Response)
+		self.assertTrue(isDone)
+		# Test the response
+		print(f'resp.iter={resp.iter}')
+
 	def test_markup(self):
 		# Create a wsgi + then create a handler for it
 		wsgi = create_environ("/www/meat/bar?name=meat")
 		handler = app.create_handler(wsgi)
 		self.assertIsNotNone(handler)
-		self.assertIs(type(handler), PythonTemplateHandler)
+		self.assertIsInstance(handler, PythonTemplateHandler)
 		# Execute the handler
 		(resp, isDone) = handler.handle_request(wsgi)
 		self.assertIsNotNone(resp)
@@ -27,7 +41,7 @@ class HandleRequestTests(unittest.TestCase):
 		wsgi = create_environ("/www/meat/foo")
 		handler = app.create_handler(wsgi)
 		self.assertIsNotNone(handler)
-		self.assertIs(type(handler), PythonModuleHandler)
+		self.assertIsInstance(handler, PythonModuleHandler)
 		# Execute the handler
 		(resp, isDone) = handler.handle_request(wsgi)
 		self.assertIsNotNone(resp)
@@ -42,7 +56,7 @@ class HandleRequestTests(unittest.TestCase):
 		wsgi = create_environ("/www/meat/foo3")
 		handler = app.create_handler(wsgi)
 		self.assertIsNotNone(handler)
-		self.assertIs(type(handler), PythonModuleHandler)
+		self.assertIsInstance(handler, PythonModuleHandler)
 		# Execute the handler
 		(resp, isDone) = handler.handle_request(wsgi)
 		self.assertIsNotNone(resp)
@@ -57,7 +71,7 @@ class HandleRequestTests(unittest.TestCase):
 		wsgi = create_environ("/www/meat/foo2")
 		handler = app.create_handler(wsgi)
 		self.assertIsNotNone(handler)
-		self.assertIs(type(handler), PythonModuleHandler)
+		self.assertIsInstance(handler, PythonModuleHandler)
 		# Execute the handler
 		(resp, isDone) = handler.handle_request(wsgi)
 		self.assertIsNotNone(resp)
@@ -72,8 +86,7 @@ class HandleRequestTests(unittest.TestCase):
 		handler = app.create_handler(wsgi)
 		print(f'handler={handler}')
 		self.assertIsNotNone(handler)
-		self.assertIs(type(handler), FileHandler)
+		self.assertIsInstance(handler, FileHandler)
 		(resp, done) = handler.handle_request(wsgi)
 		self.assertTrue(done)
 		print(f'resp.iter={resp.iter}')
-

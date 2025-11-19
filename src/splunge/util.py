@@ -5,10 +5,13 @@ import io
 import os
 import re
 import sys
+import textwrap
 from typing import NamedTuple
 import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
+
+from . import constants
 from .mimetypes import mimemap
 from .ModuleExecutionState import ModuleExecutionState
 
@@ -104,6 +107,10 @@ def get_attr_names(module, attrNamesBefore=None):
 	return attrNames
 
 
+def get_file_name(wsgi):
+	return os.path.basename(get_path(wsgi))
+
+
 def get_local_path(wsgi):
 	''' Return the local path of the resources specified by the wsgi '''
 	path = get_path(wsgi)
@@ -146,6 +153,17 @@ def get_path_extension (wsgi):
 	path = get_path(wsgi)
 	(_, ext) = os.path.splitext(path)
 	return ext
+
+
+def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
+	sio = io.StringIO()
+	print(textwrap.dedent(pre.format(title)), file=sio)
+	fragLines = frag.split('\n')
+	for line in fragLines:
+		print(f'\t\t{line}', file=sio)
+	print(textwrap.dedent(post), file=sio)
+	sio.seek(0)
+	return sio.read()
 
 
 # Check if an IO is empty, by moving to the end and confirming it is zero. 

@@ -42,6 +42,7 @@ mimemap = {
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.man'    : 'application/x-troff-man',
+        '.md'     : 'text/markdown',
         '.mid'    : 'audio/midi',
         '.midi'   : 'audio/midi',
         '.me'     : 'application/x-troff-me',
