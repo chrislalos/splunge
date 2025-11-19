@@ -6,6 +6,7 @@ setuptools.setup(name='splunge',
                  install_requires=[
                      'gunicorn',
                      'jinja2',
+                     'markdown_it_py',
                      'pygments'
                  ],
                  scripts=['scripts/www'],

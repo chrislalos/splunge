@@ -1,24 +1,31 @@
 import os.path
+import sys
 import traceback
+from markdown_it import MarkdownIt
 from .Response import Response
 from . import util
 from .HttpEnricher import enrich_module
 from .mimetypes import mimemap
 
 handler_map = {'application/x-python-code': "PythonSourceHandler",
-               'application/x-splunge-template': "PythonTemplateHandler"
+               'application/x-splunge-template': "PythonTemplateHandler",
+			   'text/markdown': "MarkdownHandler"
               }
 
 
 def create_mime_handler(wsgi):
 	""" Return the appropriate MIME handler for the wsgi. """
+	print(f'__name__={__name__}')
+	module = sys.modules[__name__]
 	ext = util.get_path_extension(wsgi)
 	print(f'ext={ext}')
 	mimetype = mimemap.get(ext, None)
 	print(f'mimetype={mimetype}')
-	handler = handler_map.get(mimetype, FileHandler())
-	print(f'handler={handler}')
-	return handler
+	handlerName = handler_map.get(mimetype, "FileHandler")
+	print(f'handler={handlerName}')
+	handlerClass = getattr(module, handlerName)
+	print(f'handlerClass={handlerClass}')
+	return handlerClass()
 
 
 class FileHandler:
@@ -31,6 +38,21 @@ class FileHandler:
 		except FileNotFoundError:
 			# We want this to be handled at a higher level
 			return (None, False)
+
+
+
+class MarkdownHandler:
+	def handle_request (self, wsgi):
+		title = util.get_file_name(wsgi)
+		with util.open_by_path(wsgi) as f:
+			# @note utf-8 is harcoded here
+			content = f.read().decode('utf-8')
+			md = MarkdownIt()
+			frag = md.render(content)
+			doc = util.html_fragment_to_doc(frag, title=title)
+		resp = Response()
+		resp.add_line(doc)
+		return (resp, True)
 
 
 class PythonModuleHandler:

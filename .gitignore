@@ -4,6 +4,7 @@
 **/*.swp
 .cache
 dist
+.DS_Store
 src/*.html
 src/*.py
 src/*.pyp
