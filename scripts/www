@@ -9,7 +9,7 @@ port=${1:-$DEFAULT_PORT}
 
 [[ -d "$contentFolder" ]] || { printf 'Non-existent folder: %s\n' "$contentFolder" >&2; return 1; }
 mkdir -p "$logFolder/" || { printf 'Unable to create log folder %s\n' "$logFolder" &>2; return; }
-printf 'Splunge serving $contentFolder on %s:%d; logging to %s' "$contentFolder" "$host" "$port" "$logFolder"
+printf 'Splunge serving %s on %s:%d; logging to %s' "$contentFolder" "$host" "$port" "$logFolder"
 
 gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
