@@ -13,3 +13,4 @@ build/
 include/
 lib/
 splunge.log
+venv/
