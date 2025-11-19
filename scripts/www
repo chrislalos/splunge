@@ -2,7 +2,7 @@
 
 DEFAULT_PORT=1313
 port=${1:-$DEFAULT_PORT}
-logFolder="~/tmp/splunge/log"
+logFolder="$HOME/tmp/splunge/log"
 mkdir -p "$logFolder/" || { printf 'Unable to create log folder %s\n' "$logFolder" &>2; return; }
 echo "Running splunge on port $port & logging to $logFolder ..."
 
