@@ -1,0 +1,11 @@
+fsspec==2025.10.0
+gunicorn==23.0.0
+Jinja2==3.1.6
+markdown-it-py==4.0.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+packaging==25.0
+Pygments==2.19.2
+setuptools==80.9.0
+-e git+https://github.com/chrislalos/splunge@fb11ebf3fb028d1a902220f448b2fc10507b9132#egg=splunge
+Werkzeug==3.1.3
