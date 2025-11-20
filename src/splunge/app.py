@@ -26,14 +26,20 @@ handler_map = {'application/x-python-code': "PythonSourceHandler",
 def create_handler(wsgi):
 	""" Return the appropriate handler for the wsgi. """
 	if util.is_index_page(wsgi):
+		loggin.info(f'handler found: {IndexPageHandler.__name__}')
 		return IndexPageHandler()
 	if is_python_module(wsgi):
+		loggin.info(f'handler found: {PythonModuleHandler.__name__}')
 		return PythonModuleHandler()
 	elif is_python_markup(wsgi):
+		loggin.info(f'handler found: {PythonTemplateHandler.__name__}')
 		return PythonTemplateHandler()
 	elif is_mime_type(wsgi):
-		return create_mime_handler(wsgi)
+		loggin.info('Looking up MIME handler ...')
+		handler = create_mime_handler(wsgi)
+		loggin.info(f'handler found: {type(handler).__name__}')
 	else:
+		loggin.info(f'handler found: {IndexPageHandler.__name__}')
 		return FileHandler()
 
 
@@ -106,7 +112,7 @@ def handle_error(ex, wsgi, resp, start_response):
 
 
 def app(wsgi, start_response):
-	loggin.info(wsgi)
+	loggin.info(wsgi['PATH_INFO'])
 	handler = create_handler(wsgi)
 	try:
 		(resp, done) = handler.handle_request(wsgi)
