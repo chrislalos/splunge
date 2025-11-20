@@ -166,6 +166,15 @@ def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constan
 	return sio.read()
 
 
+def is_index_page(wsgi):
+	path = wsgi['PATH_INFO'].strip()
+	print(f'path={path}')
+	flag = False
+	if not path or path == '/':
+		flag = True
+	return flag
+
+
 # Check if an IO is empty, by moving to the end and confirming it is zero. 
 # (This saves the cursor position before checking, and restores it afterwards)
 def is_io_empty (anIo):

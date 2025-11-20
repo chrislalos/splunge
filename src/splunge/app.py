@@ -14,7 +14,7 @@ from .mimetypes import mimemap
 from typing import NamedTuple
 from . import ModuleExecutionState
 from . import loggin, util
-from .handlers import FileHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
+from .handlers import FileHandler, IndexPageHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 from .Response import Response
 
 
@@ -25,6 +25,8 @@ handler_map = {'application/x-python-code': "PythonSourceHandler",
 
 def create_handler(wsgi):
 	""" Return the appropriate handler for the wsgi. """
+	if util.is_index_page(wsgi):
+		return IndexPageHandler()
 	if is_python_module(wsgi):
 		return PythonModuleHandler()
 	elif is_python_markup(wsgi):

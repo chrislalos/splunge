@@ -45,6 +45,18 @@ class FileHandler:
 			return (None, False)
 
 
+class IndexPageHandler:
+	''' Handle index page requests by redirection to /index.html. '''
+	def handle_request(self, wsgi):
+		try:
+			path = '/index.html'
+			resp = Response()
+			resp.redirect(path)
+			return (resp, True)
+		except FileNotFoundError:
+			# We want this to be handled at a higher level
+			return (None, False)
+
 
 class MarkdownHandler:
 	def handle_request (self, wsgi):
