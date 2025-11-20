@@ -2,6 +2,9 @@
 
 DEFAULT_PORT=1313
 
+printf '<%s> ' "${@}"
+echo
+
 contentFolder=${2:-'.'}
 host=localhost
 logFolder="$HOME/tmp/splunge/log"
