@@ -40,9 +40,10 @@ class FileHandler:
 			resp = Response()
 			util.respond_with_file(wsgi, resp, f)
 			return (resp, True)
-		except FileNotFoundError:
+		except FileNotFoundError as ex:
+			loggin.error(ex, exc_info=True)
 			# We want this to be handled at a higher level
-			return (None, False)
+			raise ex
 
 
 class IndexPageHandler:

@@ -25,22 +25,23 @@ handler_map = {'application/x-python-code': "PythonSourceHandler",
 
 def create_handler(wsgi):
 	""" Return the appropriate handler for the wsgi. """
+	handler = None
 	if util.is_index_page(wsgi):
-		loggin.info(f'handler found: {IndexPageHandler.__name__}')
-		return IndexPageHandler()
-	if is_python_module(wsgi):
-		loggin.info(f'handler found: {PythonModuleHandler.__name__}')
-		return PythonModuleHandler()
+		handler =  IndexPageHandler()
+	elif is_python_module(wsgi):
+		handler = PythonModuleHandler()
 	elif is_python_markup(wsgi):
-		loggin.info(f'handler found: {PythonTemplateHandler.__name__}')
-		return PythonTemplateHandler()
+		handler =  PythonTemplateHandler()
 	elif is_mime_type(wsgi):
-		loggin.info('Looking up MIME handler ...')
 		handler = create_mime_handler(wsgi)
-		loggin.info(f'handler found: {type(handler).__name__}')
 	else:
-		loggin.info(f'handler found: {IndexPageHandler.__name__}')
-		return FileHandler()
+		handler = FileHandler()
+	
+	if handler:
+		loggin.debug(f'handler found: {type(handler).__name__}')
+	else:
+		loggin.warn('no handler found')
+	return handler
 
 
 def is_mime_type(wsgi):
@@ -87,7 +88,24 @@ def is_python_module(wsgi):
 	return False
 
 
+def handle_404(wsgi, resp, start_response):
+	print("inside handle_error()")
+	status = "404 Resource Not Found"
+	templatePath = os.path.abspath(f'{os.getcwd()}/err/404.pyp')
+	print(f'templatePath={templatePath}')
+	# Load the template & render it w wsgi args
+	if not os.path.exists(templatePath):
+		raise Exception(f'template path not found: {templatePath}')
+	args = {"path": wsgi['PATH_INFO']}
+	content = util.render_template(templatePath, args).encode()
+	resp.headers['Content-Length'] = len(content)
+	headers = resp.headers.asTuples()
+	start_response(status, headers)
+	return [content]
+
+
 def handle_error(ex, wsgi, resp, start_response):
+	loggin.error(ex, exc_info=True)
 	print("inside handle_error()")
 	status = "513 uhoh"
 	# data = f'oh no: {str(ex)}'.encode()
@@ -116,9 +134,13 @@ def app(wsgi, start_response):
 	handler = create_handler(wsgi)
 	try:
 		(resp, done) = handler.handle_request(wsgi)
-	except Exception as ex:
-		print('error caught in app()')
+	except FileNotFoundError as ex:
+		loggin.error(f"404 - {wsgi['PATH_INFO']}")
+		loggin.error(ex, exc_info=True)
 		resp = Response()
+		return handle_404(wsgi, resp, start_response)
+	except Exception as ex:
+		loggin.warn('error caught in app()')
 		return handle_error(ex, wsgi, resp, start_response)
 		# raise ex
 	if done:

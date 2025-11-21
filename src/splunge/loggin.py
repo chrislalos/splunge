@@ -1,4 +1,6 @@
-import logging as stdlib_logging
+import logging
+import os
+
 
 PATH = "./splunge.log"
 
@@ -42,10 +44,13 @@ def warning(msg, *args, **kwargs):
 
 def initLogger():
 	print("init'ing logger ...")
-	logger = stdlib_logging.getLogger("splunge")
-	logger.setLevel(stdlib_logging.DEBUG)
-	h = stdlib_logging.FileHandler(PATH)
+	f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+	h = logging.FileHandler(PATH)
+	h.setFormatter(f)
+	logger = logging.getLogger("splunge")
+	logger.setLevel(logging.DEBUG)
 	logger.addHandler(h)
+	print(f'writing log to {os.getcwd()}/{PATH}')
 	return logger
 
 logger = initLogger()
