@@ -40,9 +40,10 @@ class FileHandler:
 			resp = Response()
 			util.respond_with_file(wsgi, resp, f)
 			return (resp, True)
-		except FileNotFoundError:
+		except FileNotFoundError as ex:
+			loggin.error(ex, exc_info=True)
 			# We want this to be handled at a higher level
-			return (None, False)
+			raise ex
 
 
 class IndexPageHandler:
@@ -76,13 +77,17 @@ class PythonModuleHandler:
 	def handle_request (self, wsgi):
 		# Get local path, append .py to the path, & confirm the file exists
 		localPath = util.get_local_path(wsgi)
-		module_path = f'{localPath}.py'
-		if not os.path.exists(module_path):
-			raise Exception(f'module path not found: {module_path}')
+		modulePath = f'{localPath}.py'
+		loggin.info(f'modulePath={modulePath}')
+		if not os.path.exists(modulePath):
+			raise Exception(f'module path not found: {modulePath}')
 		# Load the module
-		module = util.load_module(module_path)
+		module = util.load_module(modulePath)
 		if not module:
-			raise Exception(f'module not found: {module_path}')
+			raise Exception(f'module not found: {modulePath}')
+		# Add the module's folder to sys.path
+		moduleFolder = util.get_folder(modulePath)
+		sys.path.append(moduleFolder)
 		# Enrich the module
 		enrich_module(module, wsgi)
 		# Execute the module
@@ -95,8 +100,11 @@ class PythonModuleHandler:
 		resp = Response()
 		# Does stdout exist? If so, use it for output
 		if not util.is_io_empty(module_state.stdout):
+			loggin.info("about to use stdout as input")
 			s = module_state.stdout.getvalue()
 			resp.iter = [s]
+			loggin.info("returning a real tuple")
+			return (resp, True)
 		else:
 			# Get output args
 			args = util.get_module_args(module)

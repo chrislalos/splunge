@@ -111,6 +111,11 @@ def get_file_name(wsgi):
 	return os.path.basename(get_path(wsgi))
 
 
+def get_folder(path):
+	(folder, _) = os.path.split(path)
+	return folder
+
+
 def get_local_path(wsgi):
 	''' Return the local path of the resources specified by the wsgi '''
 	path = get_path(wsgi)
