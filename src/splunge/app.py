@@ -105,8 +105,8 @@ def handle_404(wsgi, resp, start_response):
 
 
 def handle_error(ex, wsgi, resp, start_response):
-	loggin.error(ex, exc_info=True)
 	print("inside handle_error()")
+	loggin.error(ex, exc_info=True)
 	status = "513 uhoh"
 	# data = f'oh no: {str(ex)}'.encode()
 	# resp.headers['Content-Length'] = len(data)
@@ -132,17 +132,22 @@ def handle_error(ex, wsgi, resp, start_response):
 def app(wsgi, start_response):
 	loggin.info(wsgi['PATH_INFO'])
 	handler = create_handler(wsgi)
+	resp = None
 	try:
-		(resp, done) = handler.handle_request(wsgi)
+		respData = handler.handle_request(wsgi)
+		loggin.info(f'respData={respData}')
+		(resp, done) = respData
 	except FileNotFoundError as ex:
 		loggin.error(f"404 - {wsgi['PATH_INFO']}")
 		loggin.error(ex, exc_info=True)
-		resp = Response()
+		if not resp:
+			resp = Response()
 		return handle_404(wsgi, resp, start_response)
 	except Exception as ex:
 		loggin.warn('error caught in app()')
+		if not resp:
+			resp = Response()
 		return handle_error(ex, wsgi, resp, start_response)
-		# raise ex
 	if done:
 		status = resp.status
 		headers = resp.headers.asTuples()
