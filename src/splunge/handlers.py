@@ -47,7 +47,7 @@ class FileHandler:
 		try:
 			f = util.open_by_path(wsgi)
 			resp = Response()
-			resp.headers.add("Content-Type", self.mimeType)
+			resp.contentType = self.mimeType
 			util.respond_with_file(wsgi, resp, f)
 			return (resp, True)
 		except FileNotFoundError as ex:
@@ -79,7 +79,7 @@ class MarkdownHandler:
 			frag = md.render(content).rstrip()
 			doc = util.html_fragment_to_doc(frag, title=title)
 		resp = Response()
-		resp.headers.add("Content-Type", "text/markdown")
+		resp.contentType = "text/markdown"
 		resp.add_line(doc)
 		return (resp, True)
 
@@ -147,6 +147,6 @@ class PythonTemplateHandler:
 		# encodedContent = content.encode(self.encoding)
 		# Initialize the response + return
 		resp = Response()
-		resp.headers.set('Content-Type', 'text/html')
+		resp.contentType = 'text/html'
 		resp.add_line(content)
 		return (resp, True)

@@ -172,9 +172,18 @@ class HeadersTests(unittest.TestCase):
 		self.assertTrue(not headers[1])
 
 
+	def test_set(self):
+		headers = Headers()
+		name = Headers.HN_ContentType
+		value1 = 'text/html'
+		value2 = 'text/markdown'
+		headers.set(name, value1)
+		headers.set(name, value2)
+		self.assertTrue(value2, headers.get(name))
+
 	def test_tuples1(self):
 		headers = Headers()
-		name = 'Content-length'
+		name = Headers.HN_ContentType
 		value = 'text/html'
 		tuplesControl = [(name, value)]
 		headers.add(name, value)

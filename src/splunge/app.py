@@ -15,6 +15,7 @@ from .mimetypes import mimemap
 from . import ModuleExecutionResponse
 from . import loggin, util
 from .handlers import FileHandler, IndexPageHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
+from .Headers import Headers
 from .Response import Response
 
 
@@ -100,7 +101,7 @@ def handle_404(wsgi, start_response, resp):
 		raise Exception(f'template path not found: {templatePath}')
 	args = {"path": wsgi['PATH_INFO']}
 	content = util.render_template(templatePath, args).encode()
-	resp.headers['Content-Length'] = len(content)
+	resp.contentLength = len(content)
 	headers = resp.headers.asTuples()
 	start_response(status, headers)
 	return [content]
@@ -111,7 +112,7 @@ def handle_error(ex, wsgi, start_response, resp):
 	loggin.error(ex, exc_info=True)
 	status = "513 uhoh"
 	# data = f'oh no: {str(ex)}'.encode()
-	# resp.headers['Content-Length'] = len(data)
+	# resp.contentLength = len(data)
 	# headers = resp.headers.asTuples()
 	templatePath = os.path.abspath(f'{os.getcwd()}/err/500.pyp')
 	print(f'templatePath={templatePath}')
@@ -125,7 +126,7 @@ def handle_error(ex, wsgi, start_response, resp):
 		"traceback": s
 	}
 	content = util.render_template(templatePath, args).encode()
-	resp.headers['Content-Length'] = len(content)
+	resp.contentLength = len(content)
 	headers = resp.headers.asTuples()
 	start_response(status, headers)
 	return [content]
@@ -162,8 +163,8 @@ def app(wsgi, start_response):
 	data = b'no clue dude'
 	status = '513 no clue dude'
 	response_headers = [
-		('Content-type', 'text/plain'),
-		('Content-Length', str(len(data)))
+		(Headers.HN_ContentLength, str(len(data))),
+		(Headers.HN_ContentType, 'text/plain'),
 	]
 	start_response(status, response_headers)
 	return iter([data])

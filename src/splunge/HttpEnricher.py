@@ -33,7 +33,7 @@ class HttpEnricher:
 		self.resp.headers.add('Content-Length', contentLength)
 
 	def set_content_type(self, contentType):
-		self.resp.headers.add('Content-Type', contentType)
+		self.resp.contentType = contentType
 
 	def validate_method(self, method, methods):
 		return util.validate_method(method, methods)

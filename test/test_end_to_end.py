@@ -5,9 +5,22 @@ from splunge import app
 
 
 class EndToEndTests(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
+        cls.cwd = os.getcwd()
+        print()
+        print(f"changing folder to ./www; saving cwd as {cls.cwd}")
         os.chdir('./www')
+
+    @classmethod
+    def tearDownClass(cls):
+        print()
+        if hasattr(cls, "cwd"):
+            print(f"changing folder back to {cls.cwd}")
+        else:
+            print("tearDownClass() called but cls.cwd isn't set. Strange.")
+        os.chdir(cls.cwd)
 
     def test_hello_html(self):
         test_get(self, "/hello.html")

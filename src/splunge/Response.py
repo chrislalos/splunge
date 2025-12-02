@@ -1,18 +1,35 @@
 from http.cookies import SimpleCookie
+import types
 from .Headers import Headers
 from . import util
-class Response:
 
+class Response:
+	statusCode: int
+	statusMessage: str
+	headers: Headers
+	exc_info: tuple[type, Exception, types.TracebackType]
+	
 	def __init__ (self):
 		self.statusCode = 200
 		self.statusMessage = 'OK'
 		self.headers = Headers()
 		self.exc_info = None
 		self.iter = []
-
 	
 	@property 
 	def status (self): return '{} {}'.format(self.statusCode, self.statusMessage)
+
+	# Content-Length
+	@property
+	def contentLength(self): return self.headers.get(Headers.HN_ContentLength)
+	@contentLength.setter
+	def contentLength(self, val): self.headers.set(Headers.HN_ContentLength, val)
+	
+	# Content-Type
+	@property
+	def contentType(self): return self.headers.get(Headers.HN_ContentType)
+	@contentType.setter
+	def contentType(self, val): self.headers.set(Headers.HN_ContentType, val)
 
 
 	def add_cookie (self, name, value, **kwargs): 
@@ -36,6 +53,7 @@ class Response:
 		self.statusCode = 303
 		self.statusMessage = f'Redirecting to {url}'
 		self.headers.add('Location', url)
+
 	# 
 	#     def add (self, data):
 	#         if not self.iter:

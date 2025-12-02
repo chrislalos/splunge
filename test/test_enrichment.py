@@ -5,6 +5,7 @@ import unittest
 from werkzeug.test import create_environ
 from splunge.HttpEnricher import HttpEnricher, create_enrichment_object, enrich_module
 from splunge import util
+from splunge import ModuleExecutionResponse
 
 def create_enricher (path, queryString=None):
 	queryString="bar=13&bum=thirteen"
@@ -16,7 +17,7 @@ def create_enricher (path, queryString=None):
 class EnrichmentTests(unittest.TestCase):
 	def test_enrich_module(self):
 		path = './www/meat/foo.py'
-		module = util.load_module(path)
+		module = util.load_module_by_path(path)
 		self.assertIsNotNone(module)
 		self.assertFalse(hasattr(module, 'http'))
 		wsgi = create_environ(path, method="GET")
@@ -33,15 +34,30 @@ class EnrichmentTests(unittest.TestCase):
 		self.assertEqual(contentLength, headerValue)
 		
 	def test_execute_module_foo(self):
+		print()
 		path = './www/meat/foo.py'
-		module = util.load_module(path)
+		module = util.load_module_by_path(path)
 		wsgi = create_environ(path, method="GET")
 		enrich_module(module, wsgi)
-		moduleState = util.exec_module(module)
+		moduleState = ModuleExecutionResponse.exec_module(module)
 		self.assertIsNotNone(moduleState)
-		self.assertEqual(1, len(moduleState.context))
+		print(f'moduleState.context={moduleState.context}')
+		self.assertEqual(2, len(moduleState.context))
+		self.assertIsInstance(moduleState.context[0], dict)
+		self.assertIsNone(moduleState.context[1])
 		self.assertIsNotNone(moduleState.stdout)
 		self.assertTrue(util.is_io_empty(moduleState.stdout))
+
+	def x_test_get_module_attrs(self):
+		print()
+		path = './www/meat/foo.py'
+		module = util.load_module_by_path(path)
+		wsgi = create_environ(path, method="GET")
+		enrich_module(module, wsgi)
+		module.__spec__.loader.exec_module(module)
+		attrNames = util.get_attr_names(module)
+		print(f'attrNames={attrNames}')
+
 
 	def test_module_args_get(self):
 		http = create_enricher("/meat/foo", "bar=13&bum=thirteen")
@@ -66,14 +82,18 @@ class EnrichmentTests(unittest.TestCase):
 		self.assertEqual(0, len(http.args))
 
 	def test_module_local_path(self):
+		print()
 		path = "/www/meat/foo"
 		wsgi = create_environ(path)
 		localPath = util.get_local_path(wsgi)
 		currDir = os.getcwd()
-		self.assertEqual(f'{currDir}{path}', localPath)
+		print(f'currDir={currDir}')
+		targetPath = os.path.abspath(f"{currDir}/{path}")
+		self.assertEqual(targetPath, localPath)
 		modulePath = f'{localPath}.py'
+		print(f'modulePath={modulePath}')
 		self.assertTrue(os.path.isfile(modulePath))
-		module = util.load_module(modulePath)
+		module = util.load_module_by_path(modulePath)
 		self.assertIsNotNone(module)
 		self.assertFalse(hasattr(module, 'meat'))
 

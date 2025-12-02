@@ -8,6 +8,9 @@ from collections import UserDict
 #   Commonly used headers (eg Content-length) can be retrieved as properties 
 
 class Headers (UserDict):
+	HN_ContentLength = "Content-Length"
+	HN_ContentType = "Content-Type"
+
 	def __contains__ (self, key):
 		if not self.data:
 			return False
@@ -18,9 +21,9 @@ class Headers (UserDict):
 	
 	def __getattr__ (self, name):
 		if name == 'contentLength':
-			return self['content-length']
+			return self[Headers.HN_ContentLength.lower()]
 		if name == 'contentType':
-			return self['content-type']
+			return self[Headers.HN_ContentType.lower()]
 		else:
 			return super().__getattribute__(name)
 

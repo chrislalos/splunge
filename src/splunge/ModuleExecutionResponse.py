@@ -8,7 +8,7 @@ from . import Response
 class ModuleExecutionResponse:
 	response: Response
 	stdout: io.StringIO
-	context: dict
+	context: tuple[dict, str]
 
 	def has_stdout(self):
 		return not util.is_io_empty(self.stdout)
@@ -25,7 +25,9 @@ class ModuleExecutionResponse:
 			module.__spec__.loader.exec_module(module)
 		# Create the module state
 		moduleContext = util.get_module_context(module)
-		moduleResponse = module.http.resp
+		moduleResponse = None
+		if hasattr(module, "http"):
+			moduleResponse = module.http.resp
 		moduleState = ModuleExecutionResponse(context=moduleContext, stdout=moduleStdout, response=moduleResponse)
 		return moduleState
 

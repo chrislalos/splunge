@@ -6,10 +6,13 @@ import os
 import re
 import sys
 import textwrap
-from typing import NamedTuple
+from typing import NamedTuple, TYPE_CHECKING
+if TYPE_CHECKING:
+	from _typeshed.wsgi import WSGIEnvironment
 import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
+import werkzeug
 
 from . import constants, loggin
 from .mimetypes import mimemap
@@ -58,19 +61,19 @@ def create_wsgi_args(wsgi):
 	return {}
 
 
-def exec_module(module):
-	""" Execute an enriched module & return a ModuleExecutionResponse.
+# def exec_module(module):
+# 	""" Execute an enriched module & return a ModuleExecutionResponse.
 
-	"""
-	# Redirect stdout to a new StringIO and execute module
-	moduleStdout = io.StringIO()
-	with contextlib.redirect_stdout(moduleStdout):
-		module.__spec__.loader.exec_module(module)
-	# Create the module state
-	moduleContext = get_module_context(module)
-	moduleResponse = module.http.resp
-	moduleState = ModuleExecutionResponse(context=moduleContext, stdout=moduleStdout, response=moduleResponse)
-	return moduleState
+# 	"""
+# 	# Redirect stdout to a new StringIO and execute module
+# 	moduleStdout = io.StringIO()
+# 	with contextlib.redirect_stdout(moduleStdout):
+# 		module.__spec__.loader.exec_module(module)
+# 	# Create the module state
+# 	moduleContext = get_module_context(module)
+# 	moduleResponse = module.http.resp
+# 	moduleState = ModuleExecutionResponse(context=moduleContext, stdout=moduleStdout, response=moduleResponse)
+# 	return moduleState
 
 
 # def addCookie (name, value, **kwargs): 
@@ -211,7 +214,7 @@ def is_io_empty (anIo):
 	return isEmpty
 
 
-def load_module(wsgi):
+def load_module(wsgi: "WSGIEnvironment"):
 	# Get local path, append .py to the path, & confirm the path exists
 	modulePath = get_module_path(wsgi)
 	loggin.info(f'modulePath={modulePath}')

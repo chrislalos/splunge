@@ -24,3 +24,11 @@ class ResponseTests(unittest.TestCase):
 		self.assertIsNotNone(locationHeader)
 		self.assertEqual(url, locationHeader)
 
+	def test_set_content(self):
+		resp = Response()
+		self.assertIsNone(resp.contentType)
+		contentType = 'text/html'
+		resp.contentType = contentType
+		self.assertEqual(contentType, resp.contentType)
+		self.assertEqual(contentType, resp.headers.get(Headers.HN_ContentType))
+
