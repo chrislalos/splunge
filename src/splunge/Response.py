@@ -1,10 +1,11 @@
 from http.cookies import SimpleCookie
-from . import Headers
+from .Headers import Headers
 from . import util
 class Response:
 
 	def __init__ (self):
-		(self.statusCode, self.statusMessage) = (200, 'OK')
+		self.statusCode = 200
+		self.statusMessage = 'OK'
 		self.headers = Headers()
 		self.exc_info = None
 		self.iter = []
@@ -101,3 +102,9 @@ class Response:
 	#         self.statusMessage = 'Response Page to POST'
 	#         self.setHeader('Location', url)
 	# 
+
+	def write_context(self, context):
+		# Render the content as a nice table
+		for key, val in context.items():
+			line = '{}={}'.format(key, val)
+			self.add_line(line) 

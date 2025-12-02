@@ -3,9 +3,11 @@ import sys
 import traceback
 from markdown_it import MarkdownIt
 from .Response import Response
-from . import loggin, util
 from .HttpEnricher import enrich_module
+from . import loggin
+from . import ModuleExecutionResponse
 from .mimetypes import mimemap
+from . import util
 
 handler_map = {'application/x-python-code': "PythonSourceHandler",
                'application/x-splunge-template': "PythonTemplateHandler",
@@ -17,12 +19,12 @@ def create_mime_handler(wsgi):
 	""" Return the appropriate MIME handler for the wsgi. """
 	# Get MIME type from path extension
 	ext = util.get_path_extension(wsgi)
-	mimetype = mimemap.get(ext, None)
-	if mimetype is None:
+	mimeType = mimemap.get(ext, None)
+	if mimeType is None:
 		loggin.warning("No MIME type found for extension: {ext}", ext)
 		return None
 	# Get handler class name from MIMEType + get the class from current module
-	handlerName = handler_map.get(mimetype, "FileHandler")
+	handlerName = handler_map.get(mimeType, "FileHandler")
 	# print(f'handler={handlerName}')
 	module = sys.modules[__name__]
 	handlerClassName = getattr(module, handlerName, None)
@@ -30,14 +32,22 @@ def create_mime_handler(wsgi):
 		loggin.warning("Unable to find handler class: {handlerClassName}", handlerClassName)
 	# instantiate handler class + return instance as handler
 	handler = handlerClassName()
+	loggin.debug(f"create_mime_handler(): type(handler)={type(handler)}")
+	if type(handler).__name__ == "FileHandler":
+		setattr(handler, "mimeType", mimeType)
 	return handler
 
 
 class FileHandler:
+	def __init__(self):
+		self.mimeType = None
+
 	def handle_request (self, wsgi):
+		loggin.debug(f"FileHandler.handler_request: self.mimeType={self.mimeType}")
 		try:
 			f = util.open_by_path(wsgi)
 			resp = Response()
+			resp.headers.add("Content-Type", self.mimeType)
 			util.respond_with_file(wsgi, resp, f)
 			return (resp, True)
 		except FileNotFoundError as ex:
@@ -69,78 +79,71 @@ class MarkdownHandler:
 			frag = md.render(content).rstrip()
 			doc = util.html_fragment_to_doc(frag, title=title)
 		resp = Response()
+		resp.headers.add("Content-Type", "text/markdown")
 		resp.add_line(doc)
 		return (resp, True)
 
 
 class PythonModuleHandler:
 	def handle_request (self, wsgi):
-		# Get local path, append .py to the path, & confirm the file exists
-		localPath = util.get_local_path(wsgi)
-		modulePath = f'{localPath}.py'
-		loggin.info(f'modulePath={modulePath}')
-		if not os.path.exists(modulePath):
-			raise Exception(f'module path not found: {modulePath}')
-		# Load the module
-		module = util.load_module(modulePath)
+		# Load & enrich the module, and add its folder to sys.path
+		module = util.load_module(wsgi)
 		if not module:
-			raise Exception(f'module not found: {modulePath}')
-		# Add the module's folder to sys.path
-		moduleFolder = util.get_folder(modulePath)
-		sys.path.append(moduleFolder)
-		# Enrich the module
+			raise Exception(f'module not found: {util.get_module_path(wsgi)}')
 		enrich_module(module, wsgi)
+		moduleFolder = util.get_module_folder(wsgi)
+		sys.path.append(moduleFolder)
+
 		# Execute the module
 		try:
-			module_state = util.exec_module(module)
+			moduleState = ModuleExecutionResponse.exec_module(module)
 		except Exception as ex:
 			print("error during execution")
 			traceback.print_tb(ex.__traceback__)
 			raise ex
-		resp = Response()
+
 		# Does stdout exist? If so, use it for output
-		if not util.is_io_empty(module_state.stdout):
+		if moduleState.has_stdout():
 			loggin.info("about to use stdout as input")
-			s = module_state.stdout.getvalue()
-			resp.iter = [s]
-			loggin.info("returning a real tuple")
-			return (resp, True)
+			s = moduleState.stdout.getvalue()
+			b = s.encode('utf-8')
+			moduleState.response.iter = [b]
+			loggin.info("returning a			 real tuple")
+			return (moduleState.response, True)
+
 		else:
-			# Get output args
-			args = util.get_module_args(module)
+			# Get output context + template (if any)
+			(context, sTemplate) = util.get_module_context(module)
 			# Does _ exist? If so use it as a template
-			if '_' in args:
-				sTemplate = args.pop('_')
-				s = util.render_string(sTemplate, args)
-				resp.add_line(s)
+			if sTemplate:
+				s = util.render_string(sTemplate, context)
+				moduleState.response.add_line(s)
 			else:
-				# Does a .pyp exist? If so, create a template handler and transfer control to it
-				templatePath = f'{localPath}.pyp'
+				# If pyp exists, delegate to template handler, else write context directly to response
+				templatePath = util.get_template_path(wsgi)
 				if os.path.exists(templatePath):
 					handler = PythonTemplateHandler()
-					return handler.handle_request(wsgi, args)
+					return handler.handle_request(wsgi, context)
 				else:
+					moduleState.response.write_context(context)
 					# Render the content as a nice table
-					for key, val in args.items():
-						line = '{}={}'.format(key, val)
-						resp.add_line(line) 
-			return (resp, True)
+			return (moduleState.response, True)
 	
 
 class PythonTemplateHandler:
 	def __init__ (self, *, encoding='latin-1'):
 		self.encoding = encoding
 
-	def handle_request (self, wsgi, args={}):
+	def handle_request (self, wsgi, context={}):
 		# Get local path, append .pyp to the path, & confirm the file exists
 		localPath = util.get_local_path(wsgi)
 		templatePath = f'{localPath}.pyp'
-		# Load the template & render it w wsgi args
+		# Load the template & render it w wsgi context
 		if not os.path.exists(templatePath):
 			raise Exception(f'template path not found: {templatePath}')
 		wsgi_args = util.create_wsgi_args(wsgi)
-		args.update(wsgi_args)
-		content = util.render_template(templatePath, args)
+		context.update(wsgi_args)
+		content = util.render_template(templatePath, context)
 		# encodedContent = content.encode(self.encoding)
 		# Initialize the response + return
 		resp = Response()

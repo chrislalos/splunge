@@ -1,12 +1,31 @@
+import os
 import unittest
 from werkzeug import Client
 from splunge import app
 
 
 class EndToEndTests(unittest.TestCase):
-    def test_static_content(self):
-        cli = Client(app.app)
-        resp = cli.get("/www/hello.html")
-        print(f'resp.iter_encoded()={resp.iter_encoded()}')
-        # print(f'resp={resp}')
-        print(f'resp.text={resp.text}')
+    @classmethod
+    def setUpClass(cls):
+        os.chdir('./www')
+
+    def test_hello_html(self):
+        test_get(self, "/hello.html")
+
+    def test_meat_foo(self):
+        test_get(self, "/meat/foo")
+    
+    def test_meat_foo3(self):
+        test_get(self, "/meat/foo3?luckyNumber=13")
+
+
+def test_get(t: unittest.TestCase, url: str, *, contentType=None):
+    cli = Client(app.app)
+    resp = cli.get(url)
+    statusCode, sep, statusMessage = resp.status.partition(' ')
+    t.assertEqual(str(200), statusCode)
+    if statusMessage:
+        t.assertEqual('OK', statusMessage.upper())
+    print(f'resp.text={resp.text}')
+    if contentType:
+        t.assertEqual(contentType, resp.content_type)

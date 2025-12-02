@@ -10,9 +10,9 @@ import sys
 from importlib.machinery import FileFinder, SourceFileLoader
 import traceback
 import urllib
-from .mimetypes import mimemap
 from typing import NamedTuple
-from . import ModuleExecutionState
+from .mimetypes import mimemap
+from . import ModuleExecutionResponse
 from . import loggin, util
 from .handlers import FileHandler, IndexPageHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 from .Response import Response
@@ -47,7 +47,9 @@ def create_handler(wsgi):
 def is_mime_type(wsgi):
 	''' Check if the wsgi has a recognized MIME type. '''
 	ext = util.get_path_extension(wsgi)
+	loggin.debug(f"is_mime_type(): ext={ext}")
 	flag = ext in mimemap
+	loggin.debug(f"is_mime_type(): flag={flag}")
 	return flag
 
 
@@ -88,7 +90,7 @@ def is_python_module(wsgi):
 	return False
 
 
-def handle_404(wsgi, resp, start_response):
+def handle_404(wsgi, start_response, resp):
 	print("inside handle_error()")
 	status = "404 Resource Not Found"
 	templatePath = os.path.abspath(f'{os.getcwd()}/err/404.pyp')
@@ -104,7 +106,7 @@ def handle_404(wsgi, resp, start_response):
 	return [content]
 
 
-def handle_error(ex, wsgi, resp, start_response):
+def handle_error(ex, wsgi, start_response, resp):
 	print("inside handle_error()")
 	loggin.error(ex, exc_info=True)
 	status = "513 uhoh"
@@ -130,24 +132,26 @@ def handle_error(ex, wsgi, resp, start_response):
 
 
 def app(wsgi, start_response):
-	loggin.info(wsgi['PATH_INFO'])
-	handler = create_handler(wsgi)
 	resp = None
 	try:
+		loggin.debug(f"PATH_INFO={wsgi['PATH_INFO']}")
+		loggin.debug(f"SCRIPT_NAME={wsgi['SCRIPT_NAME']}")
+		loggin.debug(f"wsgi.file_wrapper={getattr(wsgi, 'file_wrapper', 'N/A')}")
+		handler = create_handler(wsgi)
 		respData = handler.handle_request(wsgi)
-		loggin.info(f'respData={respData}')
+		loggin.debug(f'respData={respData}')
 		(resp, done) = respData
 	except FileNotFoundError as ex:
 		loggin.error(f"404 - {wsgi['PATH_INFO']}")
 		loggin.error(ex, exc_info=True)
 		if not resp:
 			resp = Response()
-		return handle_404(wsgi, resp, start_response)
+		return handle_404(wsgi, start_response, resp)
 	except Exception as ex:
 		loggin.warn('error caught in app()')
 		if not resp:
 			resp = Response()
-		return handle_error(ex, wsgi, resp, start_response)
+		return handle_error(ex, wsgi, start_response, resp)
 	if done:
 		status = resp.status
 		headers = resp.headers.asTuples()

@@ -11,9 +11,8 @@ import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
 
-from . import constants
+from . import constants, loggin
 from .mimetypes import mimemap
-from .ModuleExecutionState import ModuleExecutionState
 
 
 def create_cookie_value(name, value, **kwargs):
@@ -60,23 +59,18 @@ def create_wsgi_args(wsgi):
 
 
 def exec_module(module):
-	""" Execute an enriched module.
+	""" Execute an enriched module & return a ModuleExecutionResponse.
 
 	"""
 	# Redirect stdout to a new StringIO and execute module
-	module_stdout = io.StringIO()
-	with contextlib.redirect_stdout(module_stdout):
+	moduleStdout = io.StringIO()
+	with contextlib.redirect_stdout(moduleStdout):
 		module.__spec__.loader.exec_module(module)
 	# Create the module state
-	module_args = get_module_args(module)
-	module_state = ModuleExecutionState(context=module_args, stdout=module_stdout)
-	return module_state
-	# Create module state object to populate with execution results
-	# if not is_io_empty(newStdout):
-	# 	print('*** newStdout is not empty')
-	# 	module_state.stdout = newStdout
-#	else:
-#		moduleState.stdout = None
+	moduleContext = get_module_context(module)
+	moduleResponse = module.http.resp
+	moduleState = ModuleExecutionResponse(context=moduleContext, stdout=moduleStdout, response=moduleResponse)
+	return moduleState
 
 
 # def addCookie (name, value, **kwargs): 
@@ -122,7 +116,13 @@ def get_local_path(wsgi):
 	return os.path.abspath(os.getcwd() + path)
 
 
-def get_module_args (module):
+def get_module_attrs(module):
+	attrNames = get_attr_names(module)
+	attrs = {name: getattr(module, name, None) for name in attrNames}
+	return attrs
+
+
+def get_module_context (module):
 	''' Return the args set during module execution
 
 	    If the special _ attribute has been set, use that
@@ -130,7 +130,10 @@ def get_module_args (module):
 	'''
 	args = get_module_attrs(module)
 	args.pop('http', None)
-	return args
+	sTemplate = None
+	if '_' in args:
+		sTemplate = args.pop('_')
+	return (args, sTemplate)
 	# @note - this function needs to check for the existence of '_'
 	# args = {}
 	# # Create a set of the module's attrs post-execution, and filter
@@ -143,10 +146,18 @@ def get_module_args (module):
 	# 		args[attr] = val
 
 
-def get_module_attrs(module):
-	attrNames = get_attr_names(module)
-	attrs = {name: getattr(module, name, None) for name in attrNames}
-	return attrs
+def get_module_folder(wsgi):
+	path = get_module_path(wsgi)
+	(folder, _) = os.path.split(path)
+	return folder
+
+
+def get_module_path(wsgi):
+	# Get local path, append .py to the path, & confirm the path exists
+	localPath = get_local_path(wsgi)
+	modulePath = f'{localPath}.py'
+	return modulePath
+
 
 def get_path (wsgi):
 	''' Return the wsgi's path. '''
@@ -158,6 +169,13 @@ def get_path_extension (wsgi):
 	path = get_path(wsgi)
 	(_, ext) = os.path.splitext(path)
 	return ext
+
+
+def get_template_path(wsgi):
+	# Does a .pyp exist? If so, create a template handler and transfer control to it
+	localPath = get_local_path(wsgi)
+	templatePath = f'{localPath}.pyp'
+	return templatePath
 
 
 def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
@@ -192,7 +210,19 @@ def is_io_empty (anIo):
 	anIo.seek(cur, io.SEEK_SET)
 	return isEmpty
 
-def load_module (path):
+
+def load_module(wsgi):
+	# Get local path, append .py to the path, & confirm the path exists
+	modulePath = get_module_path(wsgi)
+	loggin.info(f'modulePath={modulePath}')
+	if not os.path.exists(modulePath):
+		raise Exception(f'module path not found: {modulePath}')
+	# Load the module
+	module = load_module_by_path(modulePath)
+	return module
+
+
+def load_module_by_path (path):
 	''' Load a python module by path using importlib machinery. '''
 	# create the module path and load the module using machinery
 	moduleSpec = load_module_spec(path)

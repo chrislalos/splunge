@@ -50,7 +50,7 @@ def initLogger():
 	logger = logging.getLogger("splunge")
 	logger.setLevel(logging.DEBUG)
 	logger.addHandler(h)
-	print(f'writing log to {os.getcwd()}/{PATH}')
+	print(f'writing log to {os.path.abspath(PATH)}')
 	return logger
 
 logger = initLogger()
