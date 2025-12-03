@@ -26,8 +26,9 @@ class ModuleExecutionResponse:
 		# Create the module state
 		moduleContext = util.get_module_context(module)
 		moduleResponse = None
-		if hasattr(module, "http"):
-			moduleResponse = module.http.resp
+		http = getattr(module, 'http', None)
+		if http:
+			moduleResponse = getattr(http, 'resp', None)
 		moduleState = ModuleExecutionResponse(context=moduleContext, stdout=moduleStdout, response=moduleResponse)
 		return moduleState
 

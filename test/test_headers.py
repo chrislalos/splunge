@@ -87,7 +87,7 @@ class HeadersTests(unittest.TestCase):
 		self.assertEqual(value2, headers[name])
 
 
-	def test_contentLength(self):
+	def test_content_length(self):
 		headers = create_headers()
 		name = 'Content-length'
 		value = 13
@@ -96,12 +96,22 @@ class HeadersTests(unittest.TestCase):
 		self.assertEqual(str(value), headers.contentLength)
 
 
-	def test_contentType(self):
+	def test_content_type(self):
 		headers = create_headers()
 		name = 'Content-type'
 		value = 'text/html'
 		headers.contentType = value
 		self.assertEqual(value, headers.contentType)
+		self.assertEqual(value, headers[name])
+
+
+	def test_location(self):
+		print()
+		headers = create_headers()
+		name = 'Location'
+		value = '/thankyou.pyp'
+		headers.location = value
+		self.assertEqual(value, headers.location)
 		self.assertEqual(value, headers[name])
 
 

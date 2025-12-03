@@ -10,7 +10,31 @@ from collections import UserDict
 class Headers (UserDict):
 	HN_ContentLength = "Content-Length"
 	HN_ContentType = "Content-Type"
+	HN_Location = "Location"
 
+	# Content-Length
+	@property
+	def contentLength(self): return self[self.HN_ContentLength]
+	@contentLength.setter
+	def contentLength(self, val): self[self.HN_ContentLength] = val
+	
+	# Content-Type
+	@property
+	def contentType(self): return self[self.HN_ContentType]
+	@contentType.setter
+	def contentType(self, val): self[self.HN_ContentType] = val
+	
+	# Location
+	@property
+	def location(self):
+		print("getting location")
+		return self[self.HN_Location]
+	@location.setter
+	def location(self, val):
+		print("setting location")
+		self[self.HN_Location] = val
+	
+	
 	def __contains__ (self, key):
 		if not self.data:
 			return False
@@ -25,16 +49,16 @@ class Headers (UserDict):
 		if name == 'contentType':
 			return self[Headers.HN_ContentType.lower()]
 		else:
-			return super().__getattribute__(name)
+			return super().__getattribute__(name.lower())
 
 	
 	def __setattr__ (self, name, value):
 		if name == 'contentLength':
-			self.set('content-length', value)
+			self.set(Headers.HN_ContentLength.lower(), value)
 		elif name == 'contentType':
-			self.set('content-type', value)
+			self.set(Headers.HN_ContentType.lower(), value)
 		else:
-			super().__setattr__(name, value)
+			super().__setattr__(name.lower(), value)
 
 
 	def __delitem__ (self, key):
@@ -46,6 +70,7 @@ class Headers (UserDict):
 
 
 	def __getitem__ (self, key):
+		print(f"Getting item {key}")
 		if not key:
 			return None
 		key = str(key).lower()
@@ -99,6 +124,10 @@ class Headers (UserDict):
 	
 	def deleteAll (self, name):
 		self.pop(name)
+
+
+	def get(self, key):
+		return self[key]
 
 
 	def set (self, key, value):

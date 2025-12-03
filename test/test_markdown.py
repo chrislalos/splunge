@@ -56,5 +56,5 @@ def load_markdown_content(path):
 	with open(path, 'r') as f:
 		frag = MarkdownIt().render(f.read())
 		content = util.html_fragment_to_doc(frag.rstrip(), title=title, pre=pre, post=post)	
-	return f'{content}\r\n'.encode('latin-1')
+	return f'{content}'.encode('utf-8')
 	

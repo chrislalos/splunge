@@ -1,21 +1,26 @@
+from dataclasses import dataclass
 from http.cookies import SimpleCookie
 import types
 from .Headers import Headers
 from . import util
 
+@dataclass(kw_only=True)
 class Response:
 	statusCode: int
 	statusMessage: str
 	headers: Headers
 	exc_info: tuple[type, Exception, types.TracebackType]
+	iter: list[bytes]
 	
-	def __init__ (self):
-		self.statusCode = 200
-		self.statusMessage = 'OK'
-		self.headers = Headers()
-		self.exc_info = None
-		self.iter = []
-	
+	@classmethod
+	def createEmpty(cls) -> "Response":
+		return Response(
+			statusCode=200,
+			statusMessage="OK",
+			headers=Headers(),
+			exc_info=None,
+			iter=[]
+		)
 	@property 
 	def status (self): return '{} {}'.format(self.statusCode, self.statusMessage)
 
@@ -30,6 +35,12 @@ class Response:
 	def contentType(self): return self.headers.get(Headers.HN_ContentType)
 	@contentType.setter
 	def contentType(self, val): self.headers.set(Headers.HN_ContentType, val)
+	
+	# Location
+	@property
+	def location(self): return self.headers.get(Headers.HN_Location)
+	@location.setter
+	def location(self, val): self.headers.set(Headers.HN_Location, val)
 
 
 	def add_cookie (self, name, value, **kwargs): 

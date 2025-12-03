@@ -27,9 +27,12 @@ class EnrichmentTests(unittest.TestCase):
 		self.assertIsNotNone(http)
 		self.assertIs(HttpEnricher, type(http))
 		contentLength = 13
-		http.set_content_length(contentLength)
-		self.assertEqual(1, len(http.resp.headers.items()))
-		headerValue = int(http.resp.headers['Content-Length'])
+		http.contentLength = contentLength
+		self.assertEqual(contentLength, int(http.contentLength))
+		self.assertEqual(1, len(http.headers.items()))
+		print()
+		print(f'http.headers={http.headers}')
+		headerValue = int(http.headers['Content-Length'])
 		self.assertIsNotNone(headerValue)
 		self.assertEqual(contentLength, headerValue)
 		
@@ -111,9 +114,10 @@ class EnrichmentTests(unittest.TestCase):
 		wsgi = create_environ(path)
 		http = HttpEnricher(wsgi)
 		contentLength = 13
-		http.set_content_length(contentLength)
-		self.assertEqual(1, len(http.resp.headers.items()))
-		headerValue = int(http.resp.headers['Content-Length'])
+		http.contentLength = contentLength
+		self.assertEqual(13, int(http.contentLength))
+		self.assertEqual(1, len(http.headers.items()))
+		headerValue = int(http.headers['Content-Length'])
 		self.assertIsNotNone(headerValue)
 		self.assertEqual(contentLength, headerValue)
 
@@ -124,9 +128,10 @@ class EnrichmentTests(unittest.TestCase):
 		http = HttpEnricher(wsgi)
 		url = "http://example.com/newurl"
 		contentType = "text/plain"
-		http.set_content_type(contentType)
-		self.assertEqual(1, len(http.resp.headers.items()))
-		headerValue = http.resp.headers['Content-Type']
+		http.contentType = contentType
+		self.assertEqual(contentType, http.contentType)
+		self.assertEqual(1, len(http.headers.items()))
+		headerValue = http.headers['Content-Type']
 		self.assertIsNotNone(headerValue)
 		self.assertEqual(contentType, headerValue)
 

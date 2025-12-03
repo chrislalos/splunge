@@ -22,6 +22,17 @@ class EndToEndTests(unittest.TestCase):
             print("tearDownClass() called but cls.cwd isn't set. Strange.")
         os.chdir(cls.cwd)
 
+    def test_404(self):
+        url = "/xxx/yyy/zzz"
+        cli = Client(app.app)
+        resp = cli.get(url)
+        statusCode, sep, statusMessage = resp.status.partition(' ')
+        self.assertEqual(str(404), statusCode)
+        if statusMessage:
+            self.assertNotEqual('OK', statusMessage.upper())
+        print(f'resp.text={resp.text}')
+
+
     def test_hello_html(self):
         test_get(self, "/hello.html")
 

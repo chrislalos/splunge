@@ -1,3 +1,4 @@
+from .Headers import Headers
 from .Response import Response
 from . import util
 
@@ -14,26 +15,60 @@ def enrich_module(module, wsgi):
 
 
 class HttpEnricher:
+	statusCode: int = 200
+	statusMessage: str = "OK"
+	
 	def __init__(self, wsgi):
 		self.wsgi = wsgi
-		self.resp = Response()
-		self.method = wsgi['REQUEST_METHOD']
-		self.path = wsgi['PATH_INFO']
-		self.args = util.create_wsgi_args(wsgi)
+		self.headers = Headers()
+		
+	@property
+	def args(self): return util.create_wsgi_args(self.wsgi)
+	@property
+	def method(self): return self.wsgi['REQUEST_METHOD']
+	@property
+	def path(self): return self.wsgi['PATH_INFO']
 
+	# Content-Length
+	@property
+	def contentLength(self): return self.headers.contentLength
+	@contentLength.setter
+	def contentLength(self, val): self.headers.contentLength = val
+	
+	# Content-Type
+	@property
+	def contentType(self): return self.headers.contentType
+	@contentType.setter
+	def contentType(self, val): self.headers.contentType = val
+	
+	# Location
+	@property
+	def location(self): return self.headers.location
+	@location.setter
+	def location(self, val): self.headers.location = val
+	
+	# Status
+	@property
+	def status(self): return f"{self.statusCode} {self.statusMessage}"
+	@status.setter
+	def status(self, val: str):
+		sStatusCode, _, self.statusMessage = val.partition(' ')
+		self.statusCode = int(sStatusCode)
+	
+	
 	def add_cookie (self, name, value, **kwargs): 
 		self.resp.add_cookie(name, value, kwargs)
+	
 	
 	def pypinfo (self):
 		for key, value in sorted(self.wsgi.items()):
 			print('{}={}'.format(key, value))
 		return None
 	
-	def set_content_length(self, contentLength):
-		self.resp.headers.add('Content-Length', contentLength)
-
-	def set_content_type(self, contentType):
-		self.resp.contentType = contentType
+	def redirect (self, url):
+		self.statusCode = 303
+		self.statusMessage = f'Redirecting to {url}'
+		self.headers.add('Location', url)
 
 	def validate_method(self, method, methods):
 		return util.validate_method(method, methods)

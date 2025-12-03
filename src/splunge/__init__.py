@@ -1,3 +1,4 @@
+from .EnrichedModule import EnrichedModule, EnrichedModuleResult
 from .ModuleExecutionResponse import ModuleExecutionResponse
 from .Headers import Headers
 from .HttpEnricher import HttpEnricher

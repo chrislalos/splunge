@@ -1,10 +1,8 @@
-import contextlib
 from http.cookies import SimpleCookie
 import importlib
 import io
 import os
 import re
-import sys
 import textwrap
 from typing import NamedTuple, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -12,10 +10,18 @@ if TYPE_CHECKING:
 import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
-import werkzeug
 
 from . import constants, loggin
-from .mimetypes import mimemap
+
+
+def context_to_bytes(context: dict) -> bytes:
+	f = io.StringIO()
+	# Render the content as a nice table
+	for key, val in context.items():
+		line = '{}={}'.format(key, val)
+		print(line, file=f)
+	buf = f.getvalue().encode('utf-8')
+	return buf
 
 
 def create_cookie_value(name, value, **kwargs):
@@ -315,16 +321,6 @@ def render_template (templatePath, args={}):
 		args = {}
 	s = jtemplate.render(args)
 	return s 
-
-
-def respond_with_file(wsgi, resp, f):
-	_32K = 32768
-	if 'wsgi.file_wrapper' in wsgi:
-		resp.iter = wsgi['wsgi.file_wrapper'](f, _32K)
-	else:
-		with f:
-			resp.iter = [f.read()]
-		
 
 
 def split_module_path(path):
