@@ -48,7 +48,8 @@ class FileHandler:
 		loggin.debug(f"FileHandler.handler_request: self.mimeType={self.mimeType}")
 		try:
 			f = util.open_by_path(wsgi)
-			resp = respond_with_file(f, wsgi, self.mimeType)
+			fileWrapper = getattr(wsgi, 'wsgi.file_wrapper', None)		
+			resp = respond_with_file(f, self.mimeType, fileWrapper)
 			return (resp, True)
 		except FileNotFoundError as ex:
 			loggin.error(ex, exc_info=True)
@@ -119,31 +120,24 @@ class PythonModuleHandler:
 			traceback.print_tb(ex.__traceback__)
 			raise ex
 		
+		# Is it a redirection? If so, clear the output, and return without checking for a template
+		if result.is_redirect():
+			resp = Response.create_redirect(result)
+			return (resp, True)
 		# Does stdout exist? If so, use it for output
 		if result.has_stdout():
 			loggin.info("about to use stdout as input")
 			buf = result.get_stdout_value()
+			loggin.debug(f"stdout bytes\n{buf}")
 			iter = [buf]
-			resp = Response(
-				statusCode=result.statusCode,
-				statusMessage=result.statusMessage,
-				headers=result.headers,
-				exc_info=None,
-				iter=iter
-			)
+			resp = Response.create_from_result(result, iter)
 			return (resp, True)
 		# Does _ exist? If so use it as a template
 		if result.templateString:
 			s = util.render_string(result.templateString, result.context)
 			buf = s.encode('utf-8')
 			iter = [buf]
-			resp = Response(
-				statusCode=result.statusCode,
-				statusMessage=result.statusMessage,
-				headers=result.headers,
-				exc_info=None,
-				iter=iter
-			)
+			resp = Response.create_from_result(result, iter)
 			return (resp, True)
 		# If pyp exists, delegate to template handler, else write context directly to response
 		templatePath = util.get_template_path(wsgi)
@@ -155,13 +149,7 @@ class PythonModuleHandler:
 			# Render the content as a nice table
 			buf = util.context_to_bytes(result.context)
 			iter = [buf]
-			resp = Response(
-				statusCode=result.statusCode,
-				statusMessage=result.statusMessage,
-				headers=result.headers,
-				exc_info=None,
-				iter=iter
-			)
+			resp = Response.create_from_result(result, iter)
 			return (resp, True)
 
 		# Load & enrich the module, and add its folder to sys.path
@@ -241,12 +229,12 @@ class PythonTemplateHandler:
 		return (resp, True)
 	
 
-def respond_with_file(f, wsgi, mimeType) -> Response:
-	_32K = 32768
+def respond_with_file(f, mimeType, fileWrapper) -> Response:
 	headers = Headers()	
 	headers.contentType = mimeType
-	if 'wsgi.file_wrapper' in wsgi:
-		iter = wsgi['wsgi.file_wrapper'](f, _32K)
+	if fileWrapper:
+		_32K = 32768
+		iter = fileWrapper(f, _32K)
 	else:
 		with f:
 			iter = [f.read()]

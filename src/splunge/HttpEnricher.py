@@ -1,6 +1,6 @@
 from .Headers import Headers
-from .Response import Response
 from . import util
+from . import loggin
 
 def create_enrichment_object (wsgi):
 	""" Return an http enrichment object. """
@@ -66,6 +66,7 @@ class HttpEnricher:
 		return None
 	
 	def redirect (self, url):
+		loggin.debug(f"redirecting to {url}")
 		self.statusCode = 303
 		self.statusMessage = f'Redirecting to {url}'
 		self.headers.add('Location', url)

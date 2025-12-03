@@ -1,11 +1,35 @@
 import importlib
 import os
 import unittest
+from werkzeug.test import create_environ
 
-from splunge import util, ModuleExecutionResponse
+from splunge import util, EnrichedModule, ModuleExecutionResponse
 
 class ModuleFunctionTests(unittest.TestCase):
     def test_exec_module_check_stdout(self):
+        ''' Confirm that util.load_module() does not initialize the module. '''
+        print()
+        path = '/modules/foo.py'
+        modulePath = './test/modules/foo.py'
+        wsgi = create_environ(path)
+        module = util.load_module_by_path(modulePath)
+        self.assertIsNotNone(module)
+        # module_state = ModuleExecutionResponse.exec_module(module)
+        em = EnrichedModule(module, wsgi)
+        result = em.exec()
+        self.assertIsNotNone(result)
+        print(result.context)
+        self.assertTrue('meat0' in result.context)
+        self.assertEqual(result.context['meat0'], "meat")
+        self.assertTrue(result.has_stdout())
+        self.assertFalse(util.is_io_empty(result.stdout))
+        print(f'result.stdout.getvalue()={result.stdout.getvalue()}')
+        output = result.get_stdout_value()
+        self.assertIsNotNone(output)
+        self.assertEqual(b'meat0=meat\n', output)
+
+
+    def legacy_test_exec_module_check_stdout(self):
         ''' Confirm that util.load_module() does not initialize the module. '''
         path = './test/modules/foo.py'
         module = util.load_module_by_path(path)
@@ -16,6 +40,7 @@ class ModuleFunctionTests(unittest.TestCase):
         self.assertEqual(val, "meat")
         output = module_state.stdout.getvalue()
         self.assertEqual("meat0=meat\n", output)
+
 
     def test_exec_module_check_underscore(self):
         ''' Confirm that util.load_module() does not initialize the module. '''

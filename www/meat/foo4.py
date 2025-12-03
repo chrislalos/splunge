@@ -1,0 +1,1 @@
+print("I am foo4 and I am here to see if capturing stdout works")

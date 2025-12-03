@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from http.cookies import SimpleCookie
 import types
 from .Headers import Headers
+from .EnrichedModule import EnrichedModuleResult
 from . import util
 
 @dataclass(kw_only=True)
@@ -42,6 +43,27 @@ class Response:
 	@location.setter
 	def location(self, val): self.headers.set(Headers.HN_Location, val)
 
+	@classmethod
+	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes], exc_info=None) -> "Response":
+		resp = Response(
+			statusCode=result.statusCode,
+			statusMessage=result.statusMessage,
+			headers=result.headers,
+			exc_info=None,
+			iter=iter
+		)
+		return resp
+
+	@classmethod
+	def create_redirect(cls, result: EnrichedModuleResult) -> "Response":
+		resp = Response(
+			statusCode=result.statusCode,
+			statusMessage=result.statusMessage,
+			headers=result.headers,
+			exc_info=None,
+			iter=[]
+		)
+		return resp
 
 	def add_cookie (self, name, value, **kwargs): 
 		headerName = 'Set-Cookie'

@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
 from .Headers import Headers
 from .HttpEnricher import HttpEnricher
-from .Response import Response
 from . import util
 
 class EnrichedModule:
@@ -92,17 +91,25 @@ class EnrichedModuleResult:
 		sStatusCode, _, self.statusMessage = val.partition(' ')
 		self.statusCode = int(sStatusCode)
 
-	
 	def get_stdout_value(self) -> bytes:
-		with open(self.stdout, "r") as f:
-			s = f.read()
+		if not self.has_stdout():
+			print("no stdout - returning empty bytes")
+			return bytes()
+		self.stdout.seek(0, io.SEEK_SET)
+		s = self.stdout.read()
+		print(f's={s}')
 		buf = s.encode('utf-8')
+		print(f'buf={buf}')
 		return buf
 	
 	def has_stdout(self):
 		if not self.stdout:
 			return False
 		return not util.is_io_empty(self.stdout)
-	
+
+	def is_redirect(self):
+		status_codes = [301, 303, 307, 308]
+		return self.statusCode in status_codes
+
 
 
