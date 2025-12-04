@@ -14,9 +14,19 @@ class RedirectTests(unittest.TestCase):
 		os.chdir(cls.cwd)
 
 	def test_to_html(self):
-		print()
 		url = "/meat/redirect_0_from"
-		cli = Client(app.app)
-		resp = cli.get(url)
-		print(resp)
+		test_redirect(self, url)
+	
+	def test_to_template(self):
+		url = "/meat/redirect_1_from"
+		test_redirect(self, url)
+
+
+def test_redirect(t: unittest.TestCase, url: str):
+	cli = Client(app.app)
+	resp = cli.get(url)
+	t.assertEqual(303, resp.status_code)
+	t.assertEqual(0, resp.content_length)
+	t.assertIsNone(resp.content_type)
+	t.assertIsNotNone(resp.location)
 	

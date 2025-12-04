@@ -45,10 +45,13 @@ class Response:
 
 	@classmethod
 	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes], exc_info=None) -> "Response":
+		headers = Headers.create(result.headers)
+		headers.contentType = "text/html; charset=utf-8"
+		headers.contentLength = len(iter[0])
 		resp = Response(
 			statusCode=result.statusCode,
 			statusMessage=result.statusMessage,
-			headers=result.headers,
+			headers=headers,
 			exc_info=None,
 			iter=iter
 		)
@@ -56,10 +59,13 @@ class Response:
 
 	@classmethod
 	def create_redirect(cls, result: EnrichedModuleResult) -> "Response":
+		headers = Headers.create(result.headers)
+		headers.contentLength = 0
+		del headers.contentType
 		resp = Response(
 			statusCode=result.statusCode,
 			statusMessage=result.statusMessage,
-			headers=result.headers,
+			headers=headers,
 			exc_info=None,
 			iter=[]
 		)
@@ -85,7 +91,8 @@ class Response:
 	def redirect (self, url):
 		self.statusCode = 303
 		self.statusMessage = f'Redirecting to {url}'
-		self.headers.add('Location', url)
+		self.headers.contentLength = 0
+		self.headers.set('Location', url)
 
 	# 
 	#     def add (self, data):
