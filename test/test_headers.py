@@ -121,15 +121,12 @@ class HeadersTests(unittest.TestCase):
 		self.assertEqual(value, headers[name])
 
 	def test_del_content_type(self):
-		print()
 		name = 'Content-type'
 		value = 'text/html'
 		headers = create_headers(name, value)
-		print(f'headers={headers}')
 		self.assertEqual(value, headers[name])
 		del headers[name]
 		self.assertIsNone(headers.contentType)
-
 
 	def testDelete(self):
 		name = 'Content-type'
