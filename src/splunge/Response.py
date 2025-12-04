@@ -1,18 +1,75 @@
+from dataclasses import dataclass
 from http.cookies import SimpleCookie
-from . import Headers
+import types
+from .Headers import Headers
+from .EnrichedModule import EnrichedModuleResult
 from . import util
+
+@dataclass(kw_only=True)
 class Response:
-
-	def __init__ (self):
-		(self.statusCode, self.statusMessage) = (200, 'OK')
-		self.headers = Headers()
-		self.exc_info = None
-		self.iter = []
-
+	statusCode: int
+	statusMessage: str
+	headers: Headers
+	exc_info: tuple[type, Exception, types.TracebackType]
+	iter: list[bytes]
 	
+	@classmethod
+	def createEmpty(cls) -> "Response":
+		return Response(
+			statusCode=200,
+			statusMessage="OK",
+			headers=Headers(),
+			exc_info=None,
+			iter=[]
+		)
 	@property 
 	def status (self): return '{} {}'.format(self.statusCode, self.statusMessage)
 
+	# Content-Length
+	@property
+	def contentLength(self): return self.headers.get(Headers.HN_ContentLength)
+	@contentLength.setter
+	def contentLength(self, val): self.headers.set(Headers.HN_ContentLength, val)
+	
+	# Content-Type
+	@property
+	def contentType(self): return self.headers.get(Headers.HN_ContentType)
+	@contentType.setter
+	def contentType(self, val): self.headers.set(Headers.HN_ContentType, val)
+	
+	# Location
+	@property
+	def location(self): return self.headers.get(Headers.HN_Location)
+	@location.setter
+	def location(self, val): self.headers.set(Headers.HN_Location, val)
+
+	@classmethod
+	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes], exc_info=None) -> "Response":
+		headers = Headers.create(result.headers)
+		headers.contentType = "text/html; charset=utf-8"
+		headers.contentLength = len(iter[0])
+		resp = Response(
+			statusCode=result.statusCode,
+			statusMessage=result.statusMessage,
+			headers=headers,
+			exc_info=None,
+			iter=iter
+		)
+		return resp
+
+	@classmethod
+	def create_redirect(cls, result: EnrichedModuleResult) -> "Response":
+		headers = Headers.create(result.headers)
+		headers.contentLength = 0
+		del headers.contentType
+		resp = Response(
+			statusCode=result.statusCode,
+			statusMessage=result.statusMessage,
+			headers=headers,
+			exc_info=None,
+			iter=[]
+		)
+		return resp
 
 	def add_cookie (self, name, value, **kwargs): 
 		headerName = 'Set-Cookie'
@@ -34,7 +91,9 @@ class Response:
 	def redirect (self, url):
 		self.statusCode = 303
 		self.statusMessage = f'Redirecting to {url}'
-		self.headers.add('Location', url)
+		self.headers.contentLength = 0
+		self.headers.set('Location', url)
+
 	# 
 	#     def add (self, data):
 	#         if not self.iter:
@@ -101,3 +160,9 @@ class Response:
 	#         self.statusMessage = 'Response Page to POST'
 	#         self.setHeader('Location', url)
 	# 
+
+	def write_context(self, context):
+		# Render the content as a nice table
+		for key, val in context.items():
+			line = '{}={}'.format(key, val)
+			self.add_line(line) 
