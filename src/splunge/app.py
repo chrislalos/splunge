@@ -113,14 +113,12 @@ def handle_404(wsgi, start_response):
 
 
 def handle_error(ex, wsgi, start_response):
-	print("inside handle_error()")
 	loggin.error(ex, exc_info=True)
 	status = "513 uhoh"
 	# data = f'oh no: {str(ex)}'.encode()
 	# resp.contentLength = len(data)
 	# headers = resp.headers.asTuples()
 	templatePath = os.path.abspath(f'{os.getcwd()}/err/500.pyp')
-	print(f'templatePath={templatePath}')
 	# Load the template & render it w wsgi args
 	if not os.path.exists(templatePath):
 		raise Exception(f'template path not found: {templatePath}')

@@ -106,7 +106,6 @@ class HeadersTests(unittest.TestCase):
 
 
 	def test_location(self):
-		print()
 		headers = create_headers()
 		name = 'Location'
 		value = '/thankyou.pyp'

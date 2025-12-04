@@ -8,7 +8,6 @@ from splunge import util, EnrichedModule, ModuleExecutionResponse
 class ModuleFunctionTests(unittest.TestCase):
     def test_exec_module_check_stdout(self):
         ''' Confirm that util.load_module() does not initialize the module. '''
-        print()
         path = '/modules/foo.py'
         modulePath = './test/modules/foo.py'
         wsgi = create_environ(path)
@@ -18,12 +17,10 @@ class ModuleFunctionTests(unittest.TestCase):
         em = EnrichedModule(module, wsgi)
         result = em.exec()
         self.assertIsNotNone(result)
-        print(result.context)
         self.assertTrue('meat0' in result.context)
         self.assertEqual(result.context['meat0'], "meat")
         self.assertTrue(result.has_stdout())
         self.assertFalse(util.is_io_empty(result.stdout))
-        print(f'result.stdout.getvalue()={result.stdout.getvalue()}')
         output = result.get_stdout_value()
         self.assertIsNotNone(output)
         self.assertEqual(b'meat0=meat\n', output)
@@ -77,8 +74,6 @@ class ModuleFunctionTests(unittest.TestCase):
 
     def test_load_module_spec(self):
         ''' Load a module spec from its path '''
-        print()
-        print(f'os.getcwd()={os.getcwd()}')
         path = './test/modules/foo.py'
         spec = util.load_module_spec(path)
         self.assertIsNotNone(spec)

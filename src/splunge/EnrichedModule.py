@@ -93,13 +93,10 @@ class EnrichedModuleResult:
 
 	def get_stdout_value(self) -> bytes:
 		if not self.has_stdout():
-			print("no stdout - returning empty bytes")
 			return bytes()
 		self.stdout.seek(0, io.SEEK_SET)
 		s = self.stdout.read()
-		print(f's={s}')
 		buf = s.encode('utf-8')
-		print(f'buf={buf}')
 		return buf
 	
 	def has_stdout(self):

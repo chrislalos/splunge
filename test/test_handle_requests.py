@@ -20,7 +20,6 @@ class HandleRequestTests(unittest.TestCase):
 		self.assertIs(type(resp), Response)
 		self.assertTrue(isDone)
 		# Test the response
-		print(f'resp.iter={resp.iter}')
 
 	def test_markup(self):
 		# Create a wsgi + then create a handler for it
@@ -84,9 +83,7 @@ class HandleRequestTests(unittest.TestCase):
 	def test_static_content(self):
 		wsgi = create_environ('/www/hello.html')
 		handler = app.create_handler(wsgi)
-		print(f'handler={handler}')
 		self.assertIsNotNone(handler)
 		self.assertIsInstance(handler, FileHandler)
 		(resp, done) = handler.handle_request(wsgi)
 		self.assertTrue(done)
-		print(f'resp.iter={resp.iter}')

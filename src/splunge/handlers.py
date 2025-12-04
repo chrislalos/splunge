@@ -27,7 +27,6 @@ def create_mime_handler(wsgi):
 		return None
 	# Get handler class name from MIMEType + get the class from current module
 	handlerName = handler_map.get(mimeType, "FileHandler")
-	# print(f'handler={handlerName}')
 	module = sys.modules[__name__]
 	handlerClassName = getattr(module, handlerName, None)
 	if handlerClassName is None:
@@ -112,13 +111,8 @@ class PythonModuleHandler:
 		if not module:
 			raise Exception(f'module not found: {util.get_module_path(wsgi)}')
 
-		# Execute the module
-		try:
-			result = enrichedModule.exec()
-		except Exception as ex:
-			print("error during execution")
-			traceback.print_tb(ex.__traceback__)
-			raise ex
+		# Execute the module. Let any exceptions propagate.
+		result = enrichedModule.exec()
 		
 		# Is it a redirection? If so, clear the output, and return without checking for a template
 		if result.is_redirect():
@@ -165,7 +159,6 @@ class PythonModuleHandler:
 		# try:
 		# 	moduleState = ModuleExecutionResponse.exec_module(module)
 		# except Exception as ex:
-		# 	print("error during execution")
 		# 	traceback.print_tb(ex.__traceback__)
 		# 	raise ex
 

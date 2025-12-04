@@ -27,11 +27,9 @@ class Headers (UserDict):
 	# Location
 	@property
 	def location(self):
-		print("getting location")
 		return self[self.HN_Location]
 	@location.setter
 	def location(self, val):
-		print("setting location")
 		self[self.HN_Location] = val
 	
 	
@@ -70,7 +68,6 @@ class Headers (UserDict):
 
 
 	def __getitem__ (self, key):
-		print(f"Getting item {key}")
 		if not key:
 			return None
 		key = str(key).lower()

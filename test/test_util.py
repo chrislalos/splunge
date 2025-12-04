@@ -9,9 +9,7 @@ class UtilTests(unittest.TestCase):
         md = MarkdownIt()
         markdown = "### Content</p>\n<p>Hello!</p>\n"
         frag = md.render(markdown)
-        print(f'frag={frag}')
         doc = util.html_fragment_to_doc(frag)
-        print(f'doc={doc}')
 
     def test_is_index_page_empty_string(self):
         wsgi = create_environ('')

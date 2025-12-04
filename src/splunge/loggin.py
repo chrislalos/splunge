@@ -25,7 +25,6 @@ def fatal(msg, *args, **kwargs):
 
 
 def info(msg, *args, **kwargs):
-	print("Calling logger.info()...")
 	logger.info(msg, *args, **kwargs)
 
 
