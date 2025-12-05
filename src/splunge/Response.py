@@ -43,8 +43,28 @@ class Response:
 	@location.setter
 	def location(self, val): self.headers.set(Headers.HN_Location, val)
 
+
 	@classmethod
-	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes], exc_info=None) -> "Response":
+	def create_from_html(cls, html: str, encoding='utf-8') -> "Response":
+		content = html.encode(encoding)
+		contentLength = len(html)
+		contentType = f'text/html; charset={encoding}'
+		iter = [content]
+		headers = Headers()
+		headers.contentLength = contentLength
+		headers.contentType = contentType
+		resp = Response(
+			statusCode=200,
+			statusMessage="OK",
+			headers=headers,
+			exc_info=None,
+			iter=iter
+		)
+		return resp
+
+
+	@classmethod
+	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes]) -> "Response":
 		headers = Headers.create(result.headers)
 		headers.contentType = "text/html; charset=utf-8"
 		headers.contentLength = len(iter[0])

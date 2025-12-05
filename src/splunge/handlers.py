@@ -1,10 +1,16 @@
 import os.path
+import pygments
+import pygments.formatters
+import pygments.lexers
 import sys
 import traceback
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+	from _typeshed.wsgi import WSGIEnvironment
 from markdown_it import MarkdownIt
 from .Response import Response
 # from .HttpEnricher import enrich_module
-from .EnrichedModule import EnrichedModule
+from .EnrichedModule import EnrichedModule, EnrichedModuleResult
 from .Headers import Headers
 from . import loggin
 from . import ModuleExecutionResponse
@@ -43,7 +49,7 @@ class FileHandler:
 	def __init__(self):
 		self.mimeType = None
 
-	def handle_request (self, wsgi):
+	def handle_request (self, wsgi: "WSGIEnvironment") -> Response:
 		loggin.debug(f"FileHandler.handler_request: self.mimeType={self.mimeType}")
 		try:
 			f = util.open_by_path(wsgi)
@@ -58,7 +64,7 @@ class FileHandler:
 
 class IndexPageHandler:
 	''' Handle index page requests by redirection to /index.html. '''
-	def handle_request(self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		try:
 			location = '/index.html'
 			iter = []
@@ -79,7 +85,7 @@ class IndexPageHandler:
 
 
 class MarkdownHandler:
-	def handle_request (self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		title = util.get_file_name(wsgi)
 		with util.open_by_path(wsgi) as f:
 			# @note utf-8 is harcoded here
@@ -104,7 +110,7 @@ class MarkdownHandler:
 
 
 class PythonModuleHandler:
-	def handle_request (self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		# Load module & create enriched module
 		module = util.load_module(wsgi)
 		enrichedModule = EnrichedModule(module, wsgi)
@@ -190,11 +196,22 @@ class PythonModuleHandler:
 		# 	return (moduleState.response, True)
 	
 
+class PythonSourceHandler:
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
+		with util.open_by_path(wsgi) as f:
+			code = f.read()
+		lexer = pygments.lexers.PythonLexer()
+		formatter = pygments.formatters.HtmlFormatter(full=True, linenos=True)
+		highlightedCode = pygments.highlight(code, lexer, formatter)
+		html = highlightedCode
+		resp = Response.create_from_html(html)
+		return (resp, True)
+
 class PythonTemplateHandler:
 	def __init__ (self, *, encoding='latin-1'):
 		self.encoding = encoding
 
-	def handle_request (self, wsgi, context={}):
+	def handle_request(self, wsgi: "WSGIEnvironment", context: dict = {}) -> Response:
 		# Get local path, append .pyp to the path, & confirm the file exists
 		localPath = util.get_local_path(wsgi)
 		templatePath = f'{localPath}.pyp'
@@ -204,11 +221,11 @@ class PythonTemplateHandler:
 		wsgi_args = util.create_wsgi_args(wsgi)
 		context.update(wsgi_args)
 		content = util.render_template(templatePath, context).encode('utf-8')
-		iter = [content]
 		# encodedContent = content.encode(self.encoding)
 		# Initialize the response + return
 		contentLength = len(content)
 		contentType = 'text/html'
+		iter = [content]
 		headers = Headers()
 		headers.contentLength = contentLength
 		headers.contentType = contentType
