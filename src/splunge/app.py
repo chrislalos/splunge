@@ -19,8 +19,8 @@ from .Headers import Headers
 from .Response import Response
 
 
-handler_map = {'application/x-python-code': "PythonSourceHandler",
-               'application/x-splunge-template': "PythonTemplateHandler"
+handler_map = {'application/x-python-code': "SourceHandler",
+               'application/x-splunge-template': "SourceHandler"
               }
 
 

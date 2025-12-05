@@ -1,7 +1,7 @@
 import unittest
 from werkzeug.test import create_environ
 from splunge import app
-from splunge import FileHandler, MarkdownHandler, PythonModuleHandler, PythonSourceHandler
+from splunge import FileHandler, MarkdownHandler, PythonModuleHandler, SourceHandler
 
 class CreateHandlerTests(unittest.TestCase):
     def test_module(self):
@@ -11,7 +11,9 @@ class CreateHandlerTests(unittest.TestCase):
         test_handler(self, "/www/hello.md", MarkdownHandler)
 
     def test_python_source(self):
-        test_handler(self, "/www/meat/foo.py", PythonSourceHandler)
+        print()
+        handler = test_handler(self, "/www/meat/foo.py", SourceHandler)
+        print(handler)
     
     def test_static_content(self):
         test_handler(self, "/www/hello.html", FileHandler)

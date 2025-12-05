@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os.path
 import pygments
 import pygments.formatters
@@ -17,10 +18,15 @@ from . import ModuleExecutionResponse
 from .mimetypes import mimemap
 from . import util
 
-handler_map = {'application/x-python-code': "PythonSourceHandler",
-               'application/x-splunge-template': "PythonTemplateHandler",
+handler_map = {'application/x-python-code': "SourceHandler",
+               'application/x-splunge-template': "SourceHandler",
 			   'text/markdown': "MarkdownHandler"
               }
+
+source_handler_map = {
+	'application/x-python-code': (pygments.lexers.PythonLexer, pygments.formatters.HtmlFormatter),
+	'application/x-splunge-template': (pygments.lexers.DjangoLexer, pygments.formatters.HtmlFormatter),
+}
 
 
 def create_mime_handler(wsgi):
@@ -38,7 +44,10 @@ def create_mime_handler(wsgi):
 	if handlerClassName is None:
 		loggin.warning("Unable to find handler class: {handlerClassName}", handlerClassName)
 	# instantiate handler class + return instance as handler
-	handler = handlerClassName()
+	if handlerName == "SourceHandler":
+		handler = SourceHandler.create(mimeType)
+	else:
+		handler = handlerClassName()
 	loggin.debug(f"create_mime_handler(): type(handler)={type(handler)}")
 	if type(handler).__name__ == "FileHandler":
 		setattr(handler, "mimeType", mimeType)
@@ -196,13 +205,20 @@ class PythonModuleHandler:
 		# 	return (moduleState.response, True)
 	
 
-class PythonSourceHandler:
+@dataclass
+class SourceHandler:
+	formatter: pygments.formatter.Formatter
+	lexer: pygments.lexer.RegexLexer
+
+	@classmethod
+	def create(cls, mimeType) -> "SourceHandler":
+		(clsLexer, clsFormatter) = source_handler_map[mimeType]
+		return SourceHandler(formatter=clsFormatter(), lexer=clsLexer())
+
 	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		with util.open_by_path(wsgi) as f:
 			code = f.read()
-		lexer = pygments.lexers.PythonLexer()
-		formatter = pygments.formatters.HtmlFormatter(full=True, linenos=True)
-		highlightedCode = pygments.highlight(code, lexer, formatter)
+		highlightedCode = pygments.highlight(code, self.lexer, self.formatter)
 		html = highlightedCode
 		resp = Response.create_from_html(html)
 		return (resp, True)
