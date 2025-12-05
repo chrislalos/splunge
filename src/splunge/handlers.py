@@ -3,6 +3,7 @@ import os.path
 import pygments
 import pygments.formatters
 import pygments.lexers
+import pygments.lexers.templates
 import sys
 import traceback
 from typing import TYPE_CHECKING
@@ -25,7 +26,7 @@ handler_map = {'application/x-python-code': "SourceHandler",
 
 source_handler_map = {
 	'application/x-python-code': (pygments.lexers.PythonLexer, pygments.formatters.HtmlFormatter),
-	'application/x-splunge-template': (pygments.lexers.DjangoLexer, pygments.formatters.HtmlFormatter),
+	'application/x-splunge-template': (pygments.lexers.templates.DjangoLexer, pygments.formatters.HtmlFormatter),
 }
 
 
@@ -213,7 +214,7 @@ class SourceHandler:
 	@classmethod
 	def create(cls, mimeType) -> "SourceHandler":
 		(clsLexer, clsFormatter) = source_handler_map[mimeType]
-		return SourceHandler(formatter=clsFormatter(), lexer=clsLexer())
+		return SourceHandler(formatter=clsFormatter(full=True, linenos=True), lexer=clsLexer())
 
 	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		with util.open_by_path(wsgi) as f:
