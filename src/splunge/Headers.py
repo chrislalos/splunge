@@ -60,7 +60,6 @@ class Headers (UserDict):
 		elif key == 'contentType':
 			key = Headers.HN_ContentType
 		key = key.lower()
-		print(f'deleting {key}')
 		if hasattr(self, key):
 			delattr(self, key)
 
