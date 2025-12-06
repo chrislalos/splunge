@@ -224,6 +224,7 @@ class SourceHandler:
 		resp = Response.create_from_html(html)
 		return (resp, True)
 
+
 class PythonTemplateHandler:
 	def __init__ (self, *, encoding='latin-1'):
 		self.encoding = encoding

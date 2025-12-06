@@ -11,12 +11,14 @@ from importlib.machinery import FileFinder, SourceFileLoader
 import traceback
 import urllib
 from typing import NamedTuple
+
 from .mimetypes import mimemap
 from . import ModuleExecutionResponse
 from . import loggin, util
 from .handlers import FileHandler, IndexPageHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 from .Headers import Headers
 from .Response import Response
+from .Xwsgi import Xwsgi
 
 
 handler_map = {'application/x-python-code': "SourceHandler",
@@ -138,29 +140,26 @@ def handle_error(ex, wsgi, start_response):
 
 
 def app(wsgi, start_response):
+	xwsgi = Xwsgi(wsgi)
+	loggin.debug(f"xwsgi[PATH_INFO]={xwsgi['PATH_INFO']}")
 	resp = None
 	try:
-		loggin.debug(f"PATH_INFO={wsgi['PATH_INFO']}")
-		loggin.debug(f"SCRIPT_NAME={wsgi['SCRIPT_NAME']}")
-		loggin.debug(f"wsgi.file_wrapper={getattr(wsgi, 'file_wrapper', 'N/A')}")
-		handler = create_handler(wsgi)
-		respData = handler.handle_request(wsgi)
+		handler = create_handler(xwsgi)
+		respData = handler.handle_request(xwsgi)
 		loggin.debug(f'respData={respData}')
 		(resp, done) = respData
 	except FileNotFoundError as ex:
-		loggin.error(f"404 - {wsgi['PATH_INFO']}")
+		loggin.error(f"404 - {xwsgi['PATH_INFO']}")
 		loggin.error(ex, exc_info=True)
-		return handle_404(wsgi, start_response)
+		return handle_404(xwsgi, start_response)
 	except Exception as ex:
 		loggin.warning('error caught in app()')
-		return handle_error(ex, wsgi, start_response)
+		return handle_error(ex, xwsgi, start_response)
 	if done:
 		status = resp.status
 		headers = resp.headers.asTuples() 
 		data = resp.iter
 		start_response(status, headers)
-		# loggin.debug(f"len(data)={len(data)}")
-		# loggin.debug(f"len(data[0])={len(data[0])}")
 		return data
 	# error
 	data = b'no clue dude'
