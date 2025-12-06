@@ -237,22 +237,8 @@ class PythonTemplateHandler:
 			raise Exception(f'template path not found: {templatePath}')
 		wsgi_args = util.create_wsgi_args(wsgi)
 		context.update(wsgi_args)
-		content = util.render_template(templatePath, context).encode('utf-8')
-		# encodedContent = content.encode(self.encoding)
-		# Initialize the response + return
-		contentLength = len(content)
-		contentType = 'text/html'
-		iter = [content]
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = contentType
-		resp = Response(
-			statusCode=200,
-			statusMessage="OK",
-			headers=headers,
-			exc_info=None,
-			iter=iter
-		)
+		html = util.render_template(templatePath, context)
+		resp = Response.create_from_html(html)
 		return (resp, True)
 	
 
