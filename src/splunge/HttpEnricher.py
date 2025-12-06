@@ -2,14 +2,14 @@ from .Headers import Headers
 from . import util
 from . import loggin
 
-def create_enrichment_object (wsgi):
+def create_enrichment_object (xgi):
 	""" Return an http enrichment object. """
-	http = HttpEnricher(wsgi)
+	http = HttpEnricher(xgi)
 	return http
 
-def enrich_module(module, wsgi):
+def enrich_module(module, xgi):
 	""" Enrich a module with a number of helper functions. """
-	http = create_enrichment_object(wsgi)
+	http = create_enrichment_object(xgi)
 	setattr(module, 'http', http)
 	return module
 
@@ -18,16 +18,17 @@ class HttpEnricher:
 	statusCode: int = 200
 	statusMessage: str = "OK"
 	
-	def __init__(self, wsgi):
-		self.wsgi = wsgi
+	def __init__(self, xgi):
+		self.xgi = xgi
 		self.headers = Headers()
 		
 	@property
-	def args(self): return util.create_wsgi_args(self.wsgi)
+	def args(self):
+		return self.xgi.create_args()
 	@property
-	def method(self): return self.wsgi['REQUEST_METHOD']
+	def method(self): return self.xgi['REQUEST_METHOD']
 	@property
-	def path(self): return self.wsgi['PATH_INFO']
+	def path(self): return self.xgi['PATH_INFO']
 
 	# Content-Length
 	@property
@@ -61,7 +62,7 @@ class HttpEnricher:
 	
 	
 	def pypinfo (self):
-		for key, value in sorted(self.wsgi.items()):
+		for key, value in sorted(self.xgi.items()):
 			print('{}={}'.format(key, value))
 		return None
 	

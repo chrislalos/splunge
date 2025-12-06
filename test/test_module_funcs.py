@@ -3,18 +3,18 @@ import os
 import unittest
 from werkzeug.test import create_environ
 
-from splunge import util, EnrichedModule, ModuleExecutionResponse
+from splunge import util, EnrichedModule, ModuleExecutionResponse, Xgi
 
 class ModuleFunctionTests(unittest.TestCase):
     def test_exec_module_check_stdout(self):
         ''' Confirm that util.load_module() does not initialize the module. '''
         path = '/modules/foo.py'
         modulePath = './test/modules/foo.py'
-        wsgi = create_environ(path)
+        xgi = Xgi.create(path)
         module = util.load_module_by_path(modulePath)
         self.assertIsNotNone(module)
         # module_state = ModuleExecutionResponse.exec_module(module)
-        em = EnrichedModule(module, wsgi)
+        em = EnrichedModule(module, xgi)
         result = em.exec()
         self.assertIsNotNone(result)
         self.assertTrue('meat0' in result.context)

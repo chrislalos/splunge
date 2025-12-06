@@ -2,6 +2,7 @@ import unittest
 from werkzeug.test import create_environ
 from splunge import app
 from splunge import FileHandler, MarkdownHandler, PythonModuleHandler, SourceHandler
+from splunge import Xgi
 
 class CreateHandlerTests(unittest.TestCase):
     def test_module(self):
@@ -19,8 +20,8 @@ class CreateHandlerTests(unittest.TestCase):
         test_handler(self, "/www/hello.html", FileHandler)
 
 def test_handler(t, path, handlerType):
-    wsgi = create_environ(path)
-    handler = app.create_handler(wsgi)
+    xgi = Xgi.create(path)
+    handler = app.create_handler(xgi)
     t.assertIsNotNone(handler)
     t.assertIsInstance(handler, handlerType)
     return handler

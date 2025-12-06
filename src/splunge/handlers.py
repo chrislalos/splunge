@@ -6,16 +6,13 @@ import pygments.lexers
 import pygments.lexers.templates
 import sys
 import traceback
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-	from _typeshed.wsgi import WSGIEnvironment
 from markdown_it import MarkdownIt
 from .Response import Response
 # from .HttpEnricher import enrich_module
 from .EnrichedModule import EnrichedModule, EnrichedModuleResult
 from .Headers import Headers
+from .Xgi import Xgi
 from . import loggin
-from . import ModuleExecutionResponse
 from .mimetypes import mimemap
 from . import util
 
@@ -30,10 +27,10 @@ source_handler_map = {
 }
 
 
-def create_mime_handler(wsgi):
-	""" Return the appropriate MIME handler for the wsgi. """
+def create_mime_handler(xgi):
+	""" Return the appropriate MIME handler for the xgi. """
 	# Get MIME type from path extension
-	ext = util.get_path_extension(wsgi)
+	ext = xgi.get_path_extension()
 	mimeType = mimemap.get(ext, None)
 	if mimeType is None:
 		loggin.warning("No MIME type found for extension: {ext}", ext)
@@ -59,11 +56,11 @@ class FileHandler:
 	def __init__(self):
 		self.mimeType = None
 
-	def handle_request (self, wsgi: "WSGIEnvironment") -> Response:
+	def handle_request (self, xgi: Xgi) -> Response:
 		loggin.debug(f"FileHandler.handler_request: self.mimeType={self.mimeType}")
 		try:
-			f = util.open_by_path(wsgi)
-			fileWrapper = getattr(wsgi, 'wsgi.file_wrapper', None)		
+			f = xgi.open_by_path()
+			fileWrapper = getattr(xgi, 'wsgi.file_wrapper', None)		
 			resp = respond_with_file(f, self.mimeType, fileWrapper)
 			return (resp, True)
 		except FileNotFoundError as ex:
@@ -74,7 +71,7 @@ class FileHandler:
 
 class IndexPageHandler:
 	''' Handle index page requests by redirection to /index.html. '''
-	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
+	def handle_request(self, xgi: Xgi) -> Response:
 		try:
 			location = '/index.html'
 			iter = []
@@ -95,9 +92,9 @@ class IndexPageHandler:
 
 
 class MarkdownHandler:
-	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
-		title = util.get_file_name(wsgi)
-		with util.open_by_path(wsgi) as f:
+	def handle_request(self, xgi: Xgi) -> Response:
+		title = xgi.get_file_name()
+		with xgi.open_by_path() as f:
 			# @note utf-8 is harcoded here
 			content = f.read().decode('utf-8')
 		md = MarkdownIt()
@@ -120,12 +117,12 @@ class MarkdownHandler:
 
 
 class PythonModuleHandler:
-	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
+	def handle_request(self, xgi: Xgi) -> Response:
 		# Load module & create enriched module
-		module = util.load_module(wsgi)
-		enrichedModule = EnrichedModule(module, wsgi)
+		module = xgi.load_module()
+		enrichedModule = EnrichedModule(module, xgi)
 		if not module:
-			raise Exception(f'module not found: {util.get_module_path(wsgi)}')
+			raise Exception(f'module not found: {util.get_module_path(xgi)}')
 
 		# Execute the module. Let any exceptions propagate.
 		result = enrichedModule.exec()
@@ -150,11 +147,11 @@ class PythonModuleHandler:
 			resp = Response.create_from_result(result, iter)
 			return (resp, True)
 		# If pyp exists, delegate to template handler, else write context directly to response
-		templatePath = util.get_template_path(wsgi)
+		templatePath = xgi.get_template_path()
 		if os.path.exists(templatePath):
 			loggin.debug(f"handing off to PythonTemplateHandler to handle {templatePath}")
 			handler = PythonTemplateHandler()
-			return handler.handle_request(wsgi, result.context)
+			return handler.handle_request(xgi, result.context)
 		else:
 			# Render the content as a nice table
 			buf = util.context_to_bytes(result.context)
@@ -163,12 +160,12 @@ class PythonModuleHandler:
 			return (resp, True)
 
 		# Load & enrich the module, and add its folder to sys.path
-		# module = util.load_module(wsgi)
-		# enrichedModule = EnrichedModule(module, wsgi)
+		# module = util.load_module(xgi)
+		# enrichedModule = EnrichedModule(module, xgi)
 		# if not module:
-		# 	raise Exception(f'module not found: {util.get_module_path(wsgi)}')
-		# enrich_module(module, wsgi)
-		# moduleFolder = util.get_module_folder(wsgi)
+		# 	raise Exception(f'module not found: {util.get_module_path(xgi)}')
+		# enrich_module(module, xgi)
+		# moduleFolder = util.get_module_folder(xgi)
 		# sys.path.append(moduleFolder)
 
 		# # Execute the module
@@ -196,10 +193,10 @@ class PythonModuleHandler:
 		# 		moduleState.response.add_line(s)
 		# 	else:
 		# 		# If pyp exists, delegate to template handler, else write context directly to response
-		# 		templatePath = util.get_template_path(wsgi)
+		# 		templatePath = util.get_template_path(xgi)
 		# 		if os.path.exists(templatePath):
 		# 			handler = PythonTemplateHandler()
-		# 			return handler.handle_request(wsgi, context)
+		# 			return handler.handle_request(xgi, context)
 		# 		else:
 		# 			moduleState.response.write_context(context)
 		# 			# Render the content as a nice table
@@ -216,8 +213,8 @@ class SourceHandler:
 		(clsLexer, clsFormatter) = source_handler_map[mimeType]
 		return SourceHandler(formatter=clsFormatter(full=True, linenos=True), lexer=clsLexer())
 
-	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
-		with util.open_by_path(wsgi) as f:
+	def handle_request(self, xgi: Xgi) -> Response:
+		with xgi.open_by_path() as f:
 			code = f.read()
 		highlightedCode = pygments.highlight(code, self.lexer, self.formatter)
 		html = highlightedCode
@@ -228,15 +225,15 @@ class PythonTemplateHandler:
 	def __init__ (self, *, encoding='latin-1'):
 		self.encoding = encoding
 
-	def handle_request(self, wsgi: "WSGIEnvironment", context: dict = {}) -> Response:
+	def handle_request(self, xgi: Xgi, context: dict = {}) -> Response:
 		# Get local path, append .pyp to the path, & confirm the file exists
-		localPath = util.get_local_path(wsgi)
+		localPath = xgi.get_local_path()
 		templatePath = f'{localPath}.pyp'
-		# Load the template & render it w wsgi context
+		# Load the template & render it w xgi context
 		if not os.path.exists(templatePath):
 			raise Exception(f'template path not found: {templatePath}')
-		wsgi_args = util.create_wsgi_args(wsgi)
-		context.update(wsgi_args)
+		xgi_args = xgi.create_args()
+		context.update(xgi_args)
 		html = util.render_template(templatePath, context)
 		resp = Response.create_from_html(html)
 		return (resp, True)

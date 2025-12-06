@@ -8,11 +8,12 @@ if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
 from .Headers import Headers
 from .HttpEnricher import HttpEnricher
+from .Xgi import Xgi
 from . import util
 
 class EnrichedModule:
 	module: types.ModuleType
-	wsgi: "WSGIEnvironment"
+	xgi: Xgi
 
 	# http
 	@property
@@ -20,14 +21,14 @@ class EnrichedModule:
 	@http.setter
 	def	http(self, val): setattr(self.module, 'http', val)
 
-	def __init__(self, module: types.ModuleType, wsgi: "WSGIEnvironment") -> None:
+	def __init__(self, module: types.ModuleType, xgi: Xgi) -> None:
 		self.module = module
-		self.wsgi = wsgi
-		self.http = HttpEnricher(wsgi)	# will set module.http as a side effect
+		self.xgi = xgi
+		self.http = HttpEnricher(xgi)	# will set module.http as a side effect
 
 
 	def exec(self) -> "EnrichedModuleResult":
-		moduleFolder = util.get_module_folder(self.wsgi)
+		moduleFolder = self.xgi.get_module_folder()
 		sys.path.append(moduleFolder)
 
 		# use the module's spec's loader to execute the module in a stdout-capturing context
