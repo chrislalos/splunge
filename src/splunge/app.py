@@ -11,12 +11,14 @@ from importlib.machinery import FileFinder, SourceFileLoader
 import traceback
 import urllib
 from typing import NamedTuple
+
 from .mimetypes import mimemap
 from . import ModuleExecutionResponse
 from . import loggin, util
 from .handlers import FileHandler, IndexPageHandler, PythonModuleHandler, PythonTemplateHandler, create_mime_handler
 from .Headers import Headers
 from .Response import Response
+from .Xgi import Xgi
 
 
 handler_map = {'application/x-python-code': "SourceHandler",
@@ -24,17 +26,17 @@ handler_map = {'application/x-python-code': "SourceHandler",
               }
 
 
-def create_handler(wsgi):
+def create_handler(xgi: Xgi):
 	""" Return the appropriate handler for the wsgi. """
 	handler = None
-	if util.is_index_page(wsgi):
+	if xgi.is_index_page():
 		handler =  IndexPageHandler()
-	elif is_python_module(wsgi):
+	elif xgi.is_python_module():
 		handler = PythonModuleHandler()
-	elif is_python_markup(wsgi):
+	elif xgi.is_python_markup():
 		handler =  PythonTemplateHandler()
-	elif is_mime_type(wsgi):
-		handler = create_mime_handler(wsgi)
+	elif xgi.is_mime_type():
+		handler = create_mime_handler(xgi)
 	else:
 		handler = FileHandler()
 	
@@ -45,53 +47,7 @@ def create_handler(wsgi):
 	return handler
 
 
-def is_mime_type(wsgi):
-	''' Check if the wsgi has a recognized MIME type. '''
-	ext = util.get_path_extension(wsgi)
-	loggin.debug(f"is_mime_type(): ext={ext}")
-	flag = ext in mimemap
-	loggin.debug(f"is_mime_type(): flag={flag}")
-	return flag
-
-
-def is_python_markup(wsgi):
-	''' Check if a request respresents python markup / jinja template.
-	
-	A request represents a python markup iff
-		- Its path has no extension
-		- Appending .pyp to the path yields a file that exists in the local
-		  filesystem
-	'''
-	ext = util.get_path_extension(wsgi)
-	local_path = util.get_local_path(wsgi)
-	# Is the path a non-existent file *and* does it lack an extension? (e.g. http://foo.com/app/user)  
-	if not ext and not os.path.isfile(local_path):
-		templatePath = f'{local_path}.pyp'
-		if os.path.isfile(templatePath):
-			return True
-	return False
-
-
-def is_python_module(wsgi):
-	''' Check if a request respresents a python module.
-	
-	A request represents a python module iff
-		- Its path has no extension
-		- Appending .py to the path yields a file that exists in the local
-		  filesystem
-	'''
-	ext = util.get_path_extension(wsgi)
-	local_path = util.get_local_path(wsgi)
-	# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
-	if not ext and not os.path.isfile(local_path):
-		# If it exists (as a file) when we append .py, use PythonHandler
-		module_path = '.'.join([local_path, 'py'])
-		if os.path.isfile(module_path):
-			return True
-	return False
-
-
-def handle_404(wsgi, start_response):
+def handle_404(xgi, start_response):
 	loggin.debug("inside handle_404()")
 	status = "404 Resource Not Found"
 	templatePath = os.path.abspath(f'{os.getcwd()}/err/404.pyp')
@@ -99,7 +55,7 @@ def handle_404(wsgi, start_response):
 	# Load the template & render it w wsgi args
 	if not os.path.exists(templatePath):
 		raise Exception(f'template path not found: {templatePath}')
-	args = {"path": wsgi['PATH_INFO']}
+	args = {"path": xgi['PATH_INFO']}
 	content = util.render_template(templatePath, args).encode()
 	contentLength = len(content)
 	headers = Headers()
@@ -112,7 +68,7 @@ def handle_404(wsgi, start_response):
 	return [content]
 
 
-def handle_error(ex, wsgi, start_response):
+def handle_error(ex, xgi, start_response):
 	loggin.error(ex, exc_info=True)
 	status = "513 uhoh"
 	# data = f'oh no: {str(ex)}'.encode()
@@ -138,19 +94,20 @@ def handle_error(ex, wsgi, start_response):
 
 
 def app(wsgi, start_response):
+	xgi = Xgi(wsgi)
 	resp = None
 	try:
-		loggin.debug(f"PATH_INFO={wsgi['PATH_INFO']}")
-		loggin.debug(f"SCRIPT_NAME={wsgi['SCRIPT_NAME']}")
-		loggin.debug(f"wsgi.file_wrapper={getattr(wsgi, 'file_wrapper', 'N/A')}")
-		handler = create_handler(wsgi)
-		respData = handler.handle_request(wsgi)
+		loggin.debug(f"PATH_INFO={xgi['PATH_INFO']}")
+		loggin.debug(f"SCRIPT_NAME={xgi['SCRIPT_NAME']}")
+		loggin.debug(f"xwsgi.file_wrapper={getattr(xgi, 'file_wrapper', 'N/A')}")
+		handler = create_handler(xgi)
+		respData = handler.handle_request(xgi)
 		loggin.debug(f'respData={respData}')
 		(resp, done) = respData
 	except FileNotFoundError as ex:
 		loggin.error(f"404 - {wsgi['PATH_INFO']}")
 		loggin.error(ex, exc_info=True)
-		return handle_404(wsgi, start_response)
+		return handle_404(xgi, start_response)
 	except Exception as ex:
 		loggin.warning('error caught in app()')
 		return handle_error(ex, wsgi, start_response)

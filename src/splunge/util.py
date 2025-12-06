@@ -33,40 +33,6 @@ def create_cookie_value(name, value, **kwargs):
 	return cookieValue
 
 
-def create_get_args (wsgi):
-	''' Return a dictionary of query string args. '''
-	qs = wsgi['QUERY_STRING']
-	if not qs:
-		return {}
-	args = parse_query_string(qs)
-	return args
-				
-
-# http://wsgi.tutorial.codepoint.net/parsing-the-request-post
-def create_post_args (wsgi):
-	''' Return a dictionary of post data args. '''
-	# Make sure non-empty post data exists
-	postData = read_post_data(wsgi)
-	contentType = wsgi['CONTENT_TYPE']
-	if not postData or contentType != 'application/x-www-form-urlencoded':
-		return {}
-	# Assume post data is a query string and parse it
-	if type(postData) == bytes:
-		postData = postData.decode('utf-8')
-	args = parse_query_string(postData)
-	return args
-
-
-def create_wsgi_args(wsgi):
-	''' Return args (if any) based on http method. '''
-	method = wsgi['REQUEST_METHOD'].lower()
-	if method == 'get':
-		return create_get_args(wsgi)
-	if method == 'post':
-		return create_post_args(wsgi)
-	return {}
-
-
 # def exec_module(module):
 # 	""" Execute an enriched module & return a ModuleExecutionResponse.
 
@@ -109,21 +75,6 @@ def get_attr_names(module, attrNamesBefore=None):
 	return attrNames
 
 
-def get_file_name(wsgi):
-	return os.path.basename(get_path(wsgi))
-
-
-def get_folder(path):
-	(folder, _) = os.path.split(path)
-	return folder
-
-
-def get_local_path(wsgi):
-	''' Return the local path of the resources specified by the wsgi '''
-	path = get_path(wsgi)
-	return os.path.abspath(os.getcwd() + path)
-
-
 def get_module_attrs(module):
 	attrNames = get_attr_names(module)
 	attrs = {name: getattr(module, name, None) for name in attrNames}
@@ -154,37 +105,9 @@ def get_module_context (module):
 	# 		args[attr] = val
 
 
-def get_module_folder(wsgi):
-	path = get_module_path(wsgi)
+def get_folder(path):
 	(folder, _) = os.path.split(path)
 	return folder
-
-
-def get_module_path(wsgi):
-	# Get local path, append .py to the path, & confirm the path exists
-	localPath = get_local_path(wsgi)
-	modulePath = f'{localPath}.py'
-	return modulePath
-
-
-def get_path (wsgi):
-	''' Return the wsgi's path. '''
-	return wsgi['PATH_INFO'].strip()
-
-
-def get_path_extension (wsgi):
-	''' Return the file extension for the wsgi. '''
-	path = get_path(wsgi)
-	(_, ext) = os.path.splitext(path)
-	return ext
-
-
-def get_template_path(wsgi):
-	# Does a .pyp exist? If so, create a template handler and transfer control to it
-	localPath = get_local_path(wsgi)
-	templatePath = f'{localPath}.pyp'
-	return templatePath
-
 
 def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
 	sio = io.StringIO()
@@ -195,14 +118,6 @@ def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constan
 	print(textwrap.dedent(post), file=sio)
 	sio.seek(0)
 	return sio.read()
-
-
-def is_index_page(wsgi):
-	path = wsgi['PATH_INFO'].strip()
-	flag = False
-	if not path or path == '/':
-		flag = True
-	return flag
 
 
 # Check if an IO is empty, by moving to the end and confirming it is zero. 
@@ -216,17 +131,6 @@ def is_io_empty (anIo):
 	isEmpty = (end == 0)
 	anIo.seek(cur, io.SEEK_SET)
 	return isEmpty
-
-
-def load_module(wsgi: "WSGIEnvironment"):
-	# Get local path, append .py to the path, & confirm the path exists
-	modulePath = get_module_path(wsgi)
-	loggin.info(f'modulePath={modulePath}')
-	if not os.path.exists(modulePath):
-		raise Exception(f'module path not found: {modulePath}')
-	# Load the module
-	module = load_module_by_path(modulePath)
-	return module
 
 
 def load_module_by_path (path):
@@ -260,12 +164,6 @@ def load_module_spec (path):
 	return spec
 
 
-def open_by_path (wsgi):
-	localPath = get_local_path(wsgi)
-	f = open(localPath, 'rb')
-	return f
-	
-
 def parse_query_string(qs):
 	if not qs:
 		return {}
@@ -280,19 +178,6 @@ def parse_query_string(qs):
 				value = v
 			args[key] = value
 	return args
-
-
-def read_post_data(wsgi):
-	# PEP 3333 says CONTENT_LENGTH may be omitted
-	contentLength = wsgi.get('CONTENT_LENGTH')
-	if not contentLength:
-		return None
-	contentLength = int(contentLength)
-	post_input = wsgi.get('wsgi.input')
-	if not post_input:
-		return None
-	d = post_input.read(contentLength)
-	return d
 
 
 def render_string(sTemplate, context):

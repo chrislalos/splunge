@@ -2,16 +2,11 @@ import contextlib
 from io import StringIO
 import os
 import unittest
-from werkzeug.test import create_environ
+from werkzeug.test import EnvironBuilder
 from splunge.HttpEnricher import HttpEnricher, create_enrichment_object, enrich_module
 from splunge import util
 from splunge import ModuleExecutionResponse
-
-def create_enricher (path, queryString=None):
-	queryString="bar=13&bum=thirteen"
-	wsgi = create_environ(path, query_string=queryString)
-	http = HttpEnricher(wsgi)
-	return http
+from splunge import Xgi
 
 
 class EnrichmentTests(unittest.TestCase):
@@ -20,8 +15,8 @@ class EnrichmentTests(unittest.TestCase):
 		module = util.load_module_by_path(path)
 		self.assertIsNotNone(module)
 		self.assertFalse(hasattr(module, 'http'))
-		wsgi = create_environ(path, method="GET")
-		enrich_module(module, wsgi)
+		xgi = Xgi.create(path, method="GET")
+		enrich_module(module, xgi)
 		self.assertTrue(hasattr(module, 'http'))
 		http = getattr(module, "http")
 		self.assertIsNotNone(http)
@@ -37,8 +32,8 @@ class EnrichmentTests(unittest.TestCase):
 	def test_execute_module_foo(self):
 		path = './www/meat/foo.py'
 		module = util.load_module_by_path(path)
-		wsgi = create_environ(path, method="GET")
-		enrich_module(module, wsgi)
+		xgi = Xgi.create(path, method="GET")
+		enrich_module(module, xgi)
 		moduleState = ModuleExecutionResponse.exec_module(module)
 		self.assertIsNotNone(moduleState)
 		self.assertEqual(2, len(moduleState.context))
@@ -50,8 +45,8 @@ class EnrichmentTests(unittest.TestCase):
 	def x_test_get_module_attrs(self):
 		path = './www/meat/foo.py'
 		module = util.load_module_by_path(path)
-		wsgi = create_environ(path, method="GET")
-		enrich_module(module, wsgi)
+		xgi = Xgi.create(path, method="GET")
+		enrich_module(module, xgi)
 		module.__spec__.loader.exec_module(module)
 		attrNames = util.get_attr_names(module)
 
@@ -72,16 +67,16 @@ class EnrichmentTests(unittest.TestCase):
 		path = "/meat/foo"
 		b=b'0123456789'
 		contentType='application/octet-stream'
-		wsgi = create_environ(path, method="POST", data=b, content_type=contentType)
-		self.assertEqual(contentType, wsgi['CONTENT_TYPE'])
-		self.assertEqual(str(len(b)), wsgi['CONTENT_LENGTH'])
-		http = HttpEnricher(wsgi)
+		xgi = Xgi.create(path, method="POST", data=b, content_type=contentType)
+		self.assertEqual(contentType, xgi['CONTENT_TYPE'])
+		self.assertEqual(str(len(b)), xgi['CONTENT_LENGTH'])
+		http = HttpEnricher(xgi)
 		self.assertEqual(0, len(http.args))
 
 	def test_module_local_path(self):
 		path = "/www/meat/foo"
-		wsgi = create_environ(path)
-		localPath = util.get_local_path(wsgi)
+		xgi = Xgi.create(path)
+		localPath = xgi.get_local_path()
 		currDir = os.getcwd()
 		targetPath = os.path.abspath(f"{currDir}/{path}")
 		self.assertEqual(targetPath, localPath)
@@ -93,8 +88,8 @@ class EnrichmentTests(unittest.TestCase):
 
 	def test_module_pypinfo(self):
 		path = "/meat/foo"
-		wsgi = create_environ(path)
-		http = HttpEnricher(wsgi)
+		xgi = Xgi.create(path)
+		http = HttpEnricher(xgi)
 		stdout = StringIO()
 		with contextlib.redirect_stdout(stdout):
 			http.pypinfo()
@@ -102,8 +97,8 @@ class EnrichmentTests(unittest.TestCase):
 
 	def test_module_set_content_length(self):
 		path = "/meat/foo"
-		wsgi = create_environ(path)
-		http = HttpEnricher(wsgi)
+		xgi = Xgi.create(path)
+		http = HttpEnricher(xgi)
 		contentLength = 13
 		http.contentLength = contentLength
 		self.assertEqual(13, int(http.contentLength))
@@ -115,8 +110,8 @@ class EnrichmentTests(unittest.TestCase):
 
 	def test_module_set_content_type(self):
 		path = "/meat/foo"
-		wsgi = create_environ(path)
-		http = HttpEnricher(wsgi)
+		xgi = Xgi.create(path)
+		http = HttpEnricher(xgi)
 		url = "http://example.com/newurl"
 		contentType = "text/plain"
 		http.contentType = contentType
@@ -129,8 +124,15 @@ class EnrichmentTests(unittest.TestCase):
 
 	def test_module_validate_method(self):
 		path = "/meat/foo"
-		wsgi = create_environ(path)
-		http = HttpEnricher(wsgi)
+		xgi = Xgi.create(path)
+		http = HttpEnricher(xgi)
 		method = "get"
 		methods = ["pOSt", "gET"]
 		self.assertTrue(http.validate_method(method, methods))
+
+
+def create_enricher (path, queryString=None):
+	queryString="bar=13&bum=thirteen"
+	xgi = Xgi.create(path, query_string=queryString)
+	http = HttpEnricher(xgi)
+	return http

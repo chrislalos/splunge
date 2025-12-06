@@ -2,7 +2,7 @@ from markdown_it import MarkdownIt
 import unittest
 from splunge import util
 from werkzeug.test import create_environ
-
+from splunge import Xgi
 
 class UtilTests(unittest.TestCase):
     def test_html_fragment_to_doc(self):
@@ -12,11 +12,11 @@ class UtilTests(unittest.TestCase):
         doc = util.html_fragment_to_doc(frag)
 
     def test_is_index_page_empty_string(self):
-        wsgi = create_environ('')
-        flag = util.is_index_page(wsgi)
+        xgi = Xgi.create('')
+        flag = xgi.is_index_page()
         self.assertTrue(flag)
     
     def test_is_index_page_slash(self):
-        wsgi = create_environ('/')
-        flag = util.is_index_page(wsgi)
+        xgi = Xgi.create('/')
+        flag = xgi.is_index_page()
         self.assertTrue(flag)
