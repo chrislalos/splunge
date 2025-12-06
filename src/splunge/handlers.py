@@ -1,20 +1,33 @@
+from dataclasses import dataclass
 import os.path
+import pygments
+import pygments.formatters
+import pygments.lexers
+import pygments.lexers.templates
 import sys
 import traceback
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+	from _typeshed.wsgi import WSGIEnvironment
 from markdown_it import MarkdownIt
 from .Response import Response
 # from .HttpEnricher import enrich_module
-from .EnrichedModule import EnrichedModule
+from .EnrichedModule import EnrichedModule, EnrichedModuleResult
 from .Headers import Headers
 from . import loggin
 from . import ModuleExecutionResponse
 from .mimetypes import mimemap
 from . import util
 
-handler_map = {'application/x-python-code': "PythonSourceHandler",
-               'application/x-splunge-template': "PythonTemplateHandler",
+handler_map = {'application/x-python-code': "SourceHandler",
+               'application/x-splunge-template': "SourceHandler",
 			   'text/markdown': "MarkdownHandler"
               }
+
+source_handler_map = {
+	'application/x-python-code': (pygments.lexers.PythonLexer, pygments.formatters.HtmlFormatter),
+	'application/x-splunge-template': (pygments.lexers.templates.DjangoLexer, pygments.formatters.HtmlFormatter),
+}
 
 
 def create_mime_handler(wsgi):
@@ -32,7 +45,10 @@ def create_mime_handler(wsgi):
 	if handlerClassName is None:
 		loggin.warning("Unable to find handler class: {handlerClassName}", handlerClassName)
 	# instantiate handler class + return instance as handler
-	handler = handlerClassName()
+	if handlerName == "SourceHandler":
+		handler = SourceHandler.create(mimeType)
+	else:
+		handler = handlerClassName()
 	loggin.debug(f"create_mime_handler(): type(handler)={type(handler)}")
 	if type(handler).__name__ == "FileHandler":
 		setattr(handler, "mimeType", mimeType)
@@ -43,7 +59,7 @@ class FileHandler:
 	def __init__(self):
 		self.mimeType = None
 
-	def handle_request (self, wsgi):
+	def handle_request (self, wsgi: "WSGIEnvironment") -> Response:
 		loggin.debug(f"FileHandler.handler_request: self.mimeType={self.mimeType}")
 		try:
 			f = util.open_by_path(wsgi)
@@ -58,7 +74,7 @@ class FileHandler:
 
 class IndexPageHandler:
 	''' Handle index page requests by redirection to /index.html. '''
-	def handle_request(self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		try:
 			location = '/index.html'
 			iter = []
@@ -79,7 +95,7 @@ class IndexPageHandler:
 
 
 class MarkdownHandler:
-	def handle_request (self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		title = util.get_file_name(wsgi)
 		with util.open_by_path(wsgi) as f:
 			# @note utf-8 is harcoded here
@@ -104,7 +120,7 @@ class MarkdownHandler:
 
 
 class PythonModuleHandler:
-	def handle_request (self, wsgi):
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
 		# Load module & create enriched module
 		module = util.load_module(wsgi)
 		enrichedModule = EnrichedModule(module, wsgi)
@@ -190,11 +206,29 @@ class PythonModuleHandler:
 		# 	return (moduleState.response, True)
 	
 
+@dataclass
+class SourceHandler:
+	formatter: pygments.formatter.Formatter
+	lexer: pygments.lexer.RegexLexer
+
+	@classmethod
+	def create(cls, mimeType) -> "SourceHandler":
+		(clsLexer, clsFormatter) = source_handler_map[mimeType]
+		return SourceHandler(formatter=clsFormatter(full=True, linenos=True), lexer=clsLexer())
+
+	def handle_request(self, wsgi: "WSGIEnvironment") -> Response:
+		with util.open_by_path(wsgi) as f:
+			code = f.read()
+		highlightedCode = pygments.highlight(code, self.lexer, self.formatter)
+		html = highlightedCode
+		resp = Response.create_from_html(html)
+		return (resp, True)
+
 class PythonTemplateHandler:
 	def __init__ (self, *, encoding='latin-1'):
 		self.encoding = encoding
 
-	def handle_request (self, wsgi, context={}):
+	def handle_request(self, wsgi: "WSGIEnvironment", context: dict = {}) -> Response:
 		# Get local path, append .pyp to the path, & confirm the file exists
 		localPath = util.get_local_path(wsgi)
 		templatePath = f'{localPath}.pyp'
@@ -203,22 +237,8 @@ class PythonTemplateHandler:
 			raise Exception(f'template path not found: {templatePath}')
 		wsgi_args = util.create_wsgi_args(wsgi)
 		context.update(wsgi_args)
-		content = util.render_template(templatePath, context).encode('utf-8')
-		iter = [content]
-		# encodedContent = content.encode(self.encoding)
-		# Initialize the response + return
-		contentLength = len(content)
-		contentType = 'text/html'
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = contentType
-		resp = Response(
-			statusCode=200,
-			statusMessage="OK",
-			headers=headers,
-			exc_info=None,
-			iter=iter
-		)
+		html = util.render_template(templatePath, context)
+		resp = Response.create_from_html(html)
 		return (resp, True)
 	
 

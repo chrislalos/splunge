@@ -20,8 +20,11 @@ class ResponseTests(unittest.TestCase):
 		self.assertEqual(303, resp.statusCode)
 		self.assertEqual(f'Redirecting to {url}', resp.statusMessage)
 		self.assertEqual(2, len(resp.headers.items()))
+		self.assertIsNone(resp.contentType)
+		contentLength = resp.contentLength
+		self.assertIsNotNone(contentLength)
+		self.assertEqual(0, int(contentLength))
 		locationHeader = resp.headers['Location']
-		self.assertIsNotNone(locationHeader)
 		self.assertEqual(url, locationHeader)
 
 	def test_set_content(self):

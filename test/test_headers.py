@@ -112,14 +112,6 @@ class HeadersTests(unittest.TestCase):
 		self.assertEqual(13, int(base_headers["foo"]))
 		self.assertIsNone(base_headers["bar"])
 
-	def test_location(self):
-		headers = create_headers()
-		name = 'Location'
-		value = '/thankyou.pyp'
-		headers.location = value
-		self.assertEqual(value, headers.location)
-		self.assertEqual(value, headers[name])
-
 	def test_del_content_type(self):
 		name = 'Content-type'
 		value = 'text/html'
@@ -169,6 +161,14 @@ class HeadersTests(unittest.TestCase):
 		headers.deleteAll(name)
 		tuples = headers.asTuples(name)
 		self.assertEqual(0, len(tuples))
+
+	def test_location(self):
+		headers = create_headers()
+		name = 'Location'
+		value = '/thankyou.pyp'
+		headers.location = value
+		self.assertEqual(value, headers.location)
+		self.assertEqual(value, headers[name])
 
 	def test_nonExistentHeader(self):
 		headers = Headers()

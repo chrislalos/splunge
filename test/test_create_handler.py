@@ -1,25 +1,26 @@
 import unittest
 from werkzeug.test import create_environ
 from splunge import app
-from splunge import FileHandler, MarkdownHandler, PythonModuleHandler
+from splunge import FileHandler, MarkdownHandler, PythonModuleHandler, SourceHandler
 
 class CreateHandlerTests(unittest.TestCase):
     def test_module(self):
-        wsgi = create_environ("/www/meat/foo")
-        handler = app.create_handler(wsgi)
-        self.assertIsNotNone(handler)
-        self.assertIsInstance(handler, PythonModuleHandler)
+        test_handler(self, "/www/meat/foo", PythonModuleHandler)
 
     def test_markdown(self):
-        wsgi = create_environ("/www/hello.md")
-        handler = app.create_handler(wsgi)
-        self.assertIsNotNone(handler)
-        self.assertIsInstance(handler, MarkdownHandler)
+        test_handler(self, "/www/hello.md", MarkdownHandler)
 
-
-    def test_static_content(self):
-        wsgi = create_environ("/www/hello.html")
-        handler = app.create_handler(wsgi)
-        self.assertIsNotNone(handler)
-        self.assertIsInstance(handler, FileHandler)
+    def test_python_source(self):
+        print()
+        handler = test_handler(self, "/www/meat/foo.py", SourceHandler)
+        print(handler)
     
+    def test_static_content(self):
+        test_handler(self, "/www/hello.html", FileHandler)
+
+def test_handler(t, path, handlerType):
+    wsgi = create_environ(path)
+    handler = app.create_handler(wsgi)
+    t.assertIsNotNone(handler)
+    t.assertIsInstance(handler, handlerType)
+    return handler

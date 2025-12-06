@@ -32,8 +32,8 @@ class EndToEndTests(unittest.TestCase):
 	def test_meat_foo(self):
 		test_get(self, "/meat/foo", contentType=CT_html)
 
-	def test_meat_foo_pyp(self):
-		test_get(self, "/meat/foo", contentType=CT_html)
+	def test_meat_foo3_pyp(self):
+		test_get(self, "/meat/foo3.pyp", contentType=CT_html)
 
 
 def test_get(t: unittest.TestCase, url: str, *, contentType=None, contentLength=None) -> Response: 
