@@ -1,8 +1,7 @@
 import logging
 import os
-
-
-PATH = "./splunge.log"
+import pathlib
+import sys
 
 def critical(msg, *args, **kwargs):
 	logger.critical(msg, *args, **kwargs)
@@ -41,15 +40,30 @@ def warning(msg, *args, **kwargs):
 
 
 
-def initLogger():
-	print("init'ing logger ...")
-	f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-	h = logging.FileHandler(PATH)
+def init():
+	print("init'ing logger ...", file=sys.stderr)
+	splungeLogFile = os.getenv("SPLUNGE_LOGFILE")
+	testing = os.getenv("TESTING")
+	print(f'testing={testing}', file=sys.stderr)
+	f: logging.Formatter = None
+	h: logging.FileHandler = None
+	if splungeLogFile:
+		f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+		logPath = pathlib.Path(splungeLogFile)
+		h = logging.FileHandler(logPath)
+		print(f'writing log to {os.path.abspath(splungeLogFile)}', file=sys.stderr)
+	elif testing == '1' or testing.lower == 'y':
+		f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+		logPath = pathlib.Path(os.path.join(os.getcwd(), 'splunge_test.log'))
+		h = logging.FileHandler(logPath)
+		print(f'writing log to {os.path.abspath(logPath)}', file=sys.stderr)
+	else:
+		h = logging.StreamHandler(sys.stderr)
+		print(f'arg is stream: writing log to sys.stderr', file=sys.stderr)
 	h.setFormatter(f)
 	logger = logging.getLogger("splunge")
 	logger.setLevel(logging.DEBUG)
 	logger.addHandler(h)
-	print(f'writing log to {os.path.abspath(PATH)}')
 	return logger
 
-logger = initLogger()
+logger = init()

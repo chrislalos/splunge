@@ -12,11 +12,18 @@ port=${1:-$DEFAULT_PORT}
 
 [[ -d "$contentFolder" ]] || { printf 'Non-existent folder: %s\n' "$contentFolder" >&2; return 1; }
 mkdir -p "$logFolder/" || { printf 'Unable to create log folder %s\n' "$logFolder" &>2; return; }
-printf 'Splunge serving %s on %s:%d; logging to %s' "$contentFolder" "$host" "$port" "$logFolder"
+printf 'Splunge serving %s on %s:%d; logging to %si\n' "$contentFolder" "$host" "$port" "$logFolder"
+
+if [[ ! -n "$SPLUNGE_LOGFILE" ]]; then
+    echo "$SPLUNGE_LOGFILE not set - setting manually"
+    SPLUNGE_LOGFILE="$logFolder/splunge.log"
+fi
+printf '$SPLUNGE_LOGFILE=%s\n' "$SPLUNGE_LOGFILE"
 
 gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
          --chdir "$contentFolder" \
+         --env SPLUNGE_LOGFILE="$SPLUNGE_LOGFILE" \
          --error-logfile "$logFolder/errors.log" \
          --workers 3 \
          --umask 007 \

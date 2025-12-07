@@ -5,6 +5,7 @@ import importlib
 import inspect
 import io
 import os
+import pathlib
 import re
 import sys
 from importlib.machinery import FileFinder, SourceFileLoader
