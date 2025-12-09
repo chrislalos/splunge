@@ -43,6 +43,7 @@ def warning(msg, *args, **kwargs):
 def init():
 	print("init'ing logger ...", file=sys.stderr)
 	splungeLogFile = os.getenv("SPLUNGE_LOGFILE")
+	print(f'splungeLogFile={splungeLogFile}')
 	testing = os.getenv("TESTING")
 	print(f'testing={testing}', file=sys.stderr)
 	f: logging.Formatter = None

@@ -3,6 +3,7 @@ import io
 import pygments
 import pygments.formatters
 import pygments.lexers
+from .. import loggin
 from ..Response import Response
 from ..Xgi import Xgi
 from .FileHandler import FileHandler
@@ -39,13 +40,18 @@ source_handler_map = {
 class HtmlGenHandler(FileHandler):
 	@abstractmethod
 	def gen_html(self, f, context:dict=None):
+		loggin.debug(f'{self.__class__.__name__}.get_html')
 		pass
 
-	def get_content_as_filelike(self, context: dict=None):
-		f = self.xgi.open_by_path()
+	def get_output_as_filelike(self, context: dict=None):
+		loggin.debug(f'{self.__class__.__name__}.get_output_as_filelike')
+		f = self.open_content()
 		html = self.gen_html(f, context)
 		fContent = io.BytesIO(html.encode('utf-8'))
 		return fContent
+
+	def open_content(self):
+		return self.xgi.open_by_path()
 
 	def get_mime_type(self) -> str:
 		return "text/html; charset=utf-8"

@@ -35,6 +35,7 @@ class PythonModuleHandler(BaseHandler):
 		# If pyp exists, delegate to template handler, else write context directly to response
 		elif self.xgi.has_template_path():
 			handler = PythonTemplateHandler(self.xgi)
+			loggin.debug(f"Handing over to PythonTemplateHandler ...")
 			resp =  handler.handle_request(result.context)
 		else:
 			# Render the content as a nice table

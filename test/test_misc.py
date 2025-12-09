@@ -1,6 +1,6 @@
 import io
 import unittest
-from splunge import util, Xgi
+from splunge import mimetypes, util, Xgi
 from splunge.handlers import BaseHandler, FileHandler, HtmlGenHandler, MarkdownHandler, PythonTemplateHandler, SourceHandler
 
 class MiscTests(unittest.TestCase):
@@ -48,6 +48,10 @@ class MiscTests(unittest.TestCase):
         sio.write("MEAT")
         line = sio.readline()
         self.assertFalse(util.is_io_empty(sio))
+
+    def x_gen_lookup_table(self):
+        for el in mimetypes.mimemap:
+            print(el)
 
 
 def test_for_clean(t, callable, *args, **kwargs):

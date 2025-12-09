@@ -1,3 +1,4 @@
+from .. import loggin
 from ..Response import Response
 from .BaseHandler import BaseHandler
 
@@ -12,7 +13,8 @@ class FileHandler(BaseHandler):
 			resp = Response.create_from_file(f, mimeType)
 		return resp
 
-	def get_content_as_filelike(self, context: dict=None):
+	def get_output_as_filelike(self, context: dict=None):
+		loggin.debug(f'{self.__class__.__name__}.get_output_as_filelike')
 		return self.xgi.open_by_path()
 
 	def get_mime_type(self):
@@ -21,7 +23,7 @@ class FileHandler(BaseHandler):
 		return mimeType
 	
 	def handle_request (self, context: dict=None) -> Response:
-		f = self.get_content_as_filelike(context)
+		f = self.get_output_as_filelike(context)
 		mimeType = self.get_mime_type()
 		resp = self.respond_with_file(f, mimeType, self.xgi.fileWrapper)
 		return resp
