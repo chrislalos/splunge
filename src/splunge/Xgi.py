@@ -19,6 +19,14 @@ class Xgi:
 		xgi = Xgi(wsgi)
 		return xgi
 
+
+	@property
+	def contentType(self):
+		val = None
+		if 'CONTENT_TYPE' in self.wsgi:
+			val = self.wsgi['CONTENT_TYPE']
+		return val
+
 	@property
 	def fileWrapper(self): return getattr(self.wsgi, "file_wrapper", None)
 
@@ -50,8 +58,7 @@ class Xgi:
 		''' Return a dictionary of post data args. '''
 		# Make sure non-empty post data exists
 		postData = self.read_post_data()
-		contentType = self['CONTENT_TYPE']
-		if not postData or contentType != 'application/x-www-form-urlencoded':
+		if not postData or self.contentType != 'application/x-www-form-urlencoded':
 			return {}
 		# Assume post data is a query string and parse it
 		if type(postData) == bytes:

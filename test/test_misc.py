@@ -1,7 +1,7 @@
 import io
 import unittest
 from splunge import mimetypes, util, Xgi
-from splunge.handlers import BaseHandler, FileHandler, HtmlGenHandler, MarkdownHandler, PythonTemplateHandler, SourceHandler
+from splunge.handlers import lookupTable, BaseHandler, FileHandler, HtmlGenHandler, MarkdownHandler, PythonTemplateHandler, SourceHandler
 
 class MiscTests(unittest.TestCase):
     def test_hello(self):
@@ -50,8 +50,16 @@ class MiscTests(unittest.TestCase):
         self.assertFalse(util.is_io_empty(sio))
 
     def x_gen_lookup_table(self):
-        for el in mimetypes.mimemap:
-            print(el)
+        print()
+        d = {}
+        for ext, mimeType in mimetypes.mimemap.items():
+            d[ext] = (mimeType, FileHandler.__name__)
+        d.update(lookupTable)
+        with open("/tmp/lookupTable.py", "w") as f:
+            for ext, (mimeType, handlerName) in d.items():
+                if isinstance(handlerName, type):
+                    handlerName = handlerName.__name__
+                print(f"\t'{ext}': ('{mimeType}', {handlerName}),", file=f)
 
 
 def test_for_clean(t, callable, *args, **kwargs):

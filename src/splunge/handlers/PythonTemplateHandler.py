@@ -12,12 +12,7 @@ class PythonTemplateHandler(HtmlGenHandler):
 		return self.xgi.open_template()
 
 	def gen_html(self, f, context: dict=None):
-		loggin.debug(f'{self.__class__.__name__}.get_html()')
-		# Get local path, append .pyp to the path, & confirm the file exists
-		templatePath = self.xgi.get_template_path()
-		loggin.debug(f'templatePath={templatePath}')
-		# Load the template & render it w xgi context
-		xgi_args = self.xgi.create_args()
-		xgi_args.update(context)
-		html = util.render_template(templatePath, context)
+		loggin.debug(f'{self.__class__.__name__}.gen_html()')
+		html = util.render_filelike(f, context)
+		f.close()
 		return html

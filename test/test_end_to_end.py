@@ -29,6 +29,9 @@ class EndToEndTests(unittest.TestCase):
 		test_get(self, "/hello.html", contentType="text/html", contentLength=os.path.getsize("hello.html"))
 
 
+	def test_meat_bar(self):
+		test_get(self, "/meat/bar", contentType=CT_html)
+
 	def test_meat_foo(self):
 		test_get(self, "/meat/foo", contentType=CT_html)
 

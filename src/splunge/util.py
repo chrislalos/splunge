@@ -180,23 +180,31 @@ def parse_query_string(qs):
 	return args
 
 
-def render_string(sTemplate, context):
+def render_filelike(f, context={}):
+	with f:
+		s = f.read().decode('utf-8')
+	return render_string(s, context)
+
+def render_string(sTemplate, context={}):
 	jenv = jinja2.Environment()
+	loggin.debug(f'sTemplate={sTemplate}')
 	jtemplate = jenv.from_string(sTemplate)
+	if not context:
+		context = {}
 	s = jtemplate.render(context)
 	return s
 
 # Shorthand for invoking jinja on a template path
-def render_template (templatePath, args={}):
+def render_template (templatePath, context={}):
 #	print("*** {}".format(os.getcwd()), file=sys.stderr)
 	cwd = os.getcwd()
 	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)
 	jenv = jinja2.Environment(loader=jloader)
 	templateName = os.path.relpath(templatePath, cwd)
 	jtemplate = jenv.get_template(templateName)
-	if not args:
-		args = {}
-	s = jtemplate.render(args)
+	if not context:
+		context = {}
+	s = jtemplate.render(context)
 	return s 
 
 
