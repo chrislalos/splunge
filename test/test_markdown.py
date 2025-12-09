@@ -4,7 +4,7 @@ import textwrap
 import unittest
 from markdown_it import MarkdownIt
 from werkzeug.test import create_environ
-from splunge import app, constants, util, MarkdownHandler, Response
+from splunge import constants, handlers, util, MarkdownHandler, Response
 from splunge.Xgi import Xgi
 
 class MarkdownTests(unittest.TestCase):
@@ -22,8 +22,8 @@ class MarkdownTests(unittest.TestCase):
 
 def create_markdown_handler(testcase, path):
 	# Create a wsgi + then create a handler for it
-	xwsgi = create_xgi(path)
-	handler = app.create_handler(xwsgi)
+	xgi = create_xgi(path)
+	handler = handlers.create(xgi)
 	testcase.assertIsNotNone(handler)
 	testcase.assertIsInstance(handler, MarkdownHandler)
 	return handler
@@ -31,12 +31,10 @@ def create_markdown_handler(testcase, path):
 
 def handle_request(testcase, path):
 	handler = create_markdown_handler(testcase, path)
-	wsgi = create_environ(path)
-	xgi = Xgi(wsgi)
-	(resp, isDone) = handler.handle_request(xgi)
+	xgi = Xgi.create(path)
+	resp = handler.handle_request()
 	testcase.assertIsNotNone(resp)
 	testcase.assertIs(type(resp), Response)
-	testcase.assertTrue(isDone)
 	testcase.assertIsInstance(resp.iter, list)
 	testcase.assertEqual(1, len(resp.iter))	
 	testcase.assertIsNotNone(resp.iter[0])

@@ -52,7 +52,7 @@ def init():
 		logPath = pathlib.Path(splungeLogFile)
 		h = logging.FileHandler(logPath)
 		print(f'writing log to {os.path.abspath(splungeLogFile)}', file=sys.stderr)
-	elif testing == '1' or testing.lower == 'y':
+	elif testing and (testing == '1' or testing.lower == 'y'):
 		f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 		logPath = pathlib.Path(os.path.join(os.getcwd(), 'splunge_test.log'))
 		h = logging.FileHandler(logPath)

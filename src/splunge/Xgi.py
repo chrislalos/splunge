@@ -19,6 +19,9 @@ class Xgi:
 		xgi = Xgi(wsgi)
 		return xgi
 
+	@property
+	def fileWrapper(self): return getattr(self.wsgi, "file_wrapper", None)
+
 	def __getattr__ (self, name):
 		return getattr(self.wsgi, name)
 
@@ -59,13 +62,6 @@ class Xgi:
 	def get_file_name(self):
 		return os.path.basename(self.get_path())
 
-	def is_index_page(self):
-		path = self['PATH_INFO'].strip()
-		flag = False
-		if not path or path == '/':
-			flag = True
-		return flag
-
 	def get_local_path(self):
 		''' Return the local path of the resources specified by the wsgi '''
 		path = self.get_path()
@@ -98,14 +94,13 @@ class Xgi:
 		templatePath = f'{localPath}.pyp'
 		return templatePath
 
-	def is_mime_type(self):
-		''' Check if the wsgi has a recognized MIME type. '''
-		ext = self.get_path_extension()
-		loggin.debug(f"is_mime_type(): ext={ext}")
-		flag = ext in mimemap
-		loggin.debug(f"is_mime_type(): flag={flag}")
+	def is_index_page(self):
+		path = self['PATH_INFO'].strip()
+		flag = False
+		if not path or path == '/':
+			flag = True
 		return flag
-	
+
 	def is_python_markup(self):
 		''' Check if a request respresents python markup / jinja template.
 		
@@ -142,6 +137,10 @@ class Xgi:
 				return True
 		return False
 
+	def has_template_path(self):
+		# Does a .pyp exist? If so, create a template handler and transfer control to it
+		templatePath = self.get_template_path()
+		return os.path.exists(templatePath)
 
 	def load_module(self):
 		# Get local path, append .py to the path, & confirm the path exists
@@ -156,6 +155,12 @@ class Xgi:
 	def open_by_path (self):
 		localPath = self.get_local_path()
 		f = open(localPath, 'rb')
+		return f
+		
+	def open_template (self):
+		localPath = self.get_local_path()
+		localTemplatePath = f'{localPath}.pyp'
+		f = open(localTemplatePath, 'rb')
 		return f
 		
 	def read_post_data(self):

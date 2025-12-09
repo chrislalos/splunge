@@ -45,14 +45,30 @@ class Response:
 
 
 	@classmethod
-	def create_from_html(cls, html: str, encoding='utf-8') -> "Response":
-		content = html.encode(encoding)
-		contentLength = len(html)
-		contentType = f'text/html; charset={encoding}'
+	def create_from_file(cls, f, mimeType) -> "Response":
+		headers = Headers()	
+		headers.contentType = mimeType
+		with f:
+			content = f.read()
+		headers.contentLength = len(content)
 		iter = [content]
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = contentType
+		resp = Response(
+			statusCode=200,
+			statusMessage="OK",
+			headers=headers,
+			exc_info=None,
+			iter=iter
+		)
+		return resp
+
+
+	@classmethod
+	def create_from_file_wrapper(cls, f, fileWrapper, mimeType) -> "Response":
+		headers = Headers()	
+		headers.contentType = mimeType
+		with f:
+			_32K = 32768
+			iter = fileWrapper(f, _32K)
 		resp = Response(
 			statusCode=200,
 			statusMessage="OK",
@@ -78,13 +94,13 @@ class Response:
 		return resp
 
 	@classmethod
-	def create_redirect(cls, result: EnrichedModuleResult) -> "Response":
-		headers = Headers.create(result.headers)
+	def create_redirect(cls, statusCode, statusMessage, location) -> "Response":
+		headers = Headers()
 		headers.contentLength = 0
-		del headers.contentType
+		headers.location = location
 		resp = Response(
-			statusCode=result.statusCode,
-			statusMessage=result.statusMessage,
+			statusCode=statusCode,
+			statusMessage=statusMessage,
 			headers=headers,
 			exc_info=None,
 			iter=[]
