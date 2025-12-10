@@ -11,7 +11,7 @@ class PythonModuleHandler(BaseHandler):
 	def handle_request(self) -> Response:
 		# Load module, create & exec enriched module
 		module = self.xgi.load_module()
-		enrichedModule = EnrichedModule(module, self.xgi)
+		enrichedModule = EnrichedModule(self.xgi)
 		if not module:
 			raise Exception(f'module not found: {util.get_module_path(self.xgi)}')
 		result = enrichedModule.exec()
