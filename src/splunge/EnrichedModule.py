@@ -21,6 +21,12 @@ class EnrichedModule:
 	@http.setter
 	def	http(self, val): setattr(self.module, 'http', val)
 
+	@classmethod
+	def create(cls, xgi: Xgi)-> "EnrichedModule":
+		module = xgi.load_module()
+		obj = EnrichedModule(module, xgi)
+		return obj
+
 	def __init__(self, module: types.ModuleType, xgi: Xgi) -> None:
 		self.module = module
 		self.xgi = xgi
