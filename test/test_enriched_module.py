@@ -25,7 +25,6 @@ class Tests(unittest.TestCase):
 		self.assertEqual(1, len(mod.http.args))
 		self.assertTrue('name' in mod.http.args)
 		self.assertEqual('meat', mod.http.args['name'])
-		print(f'mod.http.args={mod.http.args}')
 
 
 def test_status (t: unittest.TestCase, code: int, msg: str):

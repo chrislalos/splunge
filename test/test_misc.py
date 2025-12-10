@@ -50,7 +50,6 @@ class MiscTests(unittest.TestCase):
         self.assertFalse(util.is_io_empty(sio))
 
     def x_gen_lookup_table(self):
-        print()
         d = {}
         for ext, mimeType in mimetypes.mimemap.items():
             d[ext] = (mimeType, FileHandler.__name__)
@@ -59,7 +58,6 @@ class MiscTests(unittest.TestCase):
             for ext, (mimeType, handlerName) in d.items():
                 if isinstance(handlerName, type):
                     handlerName = handlerName.__name__
-                print(f"\t'{ext}': ('{mimeType}', {handlerName}),", file=f)
 
 
 def test_for_clean(t, callable, *args, **kwargs):
