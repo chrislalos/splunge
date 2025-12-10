@@ -4,6 +4,7 @@ import io
 import os
 import re
 import textwrap
+import types
 from typing import NamedTuple, TYPE_CHECKING
 if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
@@ -68,16 +69,19 @@ def get_attr_names(module, attrNamesBefore=None):
 	  - all __internal__ attributes, eg `__name__`
 	'''
 	rx = re.compile('__.*__')
-	attrNames= [el for el in set(dir(module))
-			    if not callable(getattr(module, el, None))
-				and not isinstance(el, type)
-				and not rx.match(el)]
+	attrNames= [name for name in set(dir(module))
+			    if not callable(getattr(module, name, None))
+				and not isinstance(getattr(module, name, None), types.ModuleType)
+				and not isinstance(getattr(module, name, None), type)
+				and not rx.match(name)]
 	return attrNames
 
 
 def get_module_attrs(module):
 	attrNames = get_attr_names(module)
 	attrs = {name: getattr(module, name, None) for name in attrNames}
+	for name, attr in attrs.items():
+		loggin.debug(f"{name}: {type(attr)} {attr} {isinstance(attr, types.ModuleType)} {isinstance(attr, type)}")
 	return attrs
 
 
