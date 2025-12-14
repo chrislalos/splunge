@@ -34,6 +34,13 @@ def create_cookie_value(name, value, **kwargs):
 	return cookieValue
 
 
+def create_jenv():
+	templateFolder = get_template_folder()
+	jloader = jinja2.FileSystemLoader(templateFolder, followlinks=True)
+	jenv = jinja2.Environment(loader=jloader)
+	return jenv
+
+
 # def exec_module(module):
 # 	""" Execute an enriched module & return a ModuleExecutionResponse.
 
@@ -81,7 +88,7 @@ def get_module_attrs(module):
 	attrNames = get_attr_names(module)
 	attrs = {name: getattr(module, name, None) for name in attrNames}
 	for name, attr in attrs.items():
-		loggin.debug(f"{name}: {type(attr)} {attr} {isinstance(attr, types.ModuleType)} {isinstance(attr, type)}")
+		loggin.debug(f"{name}: {type(attr)} {isinstance(attr, types.ModuleType)} {isinstance(attr, type)}")
 	return attrs
 
 
@@ -112,6 +119,17 @@ def get_module_context (module):
 def get_folder(path):
 	(folder, _) = os.path.split(path)
 	return folder
+
+
+def get_template_folder():
+	default = "templates"
+	envvar = "SPLUNGE_TEMPLATE_FOLDER"
+	templateFolder = os.getenv(envvar)
+	if not templateFolder:
+		loggin.info("No envvar found for {envvar}; using default ({default})")
+		templateFolder = default
+	return templateFolder
+
 
 def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
 	sio = io.StringIO()
@@ -190,8 +208,7 @@ def render_filelike(f, context={}):
 	return render_string(s, context)
 
 def render_string(sTemplate, context={}):
-	jenv = jinja2.Environment()
-	loggin.debug(f'sTemplate={sTemplate}')
+	jenv = create_jenv()
 	jtemplate = jenv.from_string(sTemplate)
 	if not context:
 		context = {}
@@ -200,12 +217,9 @@ def render_string(sTemplate, context={}):
 
 # Shorthand for invoking jinja on a template path
 def render_template (templatePath, context={}):
-#	print("*** {}".format(os.getcwd()), file=sys.stderr)
-	cwd = os.getcwd()
-	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)
-	jenv = jinja2.Environment(loader=jloader)
-	templateName = os.path.relpath(templatePath, cwd)
-	jtemplate = jenv.get_template(templateName)
+	jenv = create_jenv()
+	print(f'os.getcwd()={os.getcwd()}')
+	jtemplate = jenv.get_template(templatePath)
 	if not context:
 		context = {}
 	s = jtemplate.render(context)
