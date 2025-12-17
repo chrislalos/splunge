@@ -12,10 +12,14 @@ class PythonModuleHandler(BaseHandler):
 		# Load module, create & exec enriched module
 		module = self.xgi.load_module()
 		enrichedModule = EnrichedModule(self.xgi)
+		loggin.debug(f'enrichedModule.http={enrichedModule.http}')	
+		loggin.debug(f'enrichedModule.http.args={enrichedModule.http.args}')	
+		loggin.debug(f'enrichedModule.http.args={enrichedModule.http.args}')	
 		if not module:
 			raise Exception(f'module not found: {util.get_module_path(self.xgi)}')
 		result = enrichedModule.exec()
-		
+		loggin.debug(f'result.context={result.context}')	
+		loggin.debug(f'result.context["http"].args={result.context["http"].args}')	
 		# If redirection, clear the output, and return without checking for a template
 		if result.is_redirect():
 			resp = Response.create_redirect(result.statusCode, result.statusMessage, result.headers.location)

@@ -10,6 +10,7 @@ from .mimetypes import mimemap
 @dataclass
 class Xgi:
 	wsgi: "WSGIEnvironment"
+	postData = None
 
 	@classmethod
 	def create(cls, path='/', base_url=None, query_string=None, method='GET', input_stream=None, content_type=None, content_length=None, errors_stream=None, multithread=False, multiprocess=False, run_once=False, headers=None, data=None, environ_base=None, environ_overrides=None):
@@ -41,7 +42,7 @@ class Xgi:
 		method = self['REQUEST_METHOD'].lower()
 		if method == 'get':
 			return self.create_get_args()
-		if method == 'post':
+		elif method == 'post':
 			return self.create_post_args()
 		return {}
 
@@ -61,8 +62,10 @@ class Xgi:
 		if not postData or self.contentType != 'application/x-www-form-urlencoded':
 			return {}
 		# Assume post data is a query string and parse it
+		loggin.debug(f'type(postData)={type(postData)}')
 		if type(postData) == bytes:
 			postData = postData.decode('utf-8')
+		loggin.debug(f'postData={postData}')
 		args = util.parse_query_string(postData)
 		return args
 
@@ -171,13 +174,14 @@ class Xgi:
 		return f
 		
 	def read_post_data(self):
-		contentLength = self.get('CONTENT_LENGTH')
-		# PEP 3333 says CONTENT_LENGTH may be omitted
-		if not contentLength:
-			return None
-		contentLength = int(contentLength)
-		post_input = self.get('wsgi.input')
-		if not post_input:
-			return None
-		d = post_input.read(contentLength)
-		return d
+		if not self.postData:
+			contentLength = self.get('CONTENT_LENGTH')
+			# PEP 3333 says CONTENT_LENGTH may be omitted
+			if not contentLength:
+				return None
+			contentLength = int(contentLength)
+			post_input = self.get('wsgi.input')
+			if not post_input:
+				return None
+			self.postData = post_input.read(contentLength)
+		return self.postData

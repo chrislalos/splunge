@@ -6,10 +6,10 @@ import types
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
+from . import loggin, util
 from .Headers import Headers
 from .HttpEnricher import HttpEnricher
 from .Xgi import Xgi
-from . import util
 
 class EnrichedModule:
 	module: types.ModuleType
@@ -42,7 +42,9 @@ class EnrichedModule:
 		# use the module's spec's loader to execute the module in a stdout-capturing context
 		stdout = io.StringIO()
 		with contextlib.redirect_stdout(stdout):
+			loggin.debug(f'Before: self.module.http={self.module.http}')
 			self.module.__spec__.loader.exec_module(self.module)
+			loggin.debug(f'After: self.module.http={self.module.http}')
 
 		# get the context + templateString from the module
 		context = self.get_context()
@@ -62,7 +64,7 @@ class EnrichedModule:
 
 	def get_context(self):
 		attrs = util.get_module_attrs(self.module)
-		attrs.pop('http', None)
+		# attrs.pop('http', None)
 		attrs.pop('_', None)
 		return attrs
 
