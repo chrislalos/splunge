@@ -4,6 +4,7 @@ import io
 import os
 import re
 import textwrap
+import types
 from typing import NamedTuple, TYPE_CHECKING
 if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
@@ -31,6 +32,13 @@ def create_cookie_value(name, value, **kwargs):
 	morsel = cookie[name]
 	cookieValue = morsel.OutputString()
 	return cookieValue
+
+
+def create_jenv():
+	templateFolder = get_template_folder()
+	jloader = jinja2.FileSystemLoader(templateFolder, followlinks=True)
+	jenv = jinja2.Environment(loader=jloader)
+	return jenv
 
 
 # def exec_module(module):
@@ -68,16 +76,19 @@ def get_attr_names(module, attrNamesBefore=None):
 	  - all __internal__ attributes, eg `__name__`
 	'''
 	rx = re.compile('__.*__')
-	attrNames= [el for el in set(dir(module))
-			    if not callable(getattr(module, el, None))
-				and not isinstance(el, type)
-				and not rx.match(el)]
+	attrNames= [name for name in set(dir(module))
+			    if not callable(getattr(module, name, None))
+				and not isinstance(getattr(module, name, None), types.ModuleType)
+				and not isinstance(getattr(module, name, None), type)
+				and not rx.match(name)]
 	return attrNames
 
 
 def get_module_attrs(module):
 	attrNames = get_attr_names(module)
 	attrs = {name: getattr(module, name, None) for name in attrNames}
+	for name, attr in attrs.items():
+		loggin.debug(f"{name}: {type(attr)} {isinstance(attr, types.ModuleType)} {isinstance(attr, type)}")
 	return attrs
 
 
@@ -108,6 +119,17 @@ def get_module_context (module):
 def get_folder(path):
 	(folder, _) = os.path.split(path)
 	return folder
+
+
+def get_template_folder():
+	default = "templates"
+	envvar = "SPLUNGE_TEMPLATE_FOLDER"
+	templateFolder = os.getenv(envvar)
+	if not templateFolder:
+		loggin.info("No envvar found for {envvar}; using default ({default})")
+		templateFolder = default
+	return templateFolder
+
 
 def html_fragment_to_doc(frag, *, title='', pre=constants.html_pre, post=constants.html_post):
 	sio = io.StringIO()
@@ -180,23 +202,27 @@ def parse_query_string(qs):
 	return args
 
 
-def render_string(sTemplate, context):
-	jenv = jinja2.Environment()
+def render_filelike(f, context={}):
+	with f:
+		s = f.read().decode('utf-8')
+	return render_string(s, context)
+
+def render_string(sTemplate, context={}):
+	jenv = create_jenv()
 	jtemplate = jenv.from_string(sTemplate)
+	if not context:
+		context = {}
 	s = jtemplate.render(context)
 	return s
 
 # Shorthand for invoking jinja on a template path
-def render_template (templatePath, args={}):
-#	print("*** {}".format(os.getcwd()), file=sys.stderr)
-	cwd = os.getcwd()
-	jloader = jinja2.FileSystemLoader(cwd, followlinks=True)
-	jenv = jinja2.Environment(loader=jloader)
-	templateName = os.path.relpath(templatePath, cwd)
-	jtemplate = jenv.get_template(templateName)
-	if not args:
-		args = {}
-	s = jtemplate.render(args)
+def render_template (templatePath, context={}):
+	jenv = create_jenv()
+	print(f'os.getcwd()={os.getcwd()}')
+	jtemplate = jenv.get_template(templatePath)
+	if not context:
+		context = {}
+	s = jtemplate.render(context)
 	return s 
 
 

@@ -1,11 +1,23 @@
 import io
 import unittest
-
-from splunge import util
+from splunge import mimetypes, util, Xgi
+from splunge.handlers import lookupTable, BaseHandler, FileHandler, HtmlGenHandler, MarkdownHandler, PythonTemplateHandler, SourceHandler
 
 class MiscTests(unittest.TestCase):
     def test_hello(self):
         self.assertEqual("hello", "hello")
+
+    def test_create_abstract_handlers(self):
+        xgi = Xgi.create("/")
+        self.assertRaises(TypeError, BaseHandler, xgi)
+        self.assertRaises(TypeError, HtmlGenHandler, xgi)
+
+    def test_create_concrete_handlers(self):
+        xgi = Xgi.create("/")
+        test_for_clean(self, FileHandler, xgi)
+        test_for_clean(self, MarkdownHandler, xgi)
+        test_for_clean(self, PythonTemplateHandler, xgi)
+        test_for_clean(self, SourceHandler, xgi)
 
     def test_create_cookie_value(self):
         cookie_value = util.create_cookie_value("foo", 13)
@@ -36,3 +48,22 @@ class MiscTests(unittest.TestCase):
         sio.write("MEAT")
         line = sio.readline()
         self.assertFalse(util.is_io_empty(sio))
+
+    def x_gen_lookup_table(self):
+        d = {}
+        for ext, mimeType in mimetypes.mimemap.items():
+            d[ext] = (mimeType, FileHandler.__name__)
+        d.update(lookupTable)
+        with open("/tmp/lookupTable.py", "w") as f:
+            for ext, (mimeType, handlerName) in d.items():
+                if isinstance(handlerName, type):
+                    handlerName = handlerName.__name__
+
+
+def test_for_clean(t, callable, *args, **kwargs):
+    raisedEx = None
+    try:
+        callable(*args, **kwargs)
+    except Exception as ex:
+        raisedEx = ex
+    t.assertIsNone(raisedEx)

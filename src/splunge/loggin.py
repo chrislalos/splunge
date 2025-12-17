@@ -43,6 +43,7 @@ def warning(msg, *args, **kwargs):
 def init():
 	print("init'ing logger ...", file=sys.stderr)
 	splungeLogFile = os.getenv("SPLUNGE_LOGFILE")
+	print(f'splungeLogFile={splungeLogFile}')
 	testing = os.getenv("TESTING")
 	print(f'testing={testing}', file=sys.stderr)
 	f: logging.Formatter = None
@@ -52,7 +53,7 @@ def init():
 		logPath = pathlib.Path(splungeLogFile)
 		h = logging.FileHandler(logPath)
 		print(f'writing log to {os.path.abspath(splungeLogFile)}', file=sys.stderr)
-	elif testing == '1' or testing.lower == 'y':
+	elif testing and (testing == '1' or testing.lower == 'y'):
 		f = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 		logPath = pathlib.Path(os.path.join(os.getcwd(), 'splunge_test.log'))
 		h = logging.FileHandler(logPath)

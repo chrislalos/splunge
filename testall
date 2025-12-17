@@ -1,4 +1,9 @@
 #! /usr/bin/env bash
 
+if ! command -v python > /dev/null; then
+	echo "Activating venv"
+	source venv/bin/activate
+fi
+
 TESTING=1 python -m unittest discover -s test
 

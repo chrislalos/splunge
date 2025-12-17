@@ -18,12 +18,17 @@ if [[ ! -n "$SPLUNGE_LOGFILE" ]]; then
     echo "$SPLUNGE_LOGFILE not set - setting manually"
     SPLUNGE_LOGFILE="$logFolder/splunge.log"
 fi
+if [[ ! -n "$SPLUNGE_TEMPLATE_FOLDER" ]]; then
+    echo "$SPLUNGE_TEMPLATE_FOLDER not set - setting manually"
+    SPLUNGE_TEMPLATE_FOLDER="./templates"
+fi
 printf '$SPLUNGE_LOGFILE=%s\n' "$SPLUNGE_LOGFILE"
-
+printf '$SPLUNGE_TEMPLATE_FOLDER=%s\n' "$SPLUNGE_TEMPLATE_FOLDER"
 gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
          --chdir "$contentFolder" \
          --env SPLUNGE_LOGFILE="$SPLUNGE_LOGFILE" \
+         --env SPLUNGE_TEMPLATE_FOLDER="$SPLUNGE_TEMPLATE_FOLDER" \
          --error-logfile "$logFolder/errors.log" \
          --workers 3 \
          --umask 007 \

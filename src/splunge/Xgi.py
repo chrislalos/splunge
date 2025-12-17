@@ -10,6 +10,7 @@ from .mimetypes import mimemap
 @dataclass
 class Xgi:
 	wsgi: "WSGIEnvironment"
+	postData = None
 
 	@classmethod
 	def create(cls, path='/', base_url=None, query_string=None, method='GET', input_stream=None, content_type=None, content_length=None, errors_stream=None, multithread=False, multiprocess=False, run_once=False, headers=None, data=None, environ_base=None, environ_overrides=None):
@@ -18,6 +19,17 @@ class Xgi:
 		wsgi = EnvironBuilder(**params).get_environ()
 		xgi = Xgi(wsgi)
 		return xgi
+
+
+	@property
+	def contentType(self):
+		val = None
+		if 'CONTENT_TYPE' in self.wsgi:
+			val = self.wsgi['CONTENT_TYPE']
+		return val
+
+	@property
+	def fileWrapper(self): return getattr(self.wsgi, "file_wrapper", None)
 
 	def __getattr__ (self, name):
 		return getattr(self.wsgi, name)
@@ -30,7 +42,7 @@ class Xgi:
 		method = self['REQUEST_METHOD'].lower()
 		if method == 'get':
 			return self.create_get_args()
-		if method == 'post':
+		elif method == 'post':
 			return self.create_post_args()
 		return {}
 
@@ -47,24 +59,18 @@ class Xgi:
 		''' Return a dictionary of post data args. '''
 		# Make sure non-empty post data exists
 		postData = self.read_post_data()
-		contentType = self['CONTENT_TYPE']
-		if not postData or contentType != 'application/x-www-form-urlencoded':
+		if not postData or self.contentType != 'application/x-www-form-urlencoded':
 			return {}
 		# Assume post data is a query string and parse it
+		loggin.debug(f'type(postData)={type(postData)}')
 		if type(postData) == bytes:
 			postData = postData.decode('utf-8')
+		loggin.debug(f'postData={postData}')
 		args = util.parse_query_string(postData)
 		return args
 
 	def get_file_name(self):
 		return os.path.basename(self.get_path())
-
-	def is_index_page(self):
-		path = self['PATH_INFO'].strip()
-		flag = False
-		if not path or path == '/':
-			flag = True
-		return flag
 
 	def get_local_path(self):
 		''' Return the local path of the resources specified by the wsgi '''
@@ -98,14 +104,13 @@ class Xgi:
 		templatePath = f'{localPath}.pyp'
 		return templatePath
 
-	def is_mime_type(self):
-		''' Check if the wsgi has a recognized MIME type. '''
-		ext = self.get_path_extension()
-		loggin.debug(f"is_mime_type(): ext={ext}")
-		flag = ext in mimemap
-		loggin.debug(f"is_mime_type(): flag={flag}")
+	def is_index_page(self):
+		path = self['PATH_INFO'].strip()
+		flag = False
+		if not path or path == '/':
+			flag = True
 		return flag
-	
+
 	def is_python_markup(self):
 		''' Check if a request respresents python markup / jinja template.
 		
@@ -142,6 +147,10 @@ class Xgi:
 				return True
 		return False
 
+	def has_template_path(self):
+		# Does a .pyp exist? If so, create a template handler and transfer control to it
+		templatePath = self.get_template_path()
+		return os.path.exists(templatePath)
 
 	def load_module(self):
 		# Get local path, append .py to the path, & confirm the path exists
@@ -158,14 +167,21 @@ class Xgi:
 		f = open(localPath, 'rb')
 		return f
 		
+	def open_template (self):
+		localPath = self.get_local_path()
+		localTemplatePath = f'{localPath}.pyp'
+		f = open(localTemplatePath, 'rb')
+		return f
+		
 	def read_post_data(self):
-		contentLength = self.get('CONTENT_LENGTH')
-		# PEP 3333 says CONTENT_LENGTH may be omitted
-		if not contentLength:
-			return None
-		contentLength = int(contentLength)
-		post_input = self.get('wsgi.input')
-		if not post_input:
-			return None
-		d = post_input.read(contentLength)
-		return d
+		if not self.postData:
+			contentLength = self.get('CONTENT_LENGTH')
+			# PEP 3333 says CONTENT_LENGTH may be omitted
+			if not contentLength:
+				return None
+			contentLength = int(contentLength)
+			post_input = self.get('wsgi.input')
+			if not post_input:
+				return None
+			self.postData = post_input.read(contentLength)
+		return self.postData
