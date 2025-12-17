@@ -38,6 +38,7 @@ class EnrichedModule:
 	def exec(self) -> "EnrichedModuleResult":
 		moduleFolder = self.xgi.get_module_folder()
 		sys.path.append(moduleFolder)
+		loggin.debug(f'sys.path={sys.path}')
 
 		# use the module's spec's loader to execute the module in a stdout-capturing context
 		stdout = io.StringIO()
