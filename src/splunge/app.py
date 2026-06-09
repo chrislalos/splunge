@@ -86,7 +86,7 @@ def handle_error(ex, xgi, start_response):
 		start_response(status, headers.asTuples())
 		return [content]
 	except Exception as ex:
-		loggin.error(ex, exc_info=True)
+		# loggin.error(ex, exc_info=True)
 		content = util.render_string(error_template_strings.Err500, args).encode('utf-8')
 		contentLength = len(content)
 		headers = Headers()

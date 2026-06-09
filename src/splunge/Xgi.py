@@ -74,8 +74,8 @@ class Xgi:
 
 	def get_local_path(self):
 		''' Return the local path of the resources specified by the wsgi '''
-		path = self.get_path()
-		return os.path.abspath(os.getcwd() + path)
+		path = self.get_path().removeprefix("/")
+		return os.path.abspath(os.path.join(os.getcwd(), path))
 
 	def get_module_folder(self):
 		path = self.get_module_path()
@@ -88,7 +88,7 @@ class Xgi:
 		modulePath = f'{localPath}.py'
 		return modulePath
 
-	def get_path (self):
+	def get_path (self) -> str:
 		''' Return the wsgi's path. '''
 		return self['PATH_INFO'].strip()
 

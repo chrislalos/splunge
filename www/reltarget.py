@@ -1,0 +1,2 @@
+def meat():
+    print('MEAT')

@@ -1,0 +1,134 @@
+#! /usr/bin/env python3
+
+'''
+parseTrace - a filter to make a Python trace more legible
+
+Usage
+
+python -m trace --trace somefile.py | parseTrace
+
+parseTrace's biggest trick is to convert references to frozen modules into
+actual lines of code. This requires a folder on the local filesystem that
+contains python source code for the active python distro. Source code can
+be obtained from https://github.com/python/cpython, To make sure versions match,
+`git checkout VERSION_LABEL`. You'll get a 'detached HEAD' warning but that's
+ok.
+
+
+Sample Python trace output
+
+```
+python -m trace --trace ./somefile.py
+ --- modulename: somefile, funcname: <module>
+somefile.py(1):  import importlib
+somefile.py(3):  importlib.import_module('sys')
+ --- modulename: __init__, funcname: import_module
+__init__.py(79):      level = 0
+__init__.py(80):      if name.startswith('.'):
+__init__.py(88):      return _bootstrap._gcd_import(name[level:], package, level)
+ --- modulename: _bootstrap, funcname: _gcd_import
+<frozen importlib._bootstrap>(1384)
+ --- modulename: _bootstrap, funcname: _sanity_check
+<frozen importlib._bootstrap>(1287)
+<frozen importlib._bootstrap>(1289)
+<frozen importlib._bootstrap>(1291)
+<frozen importlib._bootstrap>(1297)
+<frozen importlib._bootstrap>(1385)
+<frozen importlib._bootstrap>(1387)
+ --- modulename: _bootstrap, funcname: _find_and_load
+<frozen importlib._bootstrap>(1354)
+<frozen importlib._bootstrap>(1355)
+<frozen importlib._bootstrap>(1356)
+<frozen importlib._bootstrap>(1368)
+<frozen importlib._bootstrap>(1372)
+```
+
+Sample parseTrace output
+
+```
+python -m trace --trace ./somefile.py | /Users/chris/src/splunge/scripts/parseTrace
+somefile.<module>()
+somefile.py(1):  import importlib
+somefile.py(3):  importlib.import_module('sys')
+__init__.import_module()
+__init__.py(79):      level = 0
+__init__.py(80):      if name.startswith('.'):
+__init__.py(88):      return _bootstrap._gcd_import(name[level:], package, level)
+_bootstrap._gcd_import()
+    _sanity_check(name, package, level)                                          # importlib/_bootstrap.py:1384
+_bootstrap._sanity_check()
+    if not isinstance(name, str):                                                # importlib/_bootstrap.py:1287
+    if level < 0:                                                                # importlib/_bootstrap.py:1289
+    if level > 0:                                                                # importlib/_bootstrap.py:1291
+    if not name and level == 0:                                                  # importlib/_bootstrap.py:1297
+    if level > 0:                                                                # importlib/_bootstrap.py:1385
+    return _find_and_load(name, _gcd_import)                                     # importlib/_bootstrap.py:1387
+_bootstrap._find_and_load()
+    module = sys.modules.get(name, _NEEDS_LOADING)                               # importlib/_bootstrap.py:1354
+    if (module is _NEEDS_LOADING or                                              # importlib/_bootstrap.py:1355
+        getattr(getattr(module, "__spec__", None), "_initializing", False)):     # importlib/_bootstrap.py:1356
+    if module is None:                                                           # importlib/_bootstrap.py:1368
+    return module                                                                # importlib/_bootstrap.py:1372
+```
+
+Notable translations
+
+ `--- modulename: __init__, funcname: import_module` => `__init__.import_module()`
+
+ `<frozen importlib._bootstrap>(1354)` => `module = sys.modules.get(name, _NEEDS_LOADING)                               # importlib/_bootstrap.py:1354`
+'''
+
+import linecache
+import os.path
+import re
+import sys
+
+# <frozen importlib._bootstrap>(613) #
+
+SRC_HOME = '/Users/chris/src/github.com/python/cpython/Lib'
+
+def handleIsFunc(s):
+    ''' Handle reference to a module and function
+
+    Eg:  --- modulename: _bootstrap_external, funcname: exec_module
+    '''
+    rx = re.compile(r'^ --- modulename: (.*), funcname: (.*)')
+    m = rx.match(s)
+    if m:
+        # print(s)
+        # print(f'\033[1m{m.group(1)}.{m.group(2)}()\033[0m')
+        print(f'{m.group(1)}.{m.group(2)}()')
+        return True
+    return False
+
+def handleIsFrozenLoc(s):
+    ''' Handle reference to a line of code in a frozen module
+
+    Eg: <frozen importlib._bootstrap>(493)
+    '''
+    rx = re.compile(r'^<frozen (.+)>\((\d+)\)')
+    m = rx.match(s)
+    if m:
+        path = m.group(1).replace('.', '/') + '.py'
+        fullPath = f'{SRC_HOME}/{path}'
+        exists = os.path.exists(fullPath)
+        lineNumber = int(m.group(2))
+        loc = linecache.getline(fullPath, lineNumber).rstrip()
+        # print(s)
+        # print(f'{fullPath}:{lineNumber} - {exists}', flush=True)
+        print(f'{loc:<80} # {path}:{lineNumber}')
+        return True
+    return False
+
+
+if __name__ == '__main__':
+    # print(f'SRC_HOME exists: {os.path.exists(SRC_HOME)}')
+    with open(sys.argv[1], 'r') if len(sys.argv) > 1 and sys.argv != '-' else sys.stdin as f:
+        try:
+            for line in f:
+                s = line.rstrip()
+                if (not handleIsFunc(s) and
+                    not handleIsFrozenLoc(s)):
+                    print(s, flush=True)
+        except KeyboardInterrupt:
+            print()

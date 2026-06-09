@@ -14,6 +14,7 @@ class IndexPageHandler(BaseHandler):
 	''' Handle index page requests by redirection to /index.html. '''
 
 	def handle_request(self) -> Response:
+		location = None
 		# @note it might be better to iterate over multiple options and use the one that exists
 		for indexPage, indexUrl in self.indexPageMap.items():
 			indexPagePath = f'{os.getcwd()}{indexPage}'

@@ -3,7 +3,7 @@ import unittest
 from splunge import mimetypes, util, Xgi
 from splunge.handlers import lookupTable, BaseHandler, FileHandler, HtmlGenHandler, MarkdownHandler, PythonTemplateHandler, SourceHandler
 
-class MiscTests(unittest.TestCase):
+class Tests(unittest.TestCase):
     def test_hello(self):
         self.assertEqual("hello", "hello")
 
