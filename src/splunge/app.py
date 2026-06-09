@@ -140,8 +140,10 @@ def app(wsgi, start_response):
 		xgi = Xgi(wsgi)
 		loggin.debug(f"PATH_INFO={xgi['PATH_INFO']}")
 		loggin.debug(f"SCRIPT_NAME={xgi['SCRIPT_NAME']}")
+		loggin.debug(f"SPLUNGE_CODEFOLDER={os.getenv('SPLUNGE_CODEFOLDER')}")
 		loggin.debug(f"xwsgi.file_wrapper={getattr(xgi, 'file_wrapper', 'N/A')}")
-		handler = handlers.create(xgi)
+		code_folder = os.getenv("SPLUNGE_CODEFOLDER")
+		handler = handlers.create(xgi, code_folder=code_folder)
 		resp = handler.handle_request()
 		status = resp.status
 		headers = resp.headers.asTuples() 

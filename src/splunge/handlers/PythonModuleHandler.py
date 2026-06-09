@@ -20,7 +20,8 @@ class PythonModuleHandler(BaseHandler):
 		# result = enrichedModule.exec()
 		codeFolderPath = os.path.abspath(os.getenv("SPLUNGE_CODEFOLDER"))
 		codeFolderNspName = 'codefolder'
-		moduleName = os.path.basename(self.xgi.get_path())
+		# moduleName = os.path.basename(self.xgi.get_path())
+		moduleName = '.'.join(self.xgi.get_path().removeprefix('/').split('/'))
 		loggin.debug(f'codeFolderPath={codeFolderPath}')
 		loggin.debug(f'moduleName={moduleName}')
 		mod = util.load_module(moduleName, codeFolderPath, codeFolderNspName)
@@ -45,7 +46,7 @@ class PythonModuleHandler(BaseHandler):
 			iter = [buf]
 			resp = Response.create_from_result(result, iter)
 		# If pyp exists, delegate to template handler, else write context directly to response
-		elif self.xgi.has_template_path():
+		elif self.xgi.has_template_path(codeFolderPath):
 			handler = PythonTemplateHandler(self.xgi)
 			loggin.info(f"Handing over to PythonTemplateHandler ...")
 			resp =  handler.handle_request(result.context)

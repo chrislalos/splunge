@@ -82,10 +82,10 @@ class Xgi:
 		(folder, _) = os.path.split(path)
 		return folder
 
-	def get_module_path(self):
+	def get_module_path(self, code_folder):
 		# Get local path, append .py to the path, & confirm the path exists
-		localPath = self.get_local_path()
-		modulePath = f'{localPath}.py'
+		path = self.get_path().removeprefix("/")
+		modulePath = f'{os.path.join(code_folder, path)}.py'
 		return modulePath
 
 	def get_path (self) -> str:
@@ -98,10 +98,11 @@ class Xgi:
 		(_, ext) = os.path.splitext(path)
 		return ext
 
-	def get_template_path(self):
+	def get_template_path(self, code_folder):
 		# Does a .pyp exist? If so, create a template handler and transfer control to it
-		localPath = self.get_local_path()
-		templatePath = f'{localPath}.pyp'
+		module_path = self.get_module_path(code_folder)
+		module_path_no_ext, _ = os.path.splitext(module_path)
+		templatePath = f'{module_path_no_ext}.pyp'
 		return templatePath
 
 	def is_index_page(self):
@@ -111,7 +112,7 @@ class Xgi:
 			flag = True
 		return flag
 
-	def is_python_markup(self):
+	def is_python_markup(self, code_folder):
 		''' Check if a request respresents python markup / jinja template.
 		
 		A request represents a python markup iff
@@ -120,16 +121,17 @@ class Xgi:
 			filesystem
 		'''
 		ext = self.get_path_extension()
-		local_path = self.get_local_path()
+		template_path = self.get_template_path(code_folder)
+		template_path_no_ext, _ = os.path.splitext(template_path)
+		print(f'ext={ext} template_path={template_path} template_path_no_ext={template_path_no_ext}')
 		# Is the path a non-existent file *and* does it lack an extension? (e.g. http://foo.com/app/user)  
-		if not ext and not os.path.isfile(local_path):
-			templatePath = f'{local_path}.pyp'
-			if os.path.isfile(templatePath):
+		if not ext and not os.path.isfile(template_path_no_ext):
+			if os.path.isfile(template_path):
 				return True
 		return False
 
 
-	def is_python_module(self):
+	def is_python_module(self, code_folder):
 		''' Check if a request respresents a python module.
 		
 		A request represents a python module iff
@@ -138,18 +140,19 @@ class Xgi:
 			filesystem
 		'''
 		ext = self.get_path_extension()
-		local_path = self.get_local_path()
+		module_path = self.get_module_path(code_folder)
+		module_path_no_ext, _ = os.path.splitext(module_path)
+		print(f'ext={ext} module_path={module_path} module_path_no_ext={module_path_no_ext}')
 		# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
-		if not ext and not os.path.isfile(local_path):
-			# If it exists (as a file) when we append .py, use PythonHandler
-			module_path = '.'.join([local_path, 'py'])
+		if not ext and not os.path.isfile(module_path_no_ext):
+			# If it exists as a file with a .py ext, use PythonHandler
 			if os.path.isfile(module_path):
 				return True
 		return False
 
-	def has_template_path(self):
+	def has_template_path(self, code_folder):
 		# Does a .pyp exist? If so, create a template handler and transfer control to it
-		templatePath = self.get_template_path()
+		templatePath = self.get_template_path(code_folder)
 		return os.path.exists(templatePath)
 
 	def load_module(self):
@@ -167,9 +170,8 @@ class Xgi:
 		f = open(localPath, 'rb')
 		return f
 		
-	def open_template (self):
-		localPath = self.get_local_path()
-		localTemplatePath = f'{localPath}.pyp'
+	def open_template (self, code_folder):
+		localTemplatePath = self.get_template_path(code_folder)
 		f = open(localTemplatePath, 'rb')
 		return f
 		

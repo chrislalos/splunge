@@ -9,7 +9,8 @@ from .HtmlGenHandler import HtmlGenHandler
 class PythonTemplateHandler(HtmlGenHandler):
 	def open_content(self):
 		loggin.debug(f'{self.__class__.__name__}.open_content()')
-		return self.xgi.open_template()
+		code_folder = os.path.abspath(os.getenv("SPLUNGE_CODEFOLDER"))
+		return self.xgi.open_template(code_folder)
 
 	def gen_html(self, f, context: dict=None):
 		loggin.debug(f'{self.__class__.__name__}.gen_html()')

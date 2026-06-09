@@ -38,7 +38,21 @@ class Tests(unittest.TestCase):
 		path = '/rel'
 		xgi = Xgi.create(path)
 		self.assertIsNotNone(xgi)
-		module_path = xgi.get_module_path()
+		module_path = xgi.get_module_path(self.codeFolder)
 		flag = os.path.exists(module_path)
 		print(f'module_path={module_path}')
 		self.assertTrue(flag)
+
+	def test_is_python_module(self):
+		path = '/foo'
+		xgi = Xgi.create(path)
+		self.assertIsNotNone(xgi)
+		isModule = xgi.is_python_module(self.codeFolder)
+		self.assertTrue(isModule)
+
+	def test_is_python_module2(self):
+		path = '/sub/bum'
+		xgi = Xgi.create(path)
+		self.assertIsNotNone(xgi)
+		isModule = xgi.is_python_module(self.codeFolder)
+		self.assertTrue(isModule)
