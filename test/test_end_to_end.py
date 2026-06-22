@@ -5,15 +5,15 @@ from splunge import app, Response
 
 CT_html = "text/html; charset=utf-8"
 
-class EndToEndTests(unittest.TestCase):
+class Tests(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
-		cls.cwd = os.getcwd()
+		cls.cwdPrev = os.getcwd()
 		os.chdir('./www')
 
 	@classmethod
 	def tearDownClass(cls):
-		os.chdir(cls.cwd)
+		os.chdir(cls.cwdPrev)
 
 	def test_404(self):
 		url = "/xxx/yyy/zzz"
@@ -28,7 +28,6 @@ class EndToEndTests(unittest.TestCase):
 	def test_hello_html(self):
 		test_get(self, "/hello.html", contentType="text/html", contentLength=os.path.getsize("hello.html"))
 
-
 	def test_meat_bar(self):
 		test_get(self, "/meat/bar", contentType=CT_html)
 
@@ -37,6 +36,12 @@ class EndToEndTests(unittest.TestCase):
 
 	def test_meat_foo3_pyp(self):
 		test_get(self, "/meat/foo3.pyp", contentType=CT_html)
+
+	def test_new_rel(self):
+		pass
+
+	def test_rel(self):
+		test_get(self, "/rel", contentType=CT_html)
 
 
 def test_get(t: unittest.TestCase, url: str, *, contentType=None, contentLength=None) -> Response: 

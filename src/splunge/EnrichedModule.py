@@ -22,7 +22,7 @@ class EnrichedModule:
 	def	http(self, val): setattr(self.module, 'http', val)
 
 	# Note this was created so I could have a simple way to create EnrichedModule
-	# instances from just an xgi. Since then, the Xgi c'tor has been modified to
+	# instances from just an xgi. Since then, the c'tor has been modified to
 	# only take an xgi, so this function might not be necessary.
 	@classmethod
 	def create(cls, xgi: Xgi)-> "EnrichedModule":
@@ -33,7 +33,7 @@ class EnrichedModule:
 	def __init__(self, xgi: Xgi) -> None:
 		self.xgi = xgi
 		self.module = self.xgi.load_module()
-		self.http = HttpEnricher(self.xgi)	# will set module.http as a side effect
+		self.http = HttpEnricher(self.xgi)	# setter will set module.http as a side effect
 
 	def exec(self) -> "EnrichedModuleResult":
 		moduleFolder = self.xgi.get_module_folder()

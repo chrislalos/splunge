@@ -5,7 +5,7 @@ from werkzeug.test import create_environ
 from splunge import app
 from splunge import handlers, util, FileHandler, IndexPageHandler, MarkdownHandler, PythonModuleHandler, PythonTemplateHandler, Response, SourceHandler, Xgi
 
-class HandleRequestTests(unittest.TestCase):
+class Tests(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.cwd = os.getcwd()
@@ -35,6 +35,12 @@ class HandleRequestTests(unittest.TestCase):
 
 	def test_module(self):
 		# Create a xgi, then create + execute a handler for it
+		(handler, resp) = create_and_test_handler(self, "foo", PythonModuleHandler)
+		# Test the response
+		test_response_ok_html(self, resp)
+		
+	def test_module_in_folder(self):
+		# Create a xgi, then create + execute a handler for it
 		(handler, resp) = create_and_test_handler(self, "/meat/foo", PythonModuleHandler)
 		# Test the response
 		test_response_ok_html(self, resp)
@@ -50,6 +56,10 @@ class HandleRequestTests(unittest.TestCase):
 		(handler, resp) = create_and_test_handler(self, "/meat/redirect_0_from", PythonModuleHandler)
 		# Test the response
 		test_response_redirect(self, resp, 'redirect_0_to.html')
+
+	def test_module_with_relative_import(self):
+		pass
+
 
 	def test_module_with_under(self):
 		# Create a xgi, then create + execute a handler for it

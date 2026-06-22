@@ -1,8 +1,12 @@
 from http.cookies import SimpleCookie
 import importlib
+from importlib._bootstrap import _load
+from importlib._bootstrap_external import _NamespacePath
+from importlib.machinery import ModuleSpec, PathFinder
 import io
 import os
 import re
+import sys
 import textwrap
 import types
 from typing import NamedTuple, TYPE_CHECKING
@@ -12,7 +16,14 @@ import urllib
 from importlib.machinery import FileFinder, SourceFileLoader
 import jinja2
 
+from .HttpEnricher import HttpEnricher
+from .Xgi import Xgi
 from . import constants, loggin
+
+
+def add_code_folder(nsp_name, code_folder_path):
+	sys.path.append(code_folder_path)
+	create_namespace_package(nsp_name, code_folder_path)
 
 
 def context_to_bytes(context: dict) -> bytes:
@@ -65,6 +76,22 @@ def create_jenv():
 # 	headerValue = cookie.OutputString()
 # 	resp.setHeader(headerName, headerValue)
 
+def create_namespace_package(name, path):
+    spec = create_spec_by_folder(name, path)
+    nsPackage = _load(spec)                                           # Create the module using the internal `_load()` function 
+    return nsPackage
+
+def create_spec_by_folder(name, path):
+    np = _NamespacePath(name, [path], PathFinder._get_spec)     # Create a NamespacePath with the desired folder and path 
+    spec = ModuleSpec(name, None)                                 # Create a simple `ModuleSpec` with the desired name 
+    spec.submodule_search_locations = np                              # Set a spec attribute to the NamespacePath
+    return spec
+
+
+def enrich_module (mod: types.ModuleType, xgi: Xgi) -> types.ModuleType:
+	http = HttpEnricher(xgi)
+	setattr(mod, 'http', http)
+	return mod
 
 
 def get_attr_names(module, attrNamesBefore=None):
@@ -82,7 +109,6 @@ def get_attr_names(module, attrNamesBefore=None):
 				and not isinstance(getattr(module, name, None), type)
 				and not rx.match(name)]
 	return attrNames
-
 
 def get_module_attrs(module):
 	attrNames = get_attr_names(module)
@@ -121,12 +147,19 @@ def get_folder(path):
 	return folder
 
 
+def get_spec_name_and_module_path (module_name, code_folder_path, code_folder_nsp_name):
+	# (_, code_folder_name) = os.path.split(code_folder_path)
+	spec_name = f'{code_folder_nsp_name}.{module_name}'
+	module_path = f'{os.path.abspath(os.path.join(code_folder_path, '/'.join(module_name.split('.'))))}.py'
+	return (spec_name, module_path)
+
+
 def get_template_folder():
 	default = "templates"
 	envvar = "SPLUNGE_TEMPLATE_FOLDER"
 	templateFolder = os.getenv(envvar)
 	if not templateFolder:
-		loggin.info("No envvar found for {envvar}; using default ({default})")
+		loggin.info(f"No envvar found for {envvar}; using default ({default})")
 		templateFolder = default
 	return templateFolder
 
@@ -155,35 +188,60 @@ def is_io_empty (anIo):
 	return isEmpty
 
 
-def load_module_by_path (path):
+# Load a module by its urlPath (eg /foo) from a code folder
+def load_module (module_name, code_folder_path, code_folder_nsp_name):
 	''' Load a python module by path using importlib machinery. '''
-	# create the module path and load the module using machinery
-	moduleSpec = load_module_spec(path)
-	if not moduleSpec:
-		raise Exception(f'No module spec found for path={path}')
-	module = importlib.util.module_from_spec(moduleSpec)
-	return module
-
-
-def load_module_spec (path):
-	''' Return a ModuleSpec for the specified path using importlib machinery.
+	# (codeFolder, filename) = os.path.split(expectedPath)
+	# self.assertEqual(expectedCodeFolder, codeFolder)
+	# self.assertEqual(expectedFilename, filename)
+	add_code_folder(code_folder_nsp_name, code_folder_path)
 	
-	The importlib machinery's process is a little weird.
-	  - Instantiate a loader class, eg importlib.machinery.SourceFileLoader
-	  - Instantiate a FileFinder from a path, the loader object, and a file extension (.py)
-	  - Use the FileFinder to lookup the spec.
+	spec = load_module_spec(module_name, code_folder_path, code_folder_nsp_name)	
+	mod = importlib.util.module_from_spec(spec)
+	# (spec_name, module_path) = get_spec_name_and_module_path(module_name, code_folder_path)
+	# spec = importlib.util.spec_from_file_location(spec_name, module_path)
+	return mod
 
-	It's strange to take a path, break it into a local folder and an extension,
-	create a FileFinder for the specific path and extension, and then immediately
-	use that FileFinder to return a ModuleSpec. Seems like the importlib.machinery
-	could do all that given a path. But it can't. That's what this function is for.
-	'''
-	splitPath = split_module_path(path)
-	folder, moduleName, ext = splitPath.folder, splitPath.moduleName, splitPath.ext	
-	loaderArgs = (SourceFileLoader, [ext])
-	finder = FileFinder(folder, loaderArgs)
-	spec = finder.find_spec(moduleName)
+
+	# create the module path and load the module using machinery
+	# moduleSpec = load_module_spec(path)
+	# if not moduleSpec:
+	# 	raise Exception(f'No module spec found for path={path}')
+	# module = importlib.util.module_from_spec(moduleSpec)
+	# return module
+
+
+def load_module_spec (module_name, code_folder_path, code_folder_nsp_name) -> ModuleSpec:
+	print(f'module_name={module_name} code_folder_path={code_folder_path} code_folder_nsp_name={code_folder_nsp_name}')
+	(spec_name, module_path) = get_spec_name_and_module_path(module_name, code_folder_path, code_folder_nsp_name)
+	# (_, code_folder_name) = os.path.split(code_folder_path)
+	# spec_name = f'{code_folder_name}.{module_name}'
+	# module_path = f'{os.path.abspath(os.path.join(code_folder_path, module_name))}.py'
+	print(f'spec_name={spec_name} module_path={module_path}')
+	spec = importlib.util.spec_from_file_location(spec_name, module_path)
 	return spec
+
+
+# def load_module_spec (path):
+# 	''' Return a ModuleSpec for the specified path using importlib machinery.
+	
+# 	The importlib machinery's process is a little weird.
+# 	  - Instantiate a loader class, eg importlib.machinery.SourceFileLoader
+# 	  - Instantiate a FileFinder from a path, the loader object, and a file extension (.py)
+# 	  - Use the FileFinder to lookup the spec.
+
+# 	It's strange to take a path, break it into a local folder and an extension,
+# 	create a FileFinder for the specific path and extension, and then immediately
+# 	use that FileFinder to return a ModuleSpec for the specified path. Seems 
+# 	like the importlib.machinery could do all that given a path. But it can't.
+# 	That's what this function is for.
+# 	'''
+# 	splitPath = split_module_path(path)
+# 	folder, moduleName, ext = splitPath.folder, splitPath.moduleName, splitPath.ext	
+# 	loaderArgs = (SourceFileLoader, [ext])
+# 	finder = FileFinder(folder, loaderArgs)
+# 	spec = finder.find_spec(moduleName)
+# 	return spec
 
 
 def parse_query_string(qs):

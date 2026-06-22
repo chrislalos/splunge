@@ -4,12 +4,13 @@ import os
 import unittest
 from werkzeug.test import EnvironBuilder
 from splunge.HttpEnricher import HttpEnricher, create_enrichment_object, enrich_module
+from splunge import module_runner
 from splunge import util
 from splunge import ModuleExecutionResponse
 from splunge import Xgi
 
 
-class EnrichmentTests(unittest.TestCase):
+class Tests(unittest.TestCase):
 	def test_enrich_module(self):
 		path = './www/meat/foo.py'
 		module = util.load_module_by_path(path)
@@ -82,9 +83,11 @@ class EnrichmentTests(unittest.TestCase):
 		self.assertEqual(targetPath, localPath)
 		modulePath = f'{localPath}.py'
 		self.assertTrue(os.path.isfile(modulePath))
-		module = util.load_module_by_path(modulePath)
+		module = util.load_module('foo', modulePath, 'mycode')
 		self.assertIsNotNone(module)
-		self.assertFalse(hasattr(module, 'meat'))
+		module = util.enrich_module(module, xgi)
+		self.assertEqual(path, module.http.path)
+		module_runner.exec_module(module, xgi)
 
 	def test_module_pypinfo(self):
 		path = "/meat/foo"

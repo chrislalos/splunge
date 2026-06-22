@@ -1,3 +1,6 @@
+import os
+
+from .BaseHandler import BaseHandler
 from .FileHandler import FileHandler
 from .HtmlGenHandler import HtmlGenHandler
 from .IndexPageHandler import IndexPageHandler
@@ -147,14 +150,16 @@ lookupTable = {
 	'.zzz': ('ZZZzzzzzzz', None),
 }
 
-def create(xgi: Xgi):
+def create(xgi: Xgi, *, code_folder: str=None) -> BaseHandler:
 	""" Return the appropriate handler for the wsgi. """
+	if not code_folder:
+		code_folder = os.getcwd()
 	handler = None
 	if xgi.is_index_page():
 		handler =  IndexPageHandler(xgi)
-	elif xgi.is_python_module():
+	elif xgi.is_python_module(code_folder):
 		handler = PythonModuleHandler(xgi)
-	elif xgi.is_python_markup():
+	elif xgi.is_python_markup(code_folder):
 		handler =  PythonTemplateHandler(xgi)
 	elif is_mime_type(xgi):
 		handler = create_mime_handler(xgi)

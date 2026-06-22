@@ -86,7 +86,7 @@ def handle_error(ex, xgi, start_response):
 		start_response(status, headers.asTuples())
 		return [content]
 	except Exception as ex:
-		loggin.error(ex, exc_info=True)
+		# loggin.error(ex, exc_info=True)
 		content = util.render_string(error_template_strings.Err500, args).encode('utf-8')
 		contentLength = len(content)
 		headers = Headers()
@@ -140,8 +140,10 @@ def app(wsgi, start_response):
 		xgi = Xgi(wsgi)
 		loggin.debug(f"PATH_INFO={xgi['PATH_INFO']}")
 		loggin.debug(f"SCRIPT_NAME={xgi['SCRIPT_NAME']}")
+		loggin.debug(f"SPLUNGE_CODEFOLDER={os.getenv('SPLUNGE_CODEFOLDER')}")
 		loggin.debug(f"xwsgi.file_wrapper={getattr(xgi, 'file_wrapper', 'N/A')}")
-		handler = handlers.create(xgi)
+		code_folder = os.getenv("SPLUNGE_CODEFOLDER")
+		handler = handlers.create(xgi, code_folder=code_folder)
 		resp = handler.handle_request()
 		status = resp.status
 		headers = resp.headers.asTuples() 
