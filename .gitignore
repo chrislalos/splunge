@@ -3,6 +3,7 @@
 **/*.pyc
 **/*.swp
 .cache
+.config
 dist
 .DS_Store
 src/*.html
