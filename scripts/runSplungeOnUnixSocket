@@ -13,4 +13,4 @@ gunicorn --bind "unix:$UDS_PATH" \
          --workers 3 \
          --umask 007 \
          --reload \
-         splunge.App2:application
+         splunge.app:app
