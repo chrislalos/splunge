@@ -8,7 +8,7 @@ main ()
     printf '$venvPath=%s\n' "$venvPath"
     python3 -m venv --upgrade-deps "$venvPath" --prompt 'splunge'
 
-    reqsPath="$PWD/venv-reqs.txt"
+    reqsPath="$PWD/requirements.txt"
     # shellcheck disable=SC2016
     [[ -f "$reqsPath" ]] || { printf 'Non-existent path: $reqsPath\n' >&2; return 1; }
     "$venvPath/bin/pip" install --requirement "$reqsPath"

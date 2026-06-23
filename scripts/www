@@ -24,7 +24,7 @@ if [[ ! -n "$SPLUNGE_TEMPLATE_FOLDER" ]]; then
 fi
 printf '$SPLUNGE_LOGFILE=%s\n' "$SPLUNGE_LOGFILE"
 printf '$SPLUNGE_TEMPLATE_FOLDER=%s\n' "$SPLUNGE_TEMPLATE_FOLDER"
-gunicorn --bind "$host:$port" \
+exec gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
          --chdir "$contentFolder" \
          --env SPLUNGE_LOGFILE="$SPLUNGE_LOGFILE" \
@@ -33,5 +33,4 @@ gunicorn --bind "$host:$port" \
          --workers 3 \
          --umask 007 \
          --reload \
-         splunge.app:app \
-         || cat "$logFolder/errors.log"
+         splunge.app:app
