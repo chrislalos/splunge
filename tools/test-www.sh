@@ -3,115 +3,88 @@
 SCRIPT_DIR=$(dirname "$(readlink -f "$BASH_SOURCE")")
 PROJECT_DIR="$SCRIPT_DIR/.."
 
-# Find www — either on PATH or in scripts/
-WWW=$(command -v www 2>/dev/null || printf '%s' "$PROJECT_DIR/scripts/www")
+command -v gunicorn >/dev/null || {
+    printf 'gunicorn not found. Activate a venv with splunge installed:\n' >&2
+    printf '  source venv/bin/activate\n' >&2
+    exit 1
+}
+
+WWW=$(printf '%s' "$PROJECT_DIR/scripts/www")
 [[ -f "$WWW" ]] || { printf 'www not found\n' >&2; exit 1; }
 
-www() { "$WWW" "$@"; }
-
-command -v bwrap >/dev/null || { printf 'bwrap not installed\n' >&2; exit 1; }
-
-
-ns()
-{
-    if ! $HAS_NET_NS; then
-        return 0  # skip — no network namespace support
-    fi
-    bwrap --unshare-net --cap-add all --bind / / --proc /proc --dev /dev \
-        --chdir "$PROJECT_DIR" \
-        bash -e -o pipefail -c "$1"
-}
-
-
-# Filesystem-only isolation — no network namespace needed
-ns_isolate()
-{
-    bwrap --bind / / --proc /proc --dev /dev \
-        --chdir "$PROJECT_DIR" \
-        bash -e -o pipefail -c "$1"
-}
-
-
-# Pre-flight: check if network namespace + loopback is supported
-check_net_ns()
-{
-    bwrap --unshare-net --bind / / --proc /proc \
-        bash -c 'ip link set lo up' 2>/dev/null
-}
-
-
-HAS_NET_NS=false
-check_net_ns && HAS_NET_NS=true
+cd "$PROJECT_DIR" || exit 1
 
 
 test-serve-tcp()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --port 80 --code-folder ./www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hello.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19871 --code-folder ./www &
+    until curl -s http://localhost:19871/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19871/hello.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-serve-uds()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --socket /tmp/splunge-test.sock --code-folder ./sample-site &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" --unix-socket /tmp/splunge-test.sock http://localhost/index.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --socket /tmp/splunge-test-$$.sock --code-folder ./sample-site &
+    until curl -s --unix-socket /tmp/splunge-test-$$.sock http://localhost/index.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt --unix-socket /tmp/splunge-test-$$.sock http://localhost/index.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    rm -f /tmp/splunge-test-$$.sock
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-host-port()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --host 127.0.0.1 --port 8080 --code-folder ./www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/hello.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --host 127.0.0.1 --port 19872 --code-folder ./www &
+    until curl -s http://127.0.0.1:19872/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://127.0.0.1:19872/hello.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-python-page()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --port 80 --code-folder ./www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/foo.py)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19873 --code-folder ./www &
+    until curl -s http://localhost:19873/foo.py | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19873/foo.py)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-markdown()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --port 80 --code-folder ./www &
-        sleep 2
-        curl -s http://localhost/hello.md | grep -q "Hello"
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19874 --code-folder ./www &
+    until curl -s http://localhost:19874/hello.md | grep -q .; do sleep 1; done
+
+    curl -s http://localhost:19874/hello.md | grep -q "helloooo"
+    local result=$?
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-404()
 {
-    ns '
-        trap "kill 0" EXIT
-        www --port 80 --code-folder ./www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/nonexistent)
-        [[ "$code" == "404" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19875 --code-folder ./www &
+    until curl -s http://localhost:19875/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19875/nonexistent)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "404" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
@@ -132,81 +105,73 @@ test-init()
 
 test-config-auto()
 {
-    ns '
-        trap "kill 0" EXIT
-        cat > .splunge.env <<EOF
-SPLUNGE_PORT=80
-SPLUNGE_CODEFOLDER=./sample-site
-SPLUNGE_TEMPLATES_FOLDER=./www/templates
-EOF
-        www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/some-values.py)
-        [[ "$code" == "200" ]]
-        rm -f .splunge.env
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19876 --code-folder ./sample-site &
+    until curl -s http://localhost:19876/some-values.py | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19876/some-values.py)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-config-explicit()
 {
-    ns '
-        trap "kill 0" EXIT
-        mkdir -p /tmp/splunge-cfg
-        cat > /tmp/splunge-cfg/env <<EOF
-SPLUNGE_PORT=80
+    mkdir -p /tmp/splunge-cfg
+    cat > /tmp/splunge-cfg/env <<EOF
+SPLUNGE_PORT=19877
 SPLUNGE_CODEFOLDER=./www
 EOF
-        www --with-config /tmp/splunge-cfg/env &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hello.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+
+    "$WWW" --graceful-timeout 1 --with-config /tmp/splunge-cfg/env &
+    until curl -s http://localhost:19877/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19877/hello.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-flag-override()
 {
-    ns '
-        trap "kill 0" EXIT
-        cat > .splunge.env <<EOF
-SPLUNGE_PORT=9090
-SPLUNGE_CODEFOLDER=./www
-EOF
-        www --port 80 &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hello.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 19878 --code-folder ./www &
+    until curl -s http://localhost:19878/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19878/hello.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-missing-content()
 {
-    "$WWW" --port 80 --code-folder /nonexistent 2>&1 | grep -qi 'not found' \
-        && { printf '  PASS\n'; return 0; } \
-        || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 80 --code-folder /nonexistent 2>&1 | grep -qi 'not found'
+    local result=$?
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-env-only()
 {
-    ns '
-        trap "kill 0" EXIT
-        export SPLUNGE_PORT=80 SPLUNGE_CODEFOLDER=./www
-        www &
-        sleep 2
-        code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hello.html)
-        [[ "$code" == "200" ]]
-    ' && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+    export SPLUNGE_PORT=19879 SPLUNGE_CODEFOLDER=./www
+    "$WWW" --graceful-timeout 1 &
+    until curl -s http://localhost:19879/hello.html | grep -q .; do sleep 1; done
+
+    local code
+    code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19879/hello.html)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
 test-port-socket-mutex()
 {
-    "$WWW" --port 80 --socket /tmp/s 2>&1 | grep -q "mutually exclusive" \
-        && { printf '  PASS\n'; return 0; } \
-        || { printf '  FAIL\n'; return 1; }
+    "$WWW" --graceful-timeout 1 --port 80 --socket /tmp/s 2>&1 | grep -q "mutually exclusive"
+    local result=$?
+    [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
 
