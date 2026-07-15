@@ -144,7 +144,7 @@ else
     printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind_str" "$log_file"
 fi
 
-local -a flags=(
+flags=(
     --bind "$bind_str"
     --access-logfile "$log_folder/access.log"
     --chdir "$code_folder"
