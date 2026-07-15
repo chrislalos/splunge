@@ -10,6 +10,7 @@ flag_socket=""
 flag_code_folder=""
 flag_templates_folder=""
 flag_log_file=""
+flag_graceful_timeout=""
 init_mode=0
 
 while (( $# > 0 )); do
@@ -53,6 +54,11 @@ while (( $# > 0 )); do
             flag_log_file=$2
             shift 2
             ;;
+        --graceful-timeout)
+            (( $# >= 2 )) || { printf '--graceful-timeout requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_graceful_timeout=$2
+            shift 2
+            ;;
         *)
             printf 'Unknown flag: %s\n' "$1" >&2
             return 1
@@ -80,6 +86,8 @@ socket_path=${flag_socket:-${SPLUNGE_SOCKET:-''}}
 code_folder=${flag_code_folder:-${SPLUNGE_CODEFOLDER:-'.'}}
 templates_folder=${flag_templates_folder:-${SPLUNGE_TEMPLATES_FOLDER:-'./templates'}}
 log_file=${flag_log_file:-${SPLUNGE_LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+
+graceful_timeout=${flag_graceful_timeout:-${SPLUNGE_GRACEFUL_TIMEOUT:-''}}
 
 # Validate mutual exclusivity
 if [[ -n "$socket_path" && -n "$flag_port" ]]; then
@@ -136,15 +144,19 @@ else
     printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind_str" "$log_file"
 fi
 
-exec gunicorn --bind "$bind_str" \
-         --graceful-timeout 1 \
-         --access-logfile "$log_folder/access.log" \
-         --chdir "$code_folder" \
-         --env SPLUNGE_CODEFOLDER="$code_folder" \
-         --env SPLUNGE_TEMPLATE_FOLDER="$templates_folder" \
-         --env SPLUNGE_LOGFILE="$log_file" \
-         --error-logfile "$log_folder/errors.log" \
-         --workers 3 \
-         --umask 007 \
-         --reload \
-         splunge.app:app
+local -a flags=(
+    --bind "$bind_str"
+    --access-logfile "$log_folder/access.log"
+    --chdir "$code_folder"
+    --env "SPLUNGE_CODEFOLDER=$code_folder"
+    --env "SPLUNGE_TEMPLATE_FOLDER=$templates_folder"
+    --env "SPLUNGE_LOGFILE=$log_file"
+    --error-logfile "$log_folder/errors.log"
+    --workers 3
+    --umask 007
+    --reload
+)
+
+[[ -n "$graceful_timeout" ]] && flags+=(--graceful-timeout "$graceful_timeout")
+
+exec gunicorn "${flags[@]}" splunge.app:app

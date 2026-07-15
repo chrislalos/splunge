@@ -17,7 +17,7 @@ cd "$PROJECT_DIR" || exit 1
 
 test-serve-tcp()
 {
-    "$WWW" --port 19871 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --port 19871 --code-folder ./www &
     until curl -s http://localhost:19871/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -29,7 +29,7 @@ test-serve-tcp()
 
 test-serve-uds()
 {
-    "$WWW" --socket /tmp/splunge-test-$$.sock --code-folder ./sample-site &
+    "$WWW" --graceful-timeout 1 --socket /tmp/splunge-test-$$.sock --code-folder ./sample-site &
     until curl -s --unix-socket /tmp/splunge-test-$$.sock http://localhost/index.html | grep -q .; do sleep 1; done
 
     local code
@@ -42,7 +42,7 @@ test-serve-uds()
 
 test-host-port()
 {
-    "$WWW" --host 127.0.0.1 --port 19872 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --host 127.0.0.1 --port 19872 --code-folder ./www &
     until curl -s http://127.0.0.1:19872/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -54,7 +54,7 @@ test-host-port()
 
 test-python-page()
 {
-    "$WWW" --port 19873 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --port 19873 --code-folder ./www &
     until curl -s http://localhost:19873/foo.py | grep -q .; do sleep 1; done
 
     local code
@@ -66,7 +66,7 @@ test-python-page()
 
 test-markdown()
 {
-    "$WWW" --port 19874 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --port 19874 --code-folder ./www &
     until curl -s http://localhost:19874/hello.md | grep -q .; do sleep 1; done
 
     curl -s http://localhost:19874/hello.md | grep -q "helloooo"
@@ -78,7 +78,7 @@ test-markdown()
 
 test-404()
 {
-    "$WWW" --port 19875 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --port 19875 --code-folder ./www &
     until curl -s http://localhost:19875/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -105,7 +105,7 @@ test-init()
 
 test-config-auto()
 {
-    "$WWW" --port 19876 --code-folder ./sample-site &
+    "$WWW" --graceful-timeout 1 --port 19876 --code-folder ./sample-site &
     until curl -s http://localhost:19876/some-values.py | grep -q .; do sleep 1; done
 
     local code
@@ -123,7 +123,7 @@ SPLUNGE_PORT=19877
 SPLUNGE_CODEFOLDER=./www
 EOF
 
-    "$WWW" --with-config /tmp/splunge-cfg/env &
+    "$WWW" --graceful-timeout 1 --with-config /tmp/splunge-cfg/env &
     until curl -s http://localhost:19877/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -135,7 +135,7 @@ EOF
 
 test-flag-override()
 {
-    "$WWW" --port 19878 --code-folder ./www &
+    "$WWW" --graceful-timeout 1 --port 19878 --code-folder ./www &
     until curl -s http://localhost:19878/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -147,7 +147,7 @@ test-flag-override()
 
 test-missing-content()
 {
-    "$WWW" --port 80 --code-folder /nonexistent 2>&1 | grep -qi 'not found'
+    "$WWW" --graceful-timeout 1 --port 80 --code-folder /nonexistent 2>&1 | grep -qi 'not found'
     local result=$?
     local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
@@ -157,7 +157,7 @@ test-missing-content()
 test-env-only()
 {
     export SPLUNGE_PORT=19879 SPLUNGE_CODEFOLDER=./www
-    "$WWW" &
+    "$WWW" --graceful-timeout 1 &
     until curl -s http://localhost:19879/hello.html | grep -q .; do sleep 1; done
 
     local code
@@ -169,7 +169,7 @@ test-env-only()
 
 test-port-socket-mutex()
 {
-    "$WWW" --port 80 --socket /tmp/s 2>&1 | grep -q "mutually exclusive"
+    "$WWW" --graceful-timeout 1 --port 80 --socket /tmp/s 2>&1 | grep -q "mutually exclusive"
     local result=$?
     [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
