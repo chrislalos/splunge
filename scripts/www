@@ -137,6 +137,7 @@ else
 fi
 
 exec gunicorn --bind "$bind_str" \
+         --graceful-timeout 1 \
          --access-logfile "$log_folder/access.log" \
          --chdir "$code_folder" \
          --env SPLUNGE_CODEFOLDER="$code_folder" \
