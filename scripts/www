@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
-DEFAULT_PORT=1313
+DEFAULT_PORT=80
 
-# Parse flags and subcommands
-declare -a posargs=()
-init_mode=0
+# Flags
 config_file=""
+flag_port=""
+flag_host=""
+flag_socket=""
+flag_code_folder=""
+flag_templates_folder=""
+flag_log_file=""
+init_mode=0
+
 while (( $# > 0 )); do
     case $1 in
         init)
@@ -13,77 +19,130 @@ while (( $# > 0 )); do
             shift
             ;;
         --with-config)
-            (( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1; }
+            (( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1 2>/dev/null || exit 1; }
             config_file=$2
             shift 2
             ;;
+        --port)
+            (( $# >= 2 )) || { printf '--port requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_port=$2
+            shift 2
+            ;;
+        --host)
+            (( $# >= 2 )) || { printf '--host requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_host=$2
+            shift 2
+            ;;
+        --socket)
+            (( $# >= 2 )) || { printf '--socket requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_socket=$2
+            shift 2
+            ;;
+        --code-folder)
+            (( $# >= 2 )) || { printf '--code-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_code_folder=$2
+            shift 2
+            ;;
+        --templates-folder)
+            (( $# >= 2 )) || { printf '--templates-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_templates_folder=$2
+            shift 2
+            ;;
+        --log-file)
+            (( $# >= 2 )) || { printf '--log-file requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_log_file=$2
+            shift 2
+            ;;
         *)
-            posargs+=("$1")
-            shift
+            printf 'Unknown flag: %s\n' "$1" >&2
+            return 1
             ;;
     esac
 done
-set -- "${posargs[@]}"
 
 # Source explicit config file if given
 if [[ -n "$config_file" ]]; then
-    [[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
+    [[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1 2>/dev/null || exit 1; }
     source "$config_file"
 fi
 
-# Resolve values: env vars > .splunge.env > positional args > defaults
-port=${SPLUNGE_PORT:-${1:-$DEFAULT_PORT}}
-contentFolder=${SPLUNGE_CONTENT_FOLDER:-${2:-'.'}}
-host=localhost
-logFolder=${SPLUNGE_LOG_FOLDER:-"$HOME/tmp/splunge/log"}
-
-# Config file auto-detection — only when no explicit config and bare command
-if [[ -z "$config_file" && "$init_mode" -eq 0 && ${#posargs[@]} -eq 0 ]]; then
+# Config file auto-detection — bare www with no flags, no env vars
+if [[ -z "$config_file" && "$init_mode" -eq 0 && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_host" && -z "$flag_templates_folder" && -z "$flag_log_file" ]]; then
     if [[ -f ".splunge.env" ]]; then
         source ".splunge.env"
-        port=${SPLUNGE_PORT:-$DEFAULT_PORT}
-        contentFolder=${SPLUNGE_CONTENT_FOLDER:-'.'}
-        logFolder=${SPLUNGE_LOG_FOLDER:-"$HOME/tmp/splunge/log"}
     fi
 fi
 
+# Resolve each value: flag > env var > config file > default
+port=${flag_port:-${SPLUNGE_PORT:-$DEFAULT_PORT}}
+host=${flag_host:-${SPLUNGE_HOST:-localhost}}
+socket_path=${flag_socket:-${SPLUNGE_SOCKET:-''}}
+code_folder=${flag_code_folder:-${SPLUNGE_CODEFOLDER:-'.'}}
+templates_folder=${flag_templates_folder:-${SPLUNGE_TEMPLATES_FOLDER:-'./templates'}}
+log_file=${flag_log_file:-${SPLUNGE_LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+
+# Validate mutual exclusivity
+if [[ -n "$socket_path" && -n "$flag_port" ]]; then
+    printf '%s\n' '--port and --socket are mutually exclusive' >&2
+    return 1 2>/dev/null || exit 1
+fi
+if [[ -n "$socket_path" && -n "$flag_host" ]]; then
+    printf '%s\n' '--host has no effect with --socket' >&2
+fi
+
 # Init mode — prompt and save config
-if [[ "$init_mode" -eq 1 ]] || { [[ -z "$config_file" && ${#posargs[@]} -eq 0 && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_CONTENT_FOLDER" ]]; }; then
+need_init=0
+if [[ "$init_mode" -eq 1 ]]; then
+    need_init=1
+elif [[ -z "$config_file" && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_templates_folder" && -z "$flag_log_file" && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_SOCKET" && -z "$SPLUNGE_CODEFOLDER" && -z "$SPLUNGE_HOST" && -z "$SPLUNGE_TEMPLATES_FOLDER" && -z "$SPLUNGE_LOGFILE" ]]; then
+    need_init=1
+fi
+
+if [[ "$need_init" -eq 1 ]]; then
     printf 'Splunge first-run setup\n'
     printf 'Enter values or press Enter for defaults.\n\n'
 
-    read -r -p "Port [${port}]: " inp; port=${inp:-$port}
-    read -r -p "Content folder [${contentFolder}]: " inp; contentFolder=${inp:-$contentFolder}
-    read -r -p "Template folder [./templates]: " inp; tf=${inp:-'./templates'}
+    read -r -p "Port [${port}]: " inp;        port=${inp:-$port}
+    read -r -p "Host [${host}]: " inp;        host=${inp:-$host}
+    read -r -p "Content folder [${code_folder}]: " inp; code_folder=${inp:-$code_folder}
+    read -r -p "Template folder [${templates_folder}]: " inp; templates_folder=${inp:-$templates_folder}
+    read -r -p "Log file [${log_file}]: " inp; log_file=${inp:-$log_file}
     printf '\n'
 
     config_file=${config_file:-.splunge.env}
     cat > "$config_file" <<EOF
 SPLUNGE_PORT=$port
-SPLUNGE_CONTENT_FOLDER=$contentFolder
-SPLUNGE_TEMPLATES=$tf
-SPLUNGE_LOG_FOLDER=$logFolder
+SPLUNGE_HOST=$host
+SPLUNGE_CODEFOLDER=$code_folder
+SPLUNGE_TEMPLATES_FOLDER=$templates_folder
+SPLUNGE_LOGFILE=$log_file
 EOF
     printf 'Config written to %s\n' "$config_file"
+    return 0 2>/dev/null || exit 0
 fi
 
 # Validate required values
-[[ -d "$contentFolder" ]] || { printf 'Content folder not found: %s\n' "$contentFolder" >&2; return 1; }
-mkdir -p "$logFolder" || { printf 'Unable to create log folder %s\n' "$logFolder" >&2; return; }
+[[ -d "$code_folder" ]] || { printf 'Content folder not found: %s\n' "$code_folder" >&2; return 1 2>/dev/null || exit 1; }
 
-SPLUNGE_LOGFILE=${SPLUNGE_LOGFILE:-"$logFolder/splunge.log"}
-SPLUNGE_TEMPLATE_FOLDER=${SPLUNGE_TEMPLATE_FOLDER:-${SPLUNGE_TEMPLATES:-'./templates'}}
+log_folder=$(dirname "$log_file")
+mkdir -p "$log_folder" || { printf 'Unable to create log folder %s\n' "$log_folder" >&2; return 1 2>/dev/null || exit 1; }
 
-printf 'Splunge serving %s on %s:%d; logging to %s\n' "$contentFolder" "$host" "$port" "$logFolder"
-printf '$SPLUNGE_LOGFILE=%s\n' "$SPLUNGE_LOGFILE"
-printf '$SPLUNGE_TEMPLATE_FOLDER=%s\n' "$SPLUNGE_TEMPLATE_FOLDER"
+# Build gunicorn bind string
+if [[ -n "$socket_path" ]]; then
+    bind_str="unix:$socket_path"
+    printf 'Splunge serving %s on socket %s\n' "$code_folder" "$socket_path"
+else
+    bind_str="$host:$port"
+    printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind_str" "$log_file"
+fi
 
-exec gunicorn --bind "$host:$port" \
-         --access-logfile "$logFolder/access.log" \
-         --chdir "$contentFolder" \
-         --env SPLUNGE_LOGFILE="$SPLUNGE_LOGFILE" \
-         --env SPLUNGE_TEMPLATE_FOLDER="$SPLUNGE_TEMPLATE_FOLDER" \
-         --error-logfile "$logFolder/errors.log" \
+exec gunicorn --bind "$bind_str" \
+         --access-logfile "$log_folder/access.log" \
+         --chdir "$code_folder" \
+         --env SPLUNGE_CODEFOLDER="$code_folder" \
+         --env SPLUNGE_TEMPLATE_FOLDER="$templates_folder" \
+         --env SPLUNGE_LOGFILE="$log_file" \
+         --error-logfile "$log_folder/errors.log" \
          --workers 3 \
          --umask 007 \
          --reload \
