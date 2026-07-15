@@ -2,28 +2,82 @@
 
 DEFAULT_PORT=1313
 
-printf '<%s> ' "${@}"
-echo
+# Parse flags and subcommands
+declare -a posargs=()
+init_mode=0
+config_file=""
+while (( $# > 0 )); do
+    case $1 in
+        init)
+            init_mode=1
+            shift
+            ;;
+        --with-config)
+            (( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1; }
+            config_file=$2
+            shift 2
+            ;;
+        *)
+            posargs+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${posargs[@]}"
 
-contentFolder=${2:-'.'}
+# Source explicit config file if given
+if [[ -n "$config_file" ]]; then
+    [[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
+    source "$config_file"
+fi
+
+# Resolve values: env vars > .splunge.env > positional args > defaults
+port=${SPLUNGE_PORT:-${1:-$DEFAULT_PORT}}
+contentFolder=${SPLUNGE_CONTENT_FOLDER:-${2:-'.'}}
 host=localhost
-logFolder="$HOME/tmp/splunge/log"
-port=${1:-$DEFAULT_PORT}
+logFolder=${SPLUNGE_LOG_FOLDER:-"$HOME/tmp/splunge/log"}
 
-[[ -d "$contentFolder" ]] || { printf 'Non-existent folder: %s\n' "$contentFolder" >&2; return 1; }
-mkdir -p "$logFolder/" || { printf 'Unable to create log folder %s\n' "$logFolder" &>2; return; }
-printf 'Splunge serving %s on %s:%d; logging to %si\n' "$contentFolder" "$host" "$port" "$logFolder"
+# Config file auto-detection — only when no explicit config and bare command
+if [[ -z "$config_file" && "$init_mode" -eq 0 && ${#posargs[@]} -eq 0 ]]; then
+    if [[ -f ".splunge.env" ]]; then
+        source ".splunge.env"
+        port=${SPLUNGE_PORT:-$DEFAULT_PORT}
+        contentFolder=${SPLUNGE_CONTENT_FOLDER:-'.'}
+        logFolder=${SPLUNGE_LOG_FOLDER:-"$HOME/tmp/splunge/log"}
+    fi
+fi
 
-if [[ ! -n "$SPLUNGE_LOGFILE" ]]; then
-    echo "$SPLUNGE_LOGFILE not set - setting manually"
-    SPLUNGE_LOGFILE="$logFolder/splunge.log"
+# Init mode — prompt and save config
+if [[ "$init_mode" -eq 1 ]] || { [[ -z "$config_file" && ${#posargs[@]} -eq 0 && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_CONTENT_FOLDER" ]]; }; then
+    printf 'Splunge first-run setup\n'
+    printf 'Enter values or press Enter for defaults.\n\n'
+
+    read -r -p "Port [${port}]: " inp; port=${inp:-$port}
+    read -r -p "Content folder [${contentFolder}]: " inp; contentFolder=${inp:-$contentFolder}
+    read -r -p "Template folder [./templates]: " inp; tf=${inp:-'./templates'}
+    printf '\n'
+
+    config_file=${config_file:-.splunge.env}
+    cat > "$config_file" <<EOF
+SPLUNGE_PORT=$port
+SPLUNGE_CONTENT_FOLDER=$contentFolder
+SPLUNGE_TEMPLATES=$tf
+SPLUNGE_LOG_FOLDER=$logFolder
+EOF
+    printf 'Config written to %s\n' "$config_file"
 fi
-if [[ ! -n "$SPLUNGE_TEMPLATE_FOLDER" ]]; then
-    echo "$SPLUNGE_TEMPLATE_FOLDER not set - setting manually"
-    SPLUNGE_TEMPLATE_FOLDER="./templates"
-fi
+
+# Validate required values
+[[ -d "$contentFolder" ]] || { printf 'Content folder not found: %s\n' "$contentFolder" >&2; return 1; }
+mkdir -p "$logFolder" || { printf 'Unable to create log folder %s\n' "$logFolder" >&2; return; }
+
+SPLUNGE_LOGFILE=${SPLUNGE_LOGFILE:-"$logFolder/splunge.log"}
+SPLUNGE_TEMPLATE_FOLDER=${SPLUNGE_TEMPLATE_FOLDER:-${SPLUNGE_TEMPLATES:-'./templates'}}
+
+printf 'Splunge serving %s on %s:%d; logging to %s\n' "$contentFolder" "$host" "$port" "$logFolder"
 printf '$SPLUNGE_LOGFILE=%s\n' "$SPLUNGE_LOGFILE"
 printf '$SPLUNGE_TEMPLATE_FOLDER=%s\n' "$SPLUNGE_TEMPLATE_FOLDER"
+
 exec gunicorn --bind "$host:$port" \
          --access-logfile "$logFolder/access.log" \
          --chdir "$contentFolder" \

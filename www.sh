@@ -2,7 +2,7 @@
 
 main ()
 {
-    www 1313 ./www
+    www --with-config "$(dirname "$0")/.splunge.env"
 }
 
 
