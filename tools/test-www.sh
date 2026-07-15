@@ -22,7 +22,7 @@ test-serve-tcp()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19871/hello.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -34,7 +34,7 @@ test-serve-uds()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt --unix-socket /tmp/splunge-test-$$.sock http://localhost/index.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     rm -f /tmp/splunge-test-$$.sock
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
@@ -47,7 +47,7 @@ test-host-port()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://127.0.0.1:19872/hello.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -59,7 +59,7 @@ test-python-page()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19873/foo.py)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -71,7 +71,7 @@ test-markdown()
 
     curl -s http://localhost:19874/hello.md | grep -q "helloooo"
     local result=$?
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -83,7 +83,7 @@ test-404()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19875/nonexistent)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "404" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -110,7 +110,7 @@ test-config-auto()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19876/some-values.py)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -128,7 +128,7 @@ EOF
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19877/hello.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -140,7 +140,7 @@ test-flag-override()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19878/hello.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -149,7 +149,7 @@ test-missing-content()
 {
     "$WWW" --port 80 --code-folder /nonexistent 2>&1 | grep -qi 'not found'
     local result=$?
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$result" -eq 0 ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
@@ -162,7 +162,7 @@ test-env-only()
 
     local code
     code=$(curl -s -w "%{http_code}" -o /tmp/_splunge_test_body.txt http://localhost:19879/hello.html)
-    kill $(jobs -p); wait
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
     [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
 }
 
