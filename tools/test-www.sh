@@ -93,7 +93,7 @@ test-init()
     local tmpDir; tmpDir=$(mktemp -d --tmpdir test-www-init.XXXXXX)
     pushd "$tmpDir" >/dev/null || return 1
 
-    printf "testproj\n./web\ntcp\nlocalhost\n80\n\n$HOME/tmp/testproj/log/splunge.log\n" | "$WWW" init 2>/dev/null
+    printf "testproj\n./web\ntcp\nlocalhost\n80\n\n$HOME/tmp/testproj/log/splunge.log\n\ny\n" | "$WWW" init 2>/dev/null
     local result=$?
 
     popd >/dev/null

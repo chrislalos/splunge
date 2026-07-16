@@ -164,6 +164,39 @@ if [[ "$need_init" -eq 1 ]]; then
     # Create content folder if missing
     mkdir -p "$code_folder" 2>/dev/null
 
+    local generate_site="y"
+    read -r -p "Generate a starter site? (Y/n): " inp;            generate_site=${inp:-$generate_site}
+    if [[ "$generate_site" =~ ^[Yy]?$ ]]; then
+        local _cf="$code_folder"
+        cat > "$_cf/index.py" <<'PYEOF'
+welcome = "welcome to splunge"
+byebye = "have fun(ge)!"
+sunmoji = "\U0001f31e"
+PYEOF
+
+        cat > "$_cf/style.css" <<'CSSEOF'
+body { font-family: sans-serif; text-align: center; margin-top: 20vh; }
+#welcome { font-size: 2rem; color: #333; }
+#byebye { font-size: 1.2rem; color: #666; margin-top: 1rem; }
+.sunmoji { font-size: 3rem; }
+CSSEOF
+
+        cat > "$_cf/index.pyp" <<'HTMLEOF'
+<html>
+<head>
+    <title>splunge</title>
+    <link rel='stylesheet' href='/style.css'>
+</head>
+<body>
+    <div id='welcome'>{{ welcome }}</div>
+    <div id='byebye'>{{ byebye }}</div>
+    <div class='silly'><span class='sunmoji'>{{ sunmoji }}</span></div>
+</body>
+</html>
+HTMLEOF
+        printf '  Starter site created in %s\n' "$_cf"
+    fi
+
     config_file=${config_file:-.splunge.env}
     cat > "$config_file" <<EOF
 SPLUNGE_PROJECT_NAME=$project_name
