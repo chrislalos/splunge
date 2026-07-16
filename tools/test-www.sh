@@ -175,6 +175,25 @@ test-port-socket-mutex()
 }
 
 
+test-python-path()
+{
+    local tmpDir; tmpDir=$(mktemp -d)
+    mkdir -p "$tmpDir/mylib"
+    printf 'def hello(): return "hello"\n' > "$tmpDir/mylib/__init__.py"
+    printf 'from mylib import hello\n_ = {"output": hello()}\n' > "$tmpDir/import_test.pyp"
+
+    "$WWW" --graceful-timeout 1 --port 19900 --code-folder "$tmpDir" \
+           --python-path "$tmpDir" &
+    until curl -s -w '%{http_code}' --output /tmp/_poll.txt http://localhost:19900/import_test.pyp \
+           | grep -q '^[2-5]'; do sleep 1; done
+
+    local code
+    code=$(curl -s -w '%{http_code}' -o /tmp/_body.txt http://localhost:19900/import_test.pyp)
+    local jp; jp=$(jobs -p); [[ -n "$jp" ]] && kill $jp; wait
+    [[ "$code" == "200" ]] && { printf '  PASS\n'; return 0; } || { printf '  FAIL\n'; return 1; }
+}
+
+
 all()
 {
     local tests=(
@@ -191,6 +210,7 @@ all()
         test-missing-content
         test-env-only
         test-port-socket-mutex
+        test-python-path
     )
     local total=${#tests[@]} passed=0 failed=0
     for t in "${tests[@]}"; do
@@ -219,6 +239,7 @@ main()
         test-missing-content)                     test-missing-content "$@";;
         test-env-only)                            test-env-only "$@";;
         test-port-socket-mutex)                   test-port-socket-mutex "$@";;
+        test-python-path)                          test-python-path "$@";;
         *)                                 printf 'Unknown test: %s\n' "$1" >&2; exit 1 ;;
     esac
 }
