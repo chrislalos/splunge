@@ -11,6 +11,7 @@ flag_code_folder=""
 flag_templates_folder=""
 flag_log_file=""
 flag_graceful_timeout=""
+flag_project_name=""
 init_mode=0
 
 while (( $# > 0 )); do
@@ -59,6 +60,11 @@ while (( $# > 0 )); do
             flag_graceful_timeout=$2
             shift 2
             ;;
+        --project-name)
+            (( $# >= 2 )) || { printf '--project-name requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
+            flag_project_name=$2
+            shift 2
+            ;;
         *)
             printf 'Unknown flag: %s\n' "$1" >&2
             return 1
@@ -73,7 +79,7 @@ if [[ -n "$config_file" ]]; then
 fi
 
 # Config file auto-detection — bare www with no flags, no env vars
-if [[ -z "$config_file" && "$init_mode" -eq 0 && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_host" && -z "$flag_templates_folder" && -z "$flag_log_file" ]]; then
+if [[ -z "$config_file" && "$init_mode" -eq 0 && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_host" && -z "$flag_templates_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
     if [[ -f ".splunge.env" ]]; then
         source ".splunge.env"
     fi
@@ -88,6 +94,7 @@ templates_folder=${flag_templates_folder:-${SPLUNGE_TEMPLATES_FOLDER:-'./templat
 log_file=${flag_log_file:-${SPLUNGE_LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
 
 graceful_timeout=${flag_graceful_timeout:-${SPLUNGE_GRACEFUL_TIMEOUT:-''}}
+project_name=${flag_project_name:-${SPLUNGE_PROJECT_NAME:-''}}
 
 # Validate mutual exclusivity
 if [[ -n "$socket_path" && -n "$flag_port" ]]; then
@@ -102,27 +109,55 @@ fi
 need_init=0
 if [[ "$init_mode" -eq 1 ]]; then
     need_init=1
-elif [[ -z "$config_file" && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_templates_folder" && -z "$flag_log_file" && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_SOCKET" && -z "$SPLUNGE_CODEFOLDER" && -z "$SPLUNGE_HOST" && -z "$SPLUNGE_TEMPLATES_FOLDER" && -z "$SPLUNGE_LOGFILE" ]]; then
+elif [[ -z "$config_file" && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_templates_folder" && -z "$flag_log_file" && -z "$flag_project_name" && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_SOCKET" && -z "$SPLUNGE_CODEFOLDER" && -z "$SPLUNGE_HOST" && -z "$SPLUNGE_TEMPLATES_FOLDER" && -z "$SPLUNGE_LOGFILE" && -z "$SPLUNGE_PROJECT_NAME" ]]; then
     need_init=1
 fi
 
 if [[ "$need_init" -eq 1 ]]; then
+    # Derive default project name from git remote or current dir
+    if [[ -z "$project_name" ]]; then
+        project_name=$(git rev-parse --show-toplevel 2>/dev/null | xargs basename 2>/dev/null || basename "$PWD" 2>/dev/null || printf '')
+    fi
+
     printf 'Splunge first-run setup\n'
     printf 'Enter values or press Enter for defaults.\n\n'
 
-    read -r -p "Port [${port}]: " inp;        port=${inp:-$port}
-    read -r -p "Host [${host}]: " inp;        host=${inp:-$host}
-    read -r -p "Content folder [${code_folder}]: " inp; code_folder=${inp:-$code_folder}
-    read -r -p "Template folder [${templates_folder}]: " inp; templates_folder=${inp:-$templates_folder}
-    read -r -p "Log file [${log_file}]: " inp; log_file=${inp:-$log_file}
+    read -r -p "Project name [${project_name}]: " inp;          project_name=${inp:-$project_name}
+    read -r -p "Content folder [./web]: " inp;                  code_folder=${inp:-'./web'}
+    templates_folder=$code_folder
+
+    local bind_type="tcp"
+    read -r -p "Bind type (tcp/unix) [${bind_type}]: " inp;     bind_type=${inp:-$bind_type}
+
+    if [[ "$bind_type" == "unix" ]]; then
+        local default_sock="/tmp/${project_name:-splunge}.sock"
+        read -r -p "Socket path [${default_sock}]: " inp;       socket_path=${inp:-$default_sock}
+        port=""
+        host=""
+    else
+        read -r -p "Host [${host}]: " inp;                      host=${inp:-$host}
+        read -r -p "Port [${port}]: " inp;                      port=${inp:-$port}
+        socket_path=""
+    fi
+
+    read -r -p "Graceful timeout (seconds, blank for default) []: " inp; graceful_timeout=${inp:-''}
+
+    local default_log="$HOME/tmp/${project_name:-splunge}/log/splunge.log"
+    read -r -p "Log file [${default_log}]: " inp;               log_file=${inp:-$default_log}
     printf '\n'
+
+    # Create content folder if missing
+    mkdir -p "$code_folder" 2>/dev/null
 
     config_file=${config_file:-.splunge.env}
     cat > "$config_file" <<EOF
+SPLUNGE_PROJECT_NAME=$project_name
 SPLUNGE_PORT=$port
 SPLUNGE_HOST=$host
+SPLUNGE_SOCKET=$socket_path
 SPLUNGE_CODEFOLDER=$code_folder
 SPLUNGE_TEMPLATES_FOLDER=$templates_folder
+SPLUNGE_GRACEFUL_TIMEOUT=$graceful_timeout
 SPLUNGE_LOGFILE=$log_file
 EOF
     printf 'Config written to %s\n' "$config_file"
