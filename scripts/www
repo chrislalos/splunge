@@ -137,7 +137,7 @@ if [[ "$need_init" -eq 1 ]]; then
     printf 'Enter values or press Enter for defaults.\n\n'
 
     read -r -p "Project name [${project_name}]: " inp;          project_name=${inp:-$project_name}
-    read -r -p "Content folder [./web]: " inp;                  code_folder=${inp:-'./web'}
+    read -r -e -p "Content folder [./web]: " inp;               code_folder=${inp:-'./web'}
     templates_folder=$code_folder
 
     local bind_type="tcp"
@@ -145,7 +145,7 @@ if [[ "$need_init" -eq 1 ]]; then
 
     if [[ "$bind_type" == "unix" ]]; then
         local default_sock="/tmp/${project_name:-splunge}.sock"
-        read -r -p "Socket path [${default_sock}]: " inp;       socket_path=${inp:-$default_sock}
+        read -r -e -p "Socket path [${default_sock}]: " inp;    socket_path=${inp:-$default_sock}
         port=""
         host=""
     else
@@ -157,8 +157,8 @@ if [[ "$need_init" -eq 1 ]]; then
     read -r -p "Graceful timeout (seconds, blank for default) []: " inp; graceful_timeout=${inp:-''}
 
     local default_log="$HOME/tmp/${project_name:-splunge}/log/splunge.log"
-    read -r -p "Log file [${default_log}]: " inp;               log_file=${inp:-$default_log}
-    read -r -p "Python path (blank for none) []: " inp;         pythonpath_arg=${inp:-''}
+    read -r -e -p "Log file [${default_log}]: " inp;            log_file=${inp:-$default_log}
+    read -r -e -p "Python path (blank for none) []: " inp;      pythonpath_arg=${inp:-''}
     printf '\n'
 
     # Create content folder if missing
