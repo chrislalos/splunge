@@ -38,32 +38,34 @@ init()
     printf 'Splunge first-run setup\n'
     printf 'Enter values or press Enter for defaults.\n\n'
 
-    read -r -p "Project name [${project_name}]: " inp;          project_name=${inp:-$project_name}
-    read -r -e -p "Content folder [./web]: " inp;               code_folder=${inp:-'./web'}
+    read -r -p "Project name [${project_name}]: " inp;
+	project_name=${inp:-$project_name}
 
-    local bind_type="tcp"
-    local bind=""
-    read -r -p "Bind type (tcp/unix) [${bind_type}]: " inp;     bind_type=${inp:-$bind_type}
+	local code_folder='./web'
+	read -r -e -p "Content folder [code_folder]: " inp;
+	code_folder=${inp:-$code_folder}
 
-    if [[ "$bind_type" == "unix" ]]; then
-        local default_sock="/tmp/${project_name:-splunge}.sock"
-        read -r -e -p "Socket path [${default_sock}]: " inp;    bind="unix:${inp:-$default_sock}"
-    else
-        local default_addr="localhost:13000"
-        read -r -e -p "Address [${default_addr}]: " inp;        bind=${inp:-$default_addr}
-    fi
+    local bind="0.0.0.0:13001"
+    read -r -p "Bind (tcp/unix, eg $bind, unix://tmp/$project_name.sock) [${bind}]: " inp;
+	bind=${inp:-$bind_type}
 
-    read -r -p "Graceful timeout (seconds, blank for default) []: " inp; graceful_timeout=${inp:-''}
+
+    read -r -p "Graceful timeout (seconds, blank for default) []: "
+	inp; graceful_timeout=${inp:-''}
 
     local default_log="$HOME/tmp/${project_name:-splunge}/log/splunge.log"
-    read -r -e -p "Log file [${default_log}]: " inp;            log_file=${inp:-$default_log}
-    read -r -e -p "Python path (blank for none) []: " inp;      pythonpath_arg=${inp:-''}
+    read -r -e -p "Log file [${default_log}]: " inp;
+	log_file=${inp:-$default_log}
+    
+	read -r -e -p "Python path (blank for none) []: " inp;
+	pythonpath_arg=${inp:-''}
     printf '\n'
 
     mkdir -p "$code_folder" 2>/dev/null
 
     local generate_site="y"
-    read -r -p "Generate a starter site? (Y/n): " inp;            generate_site=${inp:-$generate_site}
+    read -r -p "Generate a starter site? (Y/n): " inp;
+	generate_site=${inp:-$generate_site}
     if [[ "$generate_site" =~ ^[Yy]?$ ]]; then
         local _cf="$code_folder"
         printf '%s\n' "$STARTER_INDEX_PY"  > "$_cf/index.py"
@@ -162,37 +164,6 @@ main()
 		esac
 	done
 
-	# Source explicit config file if given
-	if [[ -n "$config_file" ]]; then
-		[[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
-		source "$config_file"
-	fi
-
-	# Config file auto-detection — bare www with no flags
-	if [[ -z "$config_file" && "$flag_init" -eq 0 && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
-		if [[ -f ".splunge.env" ]]; then
-			source ".splunge.env"
-		fi
-	fi
-
-	# Resolve each value: flag > config short name > default
-	bind=${flag_bind:-${BIND:-localhost:13000}}
-	code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
-	template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
-	log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
-
-	graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
-	project_name=${flag_project_name:-${PROJECT_NAME:-''}}
-
-	# Python path: flags array > SPLUNGE_PYTHONPATH > PYTHONPATH (config)
-	if (( ${#pythonpaths[@]} == 0 )); then
-		if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
-			pythonpaths=("$SPLUNGE_PYTHONPATH")
-		elif [[ -n "$PYTHONPATH" ]]; then
-			pythonpaths=("$PYTHONPATH")
-		fi
-	fi
-
 	# Init mode — prompt, save config, optionally run
 	need_init=0
 	if [[ "$flag_init" -eq 1 ]]; then
@@ -205,6 +176,7 @@ main()
 		init
 
 		# Re-source the config we just wrote and re-resolve
+		# shellcheck source=/dev/null
 		source ".splunge.env"
 		bind=${flag_bind:-${BIND:-localhost:13000}}
 		code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
@@ -228,6 +200,39 @@ main()
 
 		if [[ "$flag_run" -eq 0 ]]; then
 			return
+		fi
+	fi
+
+	# Source explicit config file if given
+	if [[ -n "$config_file" ]]; then
+		[[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
+		# shellcheck source=/dev/null
+		source "$config_file"
+	fi
+
+	# Config file auto-detection — bare www with no flags
+	if [[ -z "$config_file" && "$flag_init" -eq 0 && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
+		if [[ -f ".splunge.env" ]]; then
+			# shellcheck source=/dev/null
+			source ".splunge.env"
+		fi
+	fi
+
+	# Resolve each value: flag > config short name > default
+	bind=${flag_bind:-${BIND:-localhost:13000}}
+	code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
+	template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
+	log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+
+	graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
+	project_name=${flag_project_name:-${PROJECT_NAME:-''}}
+
+	# Python path: flags array > SPLUNGE_PYTHONPATH > PYTHONPATH (config)
+	if (( ${#pythonpaths[@]} == 0 )); then
+		if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
+			pythonpaths=("$SPLUNGE_PYTHONPATH")
+		elif [[ -n "$PYTHONPATH" ]]; then
+			pythonpaths=("$PYTHONPATH")
 		fi
 	fi
 
