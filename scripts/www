@@ -1,5 +1,32 @@
 #!/usr/bin/env bash
 
+read -r -d '' STARTER_INDEX_PY <<'PYEOF' || true
+welcome = "welcome to splunge"
+byebye = "have fun(ge)!"
+sunmoji = "\U0001f31e"
+PYEOF
+
+read -r -d '' STARTER_CSS <<'CSSEOF' || true
+body { font-family: sans-serif; text-align: center; margin-top: 20vh; }
+#welcome { font-size: 2rem; color: #333; }
+#byebye { font-size: 1.2rem; color: #666; margin-top: 1rem; }
+.rayray { font-size: 3rem; }
+CSSEOF
+
+read -r -d '' STARTER_INDEX_PYP <<'HTMLEOF' || true
+<html>
+<head>
+    <title>splunge</title>
+    <link rel='stylesheet' href='/style.css'>
+</head>
+<body>
+    <div id='welcome'>{{ welcome }}</div>
+    <div id='byebye'>{{ byebye }}</div>
+    <div><span class='rayray'>{{ sunmoji }}</span></div>
+</body>
+</html>
+HTMLEOF
+
 init()
 {
     local project_name code_folder bind log_file pythonpath_arg
@@ -39,32 +66,9 @@ init()
     read -r -p "Generate a starter site? (Y/n): " inp;            generate_site=${inp:-$generate_site}
     if [[ "$generate_site" =~ ^[Yy]?$ ]]; then
         local _cf="$code_folder"
-        cat > "$_cf/index.py" <<'PYEOF'
-welcome = "welcome to splunge"
-byebye = "have fun(ge)!"
-sunmoji = "\U0001f31e"
-PYEOF
-
-        cat > "$_cf/style.css" <<'CSSEOF'
-body { font-family: sans-serif; text-align: center; margin-top: 20vh; }
-#welcome { font-size: 2rem; color: #333; }
-#byebye { font-size: 1.2rem; color: #666; margin-top: 1rem; }
-.rayray { font-size: 3rem; }
-CSSEOF
-
-        cat > "$_cf/index.pyp" <<'HTMLEOF'
-<html>
-<head>
-    <title>splunge</title>
-    <link rel='stylesheet' href='/style.css'>
-</head>
-<body>
-    <div id='welcome'>{{ welcome }}</div>
-    <div id='byebye'>{{ byebye }}</div>
-    <div><span class='rayray'>{{ sunmoji }}</span></div>
-</body>
-</html>
-HTMLEOF
+        printf '%s\n' "$STARTER_INDEX_PY"  > "$_cf/index.py"
+        printf '%s\n' "$STARTER_CSS"       > "$_cf/style.css"
+        printf '%s\n' "$STARTER_INDEX_PYP" > "$_cf/index.pyp"
         printf '  Starter site created in %s\n' "$_cf"
     fi
 
