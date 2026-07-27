@@ -84,190 +84,189 @@ EOF
 
 main()
 {
+	# Flags
+	local config_file=""
+	local flag_bind=""
+	local flag_code_folder=""
+	local flag_template_folder=""
+	local flag_log_file=""
+	local flag_graceful_timeout=""
+	local flag_project_name=""
+	local flag_init=0
+	local flag_run=0
+	local flag_no_run=0
+	local -a pythonpaths=()
 
-# Flags
-local config_file=""
-local flag_bind=""
-local flag_code_folder=""
-local flag_template_folder=""
-local flag_log_file=""
-local flag_graceful_timeout=""
-local flag_project_name=""
-local flag_init=0
-local flag_run=0
-local flag_no_run=0
-local -a pythonpaths=()
+	while (( $# > 0 )); do
+		case $1 in
+			--bind)
+				(( $# >= 2 )) || { printf '--bind requires a value\n' >&2; return 1; }
+				flag_bind=$2
+				shift 2
+				;;
+			--code-folder)
+				(( $# >= 2 )) || { printf '--code-folder requires a value\n' >&2; return 1; }
+				flag_code_folder=$2
+				shift 2
+				;;
+			--graceful-timeout)
+				(( $# >= 2 )) || { printf '--graceful-timeout requires a value\n' >&2; return 1; }
+				flag_graceful_timeout=$2
+				shift 2
+				;;
+			--init)
+				flag_init=1
+				shift
+				;;
+			--log-file)
+				(( $# >= 2 )) || { printf '--log-file requires a value\n' >&2; return 1; }
+				flag_log_file=$2
+				shift 2
+				;;
+			--no-run)
+				flag_no_run=1
+				shift
+				;;
+			--project-name)
+				(( $# >= 2 )) || { printf '--project-name requires a value\n' >&2; return 1; }
+				flag_project_name=$2
+				shift 2
+				;;
+			--python-path)
+				(( $# >= 2 )) || { printf '--python-path requires a value\n' >&2; return 1; }
+				pythonpaths+=("$2")
+				shift 2
+				;;
+			--run)
+				flag_run=1
+				shift
+				;;
+			--template-folder)
+				(( $# >= 2 )) || { printf '--template-folder requires a value\n' >&2; return 1; }
+				flag_template_folder=$2
+				shift 2
+				;;
+			--with-config)
+				(( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1; }
+				config_file=$2
+				shift 2
+				;;
+			*)
+				printf 'Unknown flag: %s\n' "$1" >&2
+				return 1
+				;;
+		esac
+	done
 
-while (( $# > 0 )); do
-    case $1 in
-        --init)
-            flag_init=1
-            shift
-            ;;
-        --run)
-            flag_run=1
-            shift
-            ;;
-        --no-run)
-            flag_no_run=1
-            shift
-            ;;
-        --with-config)
-            (( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1 2>/dev/null || exit 1; }
-            config_file=$2
-            shift 2
-            ;;
-        --bind)
-            (( $# >= 2 )) || { printf '--bind requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_bind=$2
-            shift 2
-            ;;
-        --code-folder)
-            (( $# >= 2 )) || { printf '--code-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_code_folder=$2
-            shift 2
-            ;;
-        --template-folder)
-            (( $# >= 2 )) || { printf '--template-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_template_folder=$2
-            shift 2
-            ;;
-        --log-file)
-            (( $# >= 2 )) || { printf '--log-file requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_log_file=$2
-            shift 2
-            ;;
-        --graceful-timeout)
-            (( $# >= 2 )) || { printf '--graceful-timeout requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_graceful_timeout=$2
-            shift 2
-            ;;
-        --project-name)
-            (( $# >= 2 )) || { printf '--project-name requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_project_name=$2
-            shift 2
-            ;;
-        --python-path)
-            (( $# >= 2 )) || { printf '--python-path requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            pythonpaths+=("$2")
-            shift 2
-            ;;
-        *)
-            printf 'Unknown flag: %s\n' "$1" >&2
-            return 1
-            ;;
-    esac
-done
+	# Source explicit config file if given
+	if [[ -n "$config_file" ]]; then
+		[[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
+		source "$config_file"
+	fi
 
-# Source explicit config file if given
-if [[ -n "$config_file" ]]; then
-    [[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1 2>/dev/null || exit 1; }
-    source "$config_file"
-fi
+	# Config file auto-detection — bare www with no flags
+	if [[ -z "$config_file" && "$flag_init" -eq 0 && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
+		if [[ -f ".splunge.env" ]]; then
+			source ".splunge.env"
+		fi
+	fi
 
-# Config file auto-detection — bare www with no flags
-if [[ -z "$config_file" && "$flag_init" -eq 0 && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
-    if [[ -f ".splunge.env" ]]; then
-        source ".splunge.env"
-    fi
-fi
+	# Resolve each value: flag > config short name > default
+	bind=${flag_bind:-${BIND:-localhost:13000}}
+	code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
+	template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
+	log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
 
-# Resolve each value: flag > config short name > default
-bind=${flag_bind:-${BIND:-localhost:13000}}
-code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
-template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
-log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+	graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
+	project_name=${flag_project_name:-${PROJECT_NAME:-''}}
 
-graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
-project_name=${flag_project_name:-${PROJECT_NAME:-''}}
+	# Python path: flags array > SPLUNGE_PYTHONPATH > PYTHONPATH (config)
+	if (( ${#pythonpaths[@]} == 0 )); then
+		if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
+			pythonpaths=("$SPLUNGE_PYTHONPATH")
+		elif [[ -n "$PYTHONPATH" ]]; then
+			pythonpaths=("$PYTHONPATH")
+		fi
+	fi
 
-# Python path: flags array > SPLUNGE_PYTHONPATH > PYTHONPATH (config)
-if (( ${#pythonpaths[@]} == 0 )); then
-    if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
-        pythonpaths=("$SPLUNGE_PYTHONPATH")
-    elif [[ -n "$PYTHONPATH" ]]; then
-        pythonpaths=("$PYTHONPATH")
-    fi
-fi
+	# Init mode — prompt, save config, optionally run
+	need_init=0
+	if [[ "$flag_init" -eq 1 ]]; then
+		need_init=1
+	elif [[ -z "$config_file" && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" && ! -f ".splunge.env" && -z "$BIND" && -z "$CODEFOLDER" && -z "$TEMPLATEFOLDER" && -z "$LOGFILE" && -z "$GRACEFUL_TIMEOUT" && -z "$PROJECT_NAME" ]]; then
+		need_init=1
+	fi
 
-# Init mode — prompt, save config, optionally run
-need_init=0
-if [[ "$flag_init" -eq 1 ]]; then
-    need_init=1
-elif [[ -z "$config_file" && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" && ! -f ".splunge.env" && -z "$BIND" && -z "$CODEFOLDER" && -z "$TEMPLATEFOLDER" && -z "$LOGFILE" && -z "$GRACEFUL_TIMEOUT" && -z "$PROJECT_NAME" ]]; then
-    need_init=1
-fi
+	if [[ "$need_init" -eq 1 ]]; then
+		init
 
-if [[ "$need_init" -eq 1 ]]; then
-    init
+		# Re-source the config we just wrote and re-resolve
+		source ".splunge.env"
+		bind=${flag_bind:-${BIND:-localhost:13000}}
+		code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
+		template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
+		log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+		graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
+		project_name=${flag_project_name:-${PROJECT_NAME:-''}}
+		if (( ${#pythonpaths[@]} == 0 )); then
+			if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
+				pythonpaths=("$SPLUNGE_PYTHONPATH")
+			elif [[ -n "$PYTHONPATH" ]]; then
+				pythonpaths=("$PYTHONPATH")
+			fi
+		fi
 
-    # Re-source the config we just wrote and re-resolve
-    source ".splunge.env"
-    bind=${flag_bind:-${BIND:-localhost:13000}}
-    code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
-    template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
-    log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
-    graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
-    project_name=${flag_project_name:-${PROJECT_NAME:-''}}
-    if (( ${#pythonpaths[@]} == 0 )); then
-        if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
-            pythonpaths=("$SPLUNGE_PYTHONPATH")
-        elif [[ -n "$PYTHONPATH" ]]; then
-            pythonpaths=("$PYTHONPATH")
-        fi
-    fi
+		if [[ "$flag_run" -eq 0 && "$flag_no_run" -eq 0 ]]; then
+			read -r -p "Run the app now? (Y/n): " inp
+			flag_run=1
+			[[ "$inp" =~ ^[Nn] ]] && flag_run=0
+		fi
 
-    if [[ "$flag_run" -eq 0 && "$flag_no_run" -eq 0 ]]; then
-        read -r -p "Run the app now? (Y/n): " inp
-        flag_run=1
-        [[ "$inp" =~ ^[Nn] ]] && flag_run=0
-    fi
+		if [[ "$flag_run" -eq 0 ]]; then
+			return
+		fi
+	fi
 
-    if [[ "$flag_run" -eq 0 ]]; then
-        return 0 2>/dev/null || exit 0
-    fi
-fi
+	# Resolve relative paths to absolute so they don't shift after --chdir
+	code_folder=$(realpath -- "$code_folder" 2>/dev/null || readlink -f -- "$code_folder" 2>/dev/null || printf '%s' "$code_folder")
+	[[ -z "$template_folder" ]] && template_folder=$code_folder
+	template_folder=$(realpath -- "$template_folder" 2>/dev/null || readlink -f -- "$template_folder" 2>/dev/null || printf '%s' "$template_folder")
 
-# Resolve relative paths to absolute so they don't shift after --chdir
-code_folder=$(realpath -- "$code_folder" 2>/dev/null || readlink -f -- "$code_folder" 2>/dev/null || printf '%s' "$code_folder")
-[[ -z "$template_folder" ]] && template_folder=$code_folder
-template_folder=$(realpath -- "$template_folder" 2>/dev/null || readlink -f -- "$template_folder" 2>/dev/null || printf '%s' "$template_folder")
+	# Validate required values
+	[[ -d "$code_folder" ]] || { printf 'Content folder not found: %s\n' "$code_folder" >&2; return 1; }
 
-# Validate required values
-[[ -d "$code_folder" ]] || { printf 'Content folder not found: %s\n' "$code_folder" >&2; return 1 2>/dev/null || exit 1; }
+	log_folder=$(dirname "$log_file")
+	mkdir -p "$log_folder" || { printf 'Unable to create log folder %s\n' "$log_folder" >&2; return 1; }
 
-log_folder=$(dirname "$log_file")
-mkdir -p "$log_folder" || { printf 'Unable to create log folder %s\n' "$log_folder" >&2; return 1 2>/dev/null || exit 1; }
+	# Startup message
+	if [[ "$bind" == unix:* ]]; then
+		printf 'Splunge serving %s on socket %s\n' "$code_folder" "${bind#unix:}"
+	else
+		printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind" "$log_file"
+	fi
 
-# Startup message
-if [[ "$bind" == unix:* ]]; then
-    printf 'Splunge serving %s on socket %s\n' "$code_folder" "${bind#unix:}"
-else
-    printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind" "$log_file"
-fi
+	flags=(
+		--bind "$bind"
+		--access-logfile "$log_folder/access.log"
+		--chdir "$code_folder"
+		--env "SPLUNGE_CODEFOLDER=$code_folder"
+		--env "SPLUNGE_TEMPLATEFOLDER=$template_folder"
+		--env "SPLUNGE_TEMPLATE_FOLDER=$template_folder"
+		--env "SPLUNGE_LOGFILE=$log_file"
+		--error-logfile "$log_folder/errors.log"
+		--workers 3
+		--umask 007
+		--reload
+	)
 
-flags=(
-    --bind "$bind"
-    --access-logfile "$log_folder/access.log"
-    --chdir "$code_folder"
-    --env "SPLUNGE_CODEFOLDER=$code_folder"
-    --env "SPLUNGE_TEMPLATEFOLDER=$template_folder"
-    --env "SPLUNGE_TEMPLATE_FOLDER=$template_folder"
-    --env "SPLUNGE_LOGFILE=$log_file"
-    --error-logfile "$log_folder/errors.log"
-    --workers 3
-    --umask 007
-    --reload
-)
+	[[ -n "$graceful_timeout" ]] && flags+=(--graceful-timeout "$graceful_timeout")
 
-[[ -n "$graceful_timeout" ]] && flags+=(--graceful-timeout "$graceful_timeout")
+	if (( ${#pythonpaths[@]} > 0 )); then
+		local IFS=':'
+		export PYTHONPATH="${pythonpaths[*]}:${PYTHONPATH:-}"
+	fi
 
-if (( ${#pythonpaths[@]} > 0 )); then
-    local IFS=':'
-    export PYTHONPATH="${pythonpaths[*]}:${PYTHONPATH:-}"
-fi
-
-exec gunicorn "${flags[@]}" splunge.app:app
+	exec gunicorn "${flags[@]}" splunge.app:app
 }
 
 (return 0 2>/dev/null) || main "$@"
