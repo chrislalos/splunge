@@ -19,16 +19,16 @@ class CreateHandlerTests(unittest.TestCase):
 
 
 	def test_module(self):
-		test_handler(self, "/www/meat/foo", PythonModuleHandler)
+		test_handler(self, "/www/hello/foo", PythonModuleHandler)
 
 	def test_markdown(self):
 		test_handler(self, "/www/hello.md", MarkdownHandler)
 
 	def test_python_source(self):
-		test_handler(self, "/www/meat/foo.py", SourceHandler)
+		test_handler(self, "/www/hello/foo.py", SourceHandler)
 	
 	def test_pyp_source(self):
-		handler = test_handler(self, "/www/meat/foo3.pyp", SourceHandler)
+		handler = test_handler(self, "/www/hello/foo3.pyp", SourceHandler)
 	
 	def test_static_content(self):
 	    test_handler(self, "/www/hello.html", FileHandler)

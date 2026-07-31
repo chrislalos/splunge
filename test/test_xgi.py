@@ -15,7 +15,7 @@ class Tests(unittest.TestCase):
 		os.chdir(cls.oldCwd)
 
 	def test_create_args(self):
-		path = "/www/meat/bar?name=meat"
+		path = "/www/hello/bar?name=meat"
 		xgi = Xgi.create(path)
 		# get args
 		getArgs = xgi.create_get_args()

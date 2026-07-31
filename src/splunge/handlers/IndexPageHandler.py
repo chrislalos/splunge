@@ -1,5 +1,6 @@
 import mimetypes
 import os
+from .. import constants
 from ..loggin import debug
 from ..Response import Response
 from .BaseHandler import BaseHandler
@@ -26,8 +27,8 @@ class IndexPageHandler(BaseHandler):
 
 	def _serve_file(self, path):
 		mimeType, _ = mimetypes.guess_type(path)
-		if not mimeType:
-			mimeType = 'text/html'
+		if not mimeType or mimeType == 'text/html':
+			mimeType = constants.MT_html
 		with open(path, 'rb') as f:
 			return Response.create_from_file(f, mimeType)
 

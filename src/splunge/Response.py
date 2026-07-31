@@ -3,7 +3,7 @@ from http.cookies import SimpleCookie
 import types
 from .Headers import Headers
 from .EnrichedModule import EnrichedModuleResult
-from . import util
+from . import constants, util
 
 @dataclass(kw_only=True)
 class Response:
@@ -82,7 +82,7 @@ class Response:
 	@classmethod
 	def create_from_result(cls, result: EnrichedModuleResult, iter: list[bytes]) -> "Response":
 		headers = Headers.create(result.headers)
-		headers.contentType = "text/html; charset=utf-8"
+		headers.contentType = constants.MT_html
 		headers.contentLength = len(iter[0])
 		resp = Response(
 			statusCode=result.statusCode,

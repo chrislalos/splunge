@@ -10,6 +10,7 @@ src/*.html
 src/*.py
 src/*.pyp
 bin/
+boxymusic/
 build/
 include/
 lib/

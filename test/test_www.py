@@ -33,17 +33,17 @@ class Tests(unittest.TestCase):
 		self.assertEqual(200, status)
 		self.assertIn('🌞', body)
 
-	def test_meat_bar(self):
-		status, body = util.http_get(self.port, '/meat/bar')
+	def test_hello_bar(self):
+		status, body = util.http_get(self.port, '/hello/bar')
 		self.assertEqual(200, status)
 
-	def test_meat_foo(self):
-		status, body = util.http_get(self.port, '/meat/foo')
+	def test_hello_foo(self):
+		status, body = util.http_get(self.port, '/hello/foo')
 		self.assertEqual(200, status)
 		self.assertIn('Hi everybody', body)
 
-	def test_meat_foo3_pyp(self):
-		status, body = util.http_get(self.port, '/meat/foo3')
+	def test_hello_foo3_pyp(self):
+		status, body = util.http_get(self.port, '/hello/foo3')
 		self.assertEqual(200, status)
 		self.assertIn('MEAT', body)
 

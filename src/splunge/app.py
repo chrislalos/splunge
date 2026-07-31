@@ -2,6 +2,7 @@ import html
 import os
 import traceback
 
+from . import constants
 from . import error_template_strings, loggin, util
 from . import handlers
 from .Headers import Headers
@@ -46,7 +47,7 @@ def handle_404(xgi, start_response):
 		contentLength = len(content)
 		headers = Headers()
 		headers.contentLength = contentLength
-		headers.contentType = "text/html"
+		headers.contentType = constants.MT_html
 		loggin.debug("headers")
 		loggin.debug(headers)
 		loggin.debug("starting response")
@@ -81,7 +82,7 @@ def handle_error(ex, xgi, start_response):
 		contentLength = len(content)
 		headers = Headers()
 		headers.contentLength = contentLength
-		headers.contentType = "text/html"
+		headers.contentType = constants.MT_html
 		# Deliver the response
 		start_response(status, headers.asTuples())
 		return [content]
@@ -132,8 +133,12 @@ def app(wsgi, start_response):
 	# return iter([data])
 
 
-
+# delegate legacy calls to the new function
 def app(wsgi, start_response):
+    return wsgi_fun(wsgi, start_response)
+
+
+def wsgi_fn(wsgi, start_response):
 	xgi = None
 	resp = None
 	try:

@@ -65,7 +65,7 @@ class Tests(unittest.TestCase):
 		mod.__spec__.loader.exec_module(mod)
 
 		# util.add_code_folder(nsp_name, codeFolderPath)
-		# spec = importlib.util.spec_from_file_location('mycode.meat.foo', './www/meat/foo.py')
+		# spec = importlib.util.spec_from_file_location('mycode.meat.foo', './www/hello/foo.py')
 		# mod = importlib.util.module_from_spec(spec)
 		# mod.__spec__.loader.exec_module(mod)		
 

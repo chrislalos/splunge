@@ -1,7 +1,9 @@
 import argparse
 import sys
+from . import wsg_fn
 
 PATH_CfgDefault = "./.splunge.cfg.py"
+
 
 class AppendWithMulti(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -10,7 +12,19 @@ class AppendWithMulti(argparse.Action):
         setattr(namespace, self.dest, current)
 
 
-class AppInfo:
+class AppFactory(BaseApplication):
+    def _init(self, cfg, guniCfg):
+        self.cfg, guniCfg
+        self.guniCfg = guniCfg
+
+    def load(self):
+        return wsgi_fn
+
+    def load_config(self):
+        return self.guniCfg
+
+
+class Config:
     def __init__(self, *,
                  name,
                  bind,
@@ -18,10 +32,10 @@ class AppInfo:
                  codeFolders=[],
                  templateFolders=[]):
         self.name = name
-        self.bind = bind
         self.contentFolders = contentFolders
         self.codeFolders = codeFolders
         self.templateFolders = templateFolders
+        self.gunicornConfig = dict()
 
 
 def create_parser():
@@ -54,7 +68,13 @@ def create_parser():
     return parser
 
 
-def init(args):
+
+# create an a
+def createConfigObjs(args):
+    pass
+
+
+def init(args, configPath=None):
     print("Welcome")
     # If --name not set, prompt for name (ex: current folder basename)
     # If --bind not set, prompt for bind (ex: 0.0.0.0:13001, unix://var/run/$name.sock)
@@ -62,14 +82,19 @@ def init(args):
     # If --code-folder not set, prompt for one or more --code-folder, blank line to end)
     # If --template-folder not set, prompt for one or more --template-folder, blank line to end)
     # Write config file as splunge.cfg.py
-    appInfo = initAppInfo(args)
-
-
-
+    cfg = None
+    if configFile:
+        spec = importlib.util.spec_from_file_location('__config__', configPath)
+        cfgModule = importlib.module_from_spec(spec)
+        spec.loader.exec_module(cfgModule)
+        cfg = vars(cfgModule)
+    appInfo = initAppInfo(args, cfg)
 
 
 
 def run(args):
+    (cfg, guniCfg) = createConfig(args)
+
     pass
 
 

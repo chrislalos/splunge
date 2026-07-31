@@ -1,6 +1,6 @@
 from pprint import pprint
 import unittest
-from splunge import Headers
+from splunge import constants, Headers
 
 def create_headers (name=None, value=None, *, d=None):
 	headers = Headers()
@@ -23,14 +23,14 @@ class HeadersTests(unittest.TestCase):
 
 	def test_addSingleValue (self):
 		name = 'Content-length'
-		value = 'text/html'
+		value = constants.MT_html
 		headers = create_headers(name, value)
 		self.assertTrue(name in headers)
 		self.assertEqual(value, headers[name])
 
 	def test_addSingleValueI(self):
 		name = 'Content-length'
-		value = 'text/html'
+		value = constants.MT_html
 		headers = create_headers(name, value)
 		tuplesControl = [(name.lower(), value)]
 		nameLower = name.lower()
@@ -93,7 +93,7 @@ class HeadersTests(unittest.TestCase):
 	def test_content_type(self):
 		headers = create_headers()
 		name = 'Content-type'
-		value = 'text/html'
+		value = constants.MT_html
 		headers.contentType = value
 		self.assertEqual(value, headers.contentType)
 		self.assertEqual(value, headers[name])
@@ -114,7 +114,7 @@ class HeadersTests(unittest.TestCase):
 
 	def test_del_content_type(self):
 		name = 'Content-type'
-		value = 'text/html'
+		value = constants.MT_html
 		headers = create_headers(name, value)
 		self.assertEqual(value, headers[name])
 		del headers[name]
@@ -122,7 +122,7 @@ class HeadersTests(unittest.TestCase):
 
 	def testDelete(self):
 		name = 'Content-type'
-		value = 'text/html'
+		value = constants.MT_html
 		headers = create_headers(name, value)
 		self.assertEqual(1, len(headers))
 		headers.pop(name)
@@ -132,7 +132,7 @@ class HeadersTests(unittest.TestCase):
 
 	def testDeleteI(self):
 		name = 'Content-type'
-		value = 'text/html'
+		value = constants.MT_html
 		headers = create_headers(name, value)
 		self.assertEqual(1, len(headers))
 		nameLower = name.lower()
@@ -192,7 +192,7 @@ class HeadersTests(unittest.TestCase):
 	def test_set(self):
 		headers = Headers()
 		name = Headers.HN_ContentType
-		value1 = 'text/html'
+		value1 = constants.MT_html
 		value2 = 'text/markdown'
 		headers.set(name, value1)
 		headers.set(name, value2)
@@ -201,7 +201,7 @@ class HeadersTests(unittest.TestCase):
 	def test_tuples1(self):
 		headers = Headers()
 		name = Headers.HN_ContentType
-		value = 'text/html'
+		value = constants.MT_html
 		tuplesControl = [(name.lower(), value)]
 		headers.add(name, value)
 		tuples = headers.asTuples()

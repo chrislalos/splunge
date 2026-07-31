@@ -8,7 +8,7 @@ from splunge import util, EnrichedModule, ModuleExecutionResponse, Xgi
 class ModuleFunctionTests(unittest.TestCase):
     def test_exec_module_check_stdout(self):
         ''' Confirm that util.load_module() does not initialize the module. '''
-        path = '/www/meat/to-stdout'
+        path = '/www/hello/to-stdout'
         xgi = Xgi.create(path)
         # module_state = ModuleExecutionResponse.exec_module(module)
         em = EnrichedModule(xgi)

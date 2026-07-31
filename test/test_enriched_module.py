@@ -19,7 +19,7 @@ class Tests(unittest.TestCase):
 		test_status(self, 200, "OK")
 
 	def test_get_args(self):
-		xgi = Xgi.create("/meat/foo?name=meat")
+		xgi = Xgi.create("/hello/foo?name=meat")
 		mod = EnrichedModule.create(xgi)
 		self.assertIsNotNone(mod.http.args)
 		self.assertEqual(1, len(mod.http.args))

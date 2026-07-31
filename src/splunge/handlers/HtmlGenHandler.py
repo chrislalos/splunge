@@ -3,7 +3,7 @@ import io
 import pygments
 import pygments.formatters
 import pygments.lexers
-from .. import loggin
+from .. import constants, loggin
 from ..Response import Response
 from ..Xgi import Xgi
 from .FileHandler import FileHandler
@@ -54,4 +54,4 @@ class HtmlGenHandler(FileHandler):
 		return self.xgi.open_by_path()
 
 	def get_mime_type(self) -> str:
-		return "text/html; charset=utf-8"
+		return constants.MT_html
