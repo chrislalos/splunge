@@ -27,7 +27,7 @@ class IndexPageHandler(BaseHandler):
 
 	def _serve_file(self, path):
 		mimeType, _ = mimetypes.guess_type(path)
-		if not mimeType or mimeType == 'text/html':
+		if not mimeType:
 			mimeType = constants.MT_html
 		with open(path, 'rb') as f:
 			return Response.create_from_file(f, mimeType)

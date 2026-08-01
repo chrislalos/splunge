@@ -11,9 +11,6 @@ from .SourceHandler import SourceHandler
 from ..Xgi import Xgi
 from .. import loggin
 
-# specific media types for when there's a choice:
-MT_html = 'text/html; charset=utf-8'
-
 lookupTable = {
 	'.a': ('application/octet-stream', FileHandler),
 	'.ai': ('application/postscript', FileHandler),
