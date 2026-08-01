@@ -65,9 +65,46 @@ def gen_expected():
     })
 
 
+def leaves(tree):
+    result = []
+    def walk(node, prefix):
+        if isinstance(node, dict):
+            for key, child in node.items():
+                walk(child, prefix + '.' + key if prefix else key)
+        elif isinstance(node, list):
+            for pet in node:
+                result.append(prefix + '.' + pet)
+    for key, subtree in tree.items():
+        walk(subtree, key)
+    return result
+
+
+def relative_import(source, target):
+    src_dirs = source.split('.')[:-1]
+    tgt_dirs = target.split('.')[:-1]
+    tgt_leaf = target.split('.')[-1]
+    common = 0
+    for s, t in zip(src_dirs, tgt_dirs):
+        if s == t:
+            common += 1
+        else:
+            break
+    ups = len(src_dirs) - common
+    dots = '.' * (ups + 1)
+    downs = tgt_dirs[common:]
+    if downs:
+        path = dots + '.'.join(downs)
+    else:
+        path = dots
+    return f'from {path} import {tgt_leaf}'
+
+
 def gen_site(json_path='test/codeFolderLoader/fnf.json', out_root='www/site-04'):
     with open(json_path) as f:
         tree = json.load(f)
+
+    all_leaves = leaves(tree)
+    random.shuffle(all_leaves)
 
     def walk(node, path):
         os.makedirs(path, exist_ok=True)
@@ -76,7 +113,16 @@ def gen_site(json_path='test/codeFolderLoader/fnf.json', out_root='www/site-04')
                 walk(child, os.path.join(path, key))
         elif isinstance(node, list):
             for pet in node:
+                leaf_path = os.path.relpath(
+                    os.path.join(path, pet),
+                    out_root
+                ).replace('/', '.')
+                peers = [l for l in all_leaves if l != leaf_path]
+                count = min(random.randint(2, 5), len(peers))
+                chosen = random.sample(peers, count)
                 with open(os.path.join(path, pet + '.py'), 'w') as f:
+                    for peer in chosen:
+                        f.write(relative_import(leaf_path, peer) + '\n')
                     f.write(f"name = {pet!r}\n")
 
     walk(tree, out_root)

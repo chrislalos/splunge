@@ -195,3 +195,7 @@ create a hello.py at root and add imports to hello.py for every module. Also wri
 ### step 6
 
 Look at test-site-04.py. There's an stub for test_import that calls check_mod_vals and a stub check_mod_vals that does nothing. Fill in test_import so it builds a dict of module attribute names and expected values. Simliar to site-test-03, there should be tests for the ${moduleName}Name module level attrubutes, as tell as ${moduleName}.name which checks the actual imported module value as well. Then check_mod_vals traverses the expected dict and asserts. Show me your plan
+
+### step 7
+
+Look test test-site-04/test_import_billie. This is a simple test where I copy pasted the imports from billie.py, then did some regexs to strip all but the module name, and then build the expected up and called check_mod_vals. Pretty easy. Write a similiar test for blitzen.py
