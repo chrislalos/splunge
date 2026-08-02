@@ -199,3 +199,7 @@ Look at test-site-04.py. There's an stub for test_import that calls check_mod_va
 ### step 7
 
 Look test test-site-04/test_import_billie. This is a simple test where I copy pasted the imports from billie.py, then did some regexs to strip all but the module name, and then build the expected up and called check_mod_vals. Pretty easy. Write a similiar test for blitzen.py
+
+### step 8
+
+
