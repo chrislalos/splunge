@@ -19,7 +19,7 @@ class PythonModuleHandler(BaseHandler):
 		# if not module:
 		# 	raise Exception(f'module not found: {util.get_module_path(self.xgi)}')
 		# result = enrichedModule.exec()
-		moduleName = '.'.join(self.xgi.get_path().removeprefix('/').split('/'))
+		moduleName = self.xgi.get_module_name()
 		loggin.debug(f'moduleName={moduleName}')
 		mod = importlib.import_module(moduleName)
 		mod = util.enrich_module(mod, self.xgi)

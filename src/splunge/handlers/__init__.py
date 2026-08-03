@@ -183,6 +183,68 @@ def create_mime_handler(xgi):
 	return handler
 
 	
+def handle_404(xgi, start_response):
+	status = "404 Resource Not Found"
+	try:
+		loggin.debug("inside handle_404()")
+		templatePath = f'/err/404.pyp'
+		loggin.debug(f'templatePath={templatePath}')
+		# Load the template & render it w wsgi args
+		args = {"path": xgi['PATH_INFO']}
+		content = util.render_template(templatePath, args).encode()
+		contentLength = len(content)
+		headers = Headers()
+		headers.contentLength = contentLength
+		headers.contentType = constants.MT_html
+		loggin.debug("headers")
+		loggin.debug(headers)
+		loggin.debug("starting response")
+		start_response(status, headers.asTuples())
+		return [content]
+	except Exception as ex:
+		loggin.error(ex)
+		content = util.render_string(error_template_strings.Err404, args).encode('utf-8')
+		contentLength = len(content)
+		headers = Headers()
+		headers.contentLength = contentLength
+		headers.contentType = "text/html"
+		start_response(status, headers.asTuples())
+		return [content]
+
+
+def handle_error(ex, xgi, start_response):
+	status = "513 uhoh"
+	try:
+		loggin.error(ex, exc_info=True)
+		# Create a traceback from the ex + create a context from the message+traceback
+		ss = traceback.extract_tb(ex.__traceback__)
+		s = "".join([html.escape(line).lstrip() for line in ss.format()])
+		args = {
+			"message": str(ex),
+			"traceback": s
+		}
+		# Load + render the template, and encode as HTML
+		templatePath = '/err/500.pyp'
+		content = util.render_template(templatePath, args).encode('utf-8')
+		# Create headers
+		contentLength = len(content)
+		headers = Headers()
+		headers.contentLength = contentLength
+		headers.contentType = constants.MT_html
+		# Deliver the response
+		start_response(status, headers.asTuples())
+		return [content]
+	except Exception as ex:
+		# loggin.error(ex, exc_info=True)
+		content = util.render_string(error_template_strings.Err500, args).encode('utf-8')
+		contentLength = len(content)
+		headers = Headers()
+		headers.contentLength = contentLength
+		headers.contentType = "text/html"
+		start_response(status, headers.asTuples())
+		return [content]
+
+
 def is_mime_type(xgi):
 	''' Check if the wsgi has a recognized MIME type. '''
 	mimeType = lookup_mime_type(xgi)

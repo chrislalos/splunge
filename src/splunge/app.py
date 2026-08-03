@@ -1,6 +1,10 @@
+from contextvars import ContextVar
+from dataclasses import dataclass
 import html
 import os
 import traceback
+
+from gunicorn.app.base import BaseApplication
 
 from . import constants
 from . import error_template_strings, loggin, util
@@ -12,6 +16,9 @@ from .Xgi import Xgi
 handler_map = {'application/x-python-code': "SourceHandler",
 			   'application/x-splunge-template': "SourceHandler"
 			  }
+
+# Context variable for the current Xgi object
+CV_xgi = ContextVar(constants.CTX_xgi)
 
 
 # def create_handler(xgi: Xgi):
@@ -35,66 +42,35 @@ handler_map = {'application/x-python-code': "SourceHandler",
 # 	return handler
 
 
-def handle_404(xgi, start_response):
-	status = "404 Resource Not Found"
-	try:
-		loggin.debug("inside handle_404()")
-		templatePath = f'/err/404.pyp'
-		loggin.debug(f'templatePath={templatePath}')
-		# Load the template & render it w wsgi args
-		args = {"path": xgi['PATH_INFO']}
-		content = util.render_template(templatePath, args).encode()
-		contentLength = len(content)
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = constants.MT_html
-		loggin.debug("headers")
-		loggin.debug(headers)
-		loggin.debug("starting response")
-		start_response(status, headers.asTuples())
-		return [content]
-	except Exception as ex:
-		loggin.error(ex)
-		content = util.render_string(error_template_strings.Err404, args).encode('utf-8')
-		contentLength = len(content)
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = "text/html"
-		start_response(status, headers.asTuples())
-		return [content]
+class AppFactory(BaseApplication):
+	def _init(self, cfg, guniCfg):
+		self.cfg, guniCfg
+		self.guniCfg = guniCfg
+
+	def load(self):
+		return wsgi_fn
+
+	def load_config(self):
+		pass
+
+class Config:
+    def __init__(self, *,
+                 name,
+                 bind,
+                 contentFolders=[],
+                 codeFolders=[],
+                 templateFolders=[]):
+        self.name = name
+        self.contentFolders = contentFolders
+        self.codeFolders = codeFolders
+        self.templateFolders = templateFolders
+        self.gunicornConfig = dict()
 
 
-def handle_error(ex, xgi, start_response):
-	status = "513 uhoh"
-	try:
-		loggin.error(ex, exc_info=True)
-		# Create a traceback from the ex + create a context from the message+traceback
-		ss = traceback.extract_tb(ex.__traceback__)
-		s = "".join([html.escape(line).lstrip() for line in ss.format()])
-		args = {
-			"message": str(ex),
-			"traceback": s
-		}
-		# Load + render the template, and encode as HTML
-		templatePath = '/err/500.pyp'
-		content = util.render_template(templatePath, args).encode('utf-8')
-		# Create headers
-		contentLength = len(content)
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = constants.MT_html
-		# Deliver the response
-		start_response(status, headers.asTuples())
-		return [content]
-	except Exception as ex:
-		# loggin.error(ex, exc_info=True)
-		content = util.render_string(error_template_strings.Err500, args).encode('utf-8')
-		contentLength = len(content)
-		headers = Headers()
-		headers.contentLength = contentLength
-		headers.contentType = "text/html"
-		start_response(status, headers.asTuples())
-		return [content]
+@dataclass
+class Context:
+	cfg: Config
+	xgi: Xgi
 
 
 def app(wsgi, start_response):
@@ -117,10 +93,10 @@ def app(wsgi, start_response):
 	except FileNotFoundError as ex:
 		loggin.error(f"404 - {wsgi['PATH_INFO']}")
 		loggin.error(ex, exc_info=True)
-		return handle_404(xgi, start_response)
+		return handlers.handle_404(xgi, start_response)
 	except Exception as ex:
 		loggin.warning('error caught in app()')
-		return handle_error(ex, wsgi, start_response)
+		return handlers.handle_error(ex, wsgi, start_response)
 
 	# # error
 	# data = b'no clue dude'
@@ -143,19 +119,12 @@ def wsgi_fn(wsgi, start_response):
 	resp = None
 	try:
 		xgi = Xgi(wsgi)
-		loggin.debug(f"PATH_INFO={xgi['PATH_INFO']}")
-		loggin.debug(f"SCRIPT_NAME={xgi['SCRIPT_NAME']}")
-		loggin.debug(f"SPLUNGE_CODEFOLDER={os.getenv('SPLUNGE_CODEFOLDER')}")
-		loggin.debug(f"xwsgi.file_wrapper={getattr(xgi, 'file_wrapper', 'N/A')}")
-		code_folder = os.getenv("SPLUNGE_CODEFOLDER")
-		handler = handlers.create(xgi, code_folder=code_folder)
+		handler = handlers.create(xgi)
 		resp = handler.handle_request()
 		status = resp.status
 		headers = resp.headers.asTuples() 
 		data = resp.iter
 		start_response(status, headers)
-		# loggin.debug(f"len(data)={len(data)}")
-		# loggin.debug(f"len(data[0])={len(data[0])}")
 		return data
 	except FileNotFoundError as ex:
 		loggin.error(f"404 - {wsgi['PATH_INFO']}")

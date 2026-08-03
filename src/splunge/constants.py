@@ -13,6 +13,9 @@ html_post = """
 </html>
 """.lstrip("\r\n")
 
+# Context variable names
+CTX_xgi = "current_xgi"
+
 # specific media types for when there's a choice:
 MT_html = 'text/html; charset=utf-8'
 

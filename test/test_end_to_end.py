@@ -26,25 +26,25 @@ class Tests(unittest.TestCase):
 
 
 	def test_hello_html(self):
-		test_get(self, "/hello.html", contentType=constants.MT_html, contentLength=os.path.getsize("hello.html"))
+		check_get(self, "/hello.html", contentType=constants.MT_html, contentLength=os.path.getsize("hello.html"))
 
 	def test_hello_bar(self):
-		test_get(self, "/hello/bar", contentType=CT_html)
+		check_get(self, "/hello/bar", contentType=CT_html)
 
 	def test_hello_foo(self):
-		test_get(self, "/hello/foo", contentType=CT_html)
+		check_get(self, "/hello/foo", contentType=CT_html)
 
 	def test_hello_foo3_pyp(self):
-		test_get(self, "/hello/foo3.pyp", contentType=CT_html)
+		check_get(self, "/hello/foo3.pyp", contentType=CT_html)
 
 	def test_new_rel(self):
 		pass
 
 	def test_rel(self):
-		test_get(self, "/rel", contentType=CT_html)
+		check_get(self, "/rel", contentType=CT_html)
 
 
-def test_get(t: unittest.TestCase, url: str, *, contentType=None, contentLength=None) -> Response: 
+def check_get(t: unittest.TestCase, url: str, *, contentType=None, contentLength=None) -> Response: 
 	cli = Client(app.app)
 	resp = cli.get(url)
 	statusCode, sep, statusMessage = resp.status.partition(' ')
