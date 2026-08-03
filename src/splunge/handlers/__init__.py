@@ -157,7 +157,7 @@ def create(xgi: Xgi, *, code_folder: str=None) -> BaseHandler:
 	handler = None
 	if xgi.is_index_page():
 		handler =  IndexPageHandler(xgi)
-	elif xgi.is_python_module(code_folder):
+	elif xgi.is_python_module():
 		handler = PythonModuleHandler(xgi)
 	elif xgi.is_python_markup(code_folder):
 		handler =  PythonTemplateHandler(xgi)

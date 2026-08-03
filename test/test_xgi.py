@@ -1,58 +1,63 @@
-import os.path
-import unittest
-from splunge import Xgi
+import os
+import pytest
+from splunge import constants, Xgi
 
-class Tests(unittest.TestCase):
-	@classmethod
-	def setUpClass(cls):
-		home = os.getenv('HOME')
-		cls.codeFolder = f"{home}/src/splunge/test/code"
-		cls.oldCwd = os.getcwd()
-		os.chdir(cls.codeFolder)
+_codeFolder = f"/www"
 
-	@classmethod
-	def tearDownClass(cls):
-		os.chdir(cls.oldCwd)
 
-	def test_create_args(self):
-		path = "/www/hello/bar?name=meat"
-		xgi = Xgi.create(path)
-		# get args
-		getArgs = xgi.create_get_args()
-		self.assertIsNotNone(getArgs)
-		self.assertEqual(1, len(getArgs))
-		self.assertTrue('name' in getArgs)
-		self.assertEqual("meat", getArgs['name'])
-		# post args
-		postArgs = xgi.create_post_args()
-		self.assertIsNotNone(postArgs)
-		# args
-		self.assertEqual(0, len(postArgs))
-		args = xgi.create_args()
-		self.assertIsNotNone(args)
-		self.assertEqual(1, len(args))
-		self.assertTrue('name' in args)
-		self.assertEqual("meat", args['name'])
 
-	def test_get_module_path(self):
-		path = '/rel'
-		xgi = Xgi.create(path)
-		self.assertIsNotNone(xgi)
-		module_path = xgi.get_module_path(self.codeFolder)
-		flag = os.path.exists(module_path)
-		print(f'module_path={module_path}')
-		self.assertTrue(flag)
+@pytest.fixture(scope='module', autouse=True)
+def _setup():
+    old = os.getcwd()
+    os.chdir(_codeFolder)
+    yield
+    os.chdir(old)
 
-	def test_is_python_module(self):
-		path = '/foo'
-		xgi = Xgi.create(path)
-		self.assertIsNotNone(xgi)
-		isModule = xgi.is_python_module(self.codeFolder)
-		self.assertTrue(isModule)
 
-	def test_is_python_module2(self):
-		path = '/sub/bum'
-		xgi = Xgi.create(path)
-		self.assertIsNotNone(xgi)
-		isModule = xgi.is_python_module(self.codeFolder)
-		self.assertTrue(isModule)
+def test_create_args():
+    path = "/www/hello/bar?name=meat"
+    xgi = Xgi.create(path)
+    # get args
+    getArgs = xgi.create_get_args()
+    assert getArgs is not None
+    assert len(getArgs) == 1
+    assert 'name' in getArgs
+    assert getArgs['name'] == "meat"
+    # post args
+    postArgs = xgi.create_post_args()
+    assert postArgs is not None
+    assert len(postArgs) == 0
+    # all args
+    args = xgi.create_args()
+    assert args is not None
+    assert len(args) == 1
+    assert 'name' in args
+    assert args['name'] == "meat"
+
+
+def test_get_module_name():
+    path = "/hello/foo"
+    xgi = Xgi.create(path)
+    assert xgi.get_module_name() == f'{constants.NSP_name}.hello.foo'
+
+
+def test_get_module_path():
+    path = '/rel'
+    xgi = Xgi.create(path)
+    assert xgi is not None
+    module_path = xgi.get_module_path(_codeFolder)
+    assert os.path.exists(module_path)
+
+
+def test_is_python_module():
+    path = '/foo'
+    xgi = Xgi.create(path)
+    assert xgi is not None
+    assert xgi.is_python_module()
+
+
+def test_is_python_module2():
+    path = '/sub/bum'
+    xgi = Xgi.create(path)
+    assert xgi is not None
+    assert xgi.is_python_module()

@@ -1,5 +1,6 @@
 from splunge import CodeFolderLoader
 
+    ldr.install()
 import importlib
 import os.path
 import pytest

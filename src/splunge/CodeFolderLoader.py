@@ -2,10 +2,10 @@ import importlib.machinery
 import importlib.util
 import os
 import sys
-
+from . import constants
 
 class CodeFolderLoader:
-    def __init__(self, codeFolders, *, nspName='codefolder'):
+    def __init__(self, codeFolders, *, nspName=constants.NSP_name):
         self.codeFolders = [os.path.abspath(cf) for cf in codeFolders]
         self.nspName = nspName
         self.nspPrefix = nspName + '.'

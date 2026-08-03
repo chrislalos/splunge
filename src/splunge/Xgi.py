@@ -1,11 +1,11 @@
 from dataclasses import dataclass
+import importlib
 import os
 from typing import TYPE_CHECKING
 from werkzeug.test import EnvironBuilder
 if TYPE_CHECKING:
 	from _typeshed.wsgi import WSGIEnvironment
-from . import loggin
-from . import util
+from . import constants, loggin, util
 from .mimetypes import mimemap
 @dataclass
 class Xgi:
@@ -82,6 +82,15 @@ class Xgi:
 		(folder, _) = os.path.split(path)
 		return folder
 
+	def get_module_name(self):
+		path = self.get_path().removeprefix('/')
+		if not path:
+			return path
+		segments = path.split('/')
+		segments.insert(0, constants.NSP_name)
+		moduleName = '.'.join(segments)
+		return moduleName
+
 	def get_module_path(self, code_folder):
 		# Get local path, append .py to the path, & confirm the path exists
 		path = self.get_path().removeprefix("/")
@@ -105,6 +114,11 @@ class Xgi:
 		templatePath = f'{module_path_no_ext}.pyp'
 		return templatePath
 
+	def has_template_path(self, code_folder):
+		# Does a .pyp exist? If so, create a template handler and transfer control to it
+		templatePath = self.get_template_path(code_folder)
+		return os.path.exists(templatePath)
+
 	def is_index_page(self):
 		path = self['PATH_INFO'].strip()
 		flag = False
@@ -117,7 +131,7 @@ class Xgi:
 		
 		A request represents a python markup iff
 			- Its path has no extension
-			- Appending .pyp to the path yields a file that exists in the local
+	 Appending .pyp to the path yields a file that exists in the local
 			filesystem
 		'''
 		ext = self.get_path_extension()
@@ -131,7 +145,7 @@ class Xgi:
 		return False
 
 
-	def is_python_module(self, code_folder):
+	def is_python_module(self):
 		''' Check if a request respresents a python module.
 		
 		A request represents a python module iff
@@ -139,21 +153,12 @@ class Xgi:
 			- Appending .py to the path yields a file that exists in the local
 			filesystem
 		'''
-		ext = self.get_path_extension()
-		module_path = self.get_module_path(code_folder)
-		module_path_no_ext, _ = os.path.splitext(module_path)
-		print(f'ext={ext} module_path={module_path} module_path_no_ext={module_path_no_ext}')
-		# Is the path a non-existent FILE and does it lack an extension? (e.g. http://foo.com/app/user)  
-		if not ext and not os.path.isfile(module_path_no_ext):
-			# If it exists as a file with a .py ext, use PythonHandler
-			if os.path.isfile(module_path):
-				return True
-		return False
-
-	def has_template_path(self, code_folder):
-		# Does a .pyp exist? If so, create a template handler and transfer control to it
-		templatePath = self.get_template_path(code_folder)
-		return os.path.exists(templatePath)
+		moduleName = self.get_module_name()
+		try:
+			importlib.import_module(moduleName)
+		except ImportError:
+			return False
+		return True
 
 	def load_module(self):
 		# Get local path, append .py to the path, & confirm the path exists

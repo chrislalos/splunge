@@ -7,12 +7,10 @@ import sys
 
 @pytest.fixture(scope='module')
 def loader():
-    sys.path.insert(0, '/www/site-05')
     ldr = CodeFolderLoader(['/www/site-05'])
     ldr.install()
     yield ldr
     ldr.uninstall()
-    sys.path.remove('/www/site-05')
 
 
 def test_import(loader):
