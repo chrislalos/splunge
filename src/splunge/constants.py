@@ -20,3 +20,5 @@ CTX_xgi = "current_xgi"
 MT_html = 'text/html; charset=utf-8'
 
 NSP_name = 'codefolders'
+
+PATH_CfgDefault = "./.splunge.cfg.py"

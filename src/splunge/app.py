@@ -2,6 +2,8 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 import html
 import os
+from pprint import pformat
+import sys
 import traceback
 
 from gunicorn.app.base import BaseApplication
@@ -53,18 +55,19 @@ class AppFactory(BaseApplication):
 	def load_config(self):
 		pass
 
+
+@dataclass
 class Config:
-    def __init__(self, *,
-                 name,
-                 bind,
-                 contentFolders=[],
-                 codeFolders=[],
-                 templateFolders=[]):
-        self.name = name
-        self.contentFolders = contentFolders
-        self.codeFolders = codeFolders
-        self.templateFolders = templateFolders
-        self.gunicornConfig = dict()
+	contentFolders: list[str]
+	codeFolders: list[str]
+	guniCfg: dict
+	name: str
+	templateFolders: list[str]
+
+	def pprint(self):
+		''' Use pprint.pformat() to output config settings as valid Python '''
+		sys.stdout.write(f'name = {pformat(self.name)}\n')
+		pass
 
 
 @dataclass

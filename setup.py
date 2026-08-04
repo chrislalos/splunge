@@ -2,7 +2,11 @@ import setuptools
 
 
 setuptools.setup(name='splunge',
-                 entry_points={},
+                 entry_points={
+					'console_scripts': [
+						 "splunge = splunge.cli:main",
+					]	
+				 },
                  install_requires=[
                      'gunicorn',
                      'jinja2',
