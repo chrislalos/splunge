@@ -1,0 +1,388 @@
+INFO:__main__:text=asdfaf state=0
+INFO:__main__:text=asdfaf state=0
+INFO:__main__:text=asdfaf state=0
+INFO:__main__:text=asdfaf state=0
+INFO:__main__:text=asdfaf state=0
+INFO:__main__:text=asdfafasdfa state=0
+INFO:__main__:text=asdfafasdfa state=0
+INFO:__main__:text=abc state=0
+INFO:__main__:text=abc state=0
+INFO:__main__:text=abcd state=0
+INFO:__main__:text=123 state=0
+INFO:__main__:text=123 state=0
+INFO:__main__:text=123 state=0
+INFO:__main__:text=123 state=0
+INFO:__main__:text=aSD state=0
+INFO:__main__:creating matches ...
+INFO:__main__:text=123 state=0
+INFO:__main__:creating matches ...
+INFO:root:text=abc state=0
+INFO:root:creating matches ...
+INFO:root:text=abc state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=abc state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=abc state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=abc state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text=0 state=0
+INFO:root:creating matches ...
+INFO:root:matches=['match-0', 'match-1', 'match-2', 'match-3', 'match-4']
+INFO:root:text=0 state=1
+INFO:root:text='co' state=0
+INFO:root:text='co' state=1
+INFO:root:text='co' state=2
+INFO:root:text='comple' state=0
+INFO:root:text='comple' state=1
+INFO:root:text='comple' state=2
+INFO:root:text='comple' state=0
+INFO:root:text='comple' state=1
+INFO:root:text='comple' state=2
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='c' state=0
+INFO:root:text='c' state=1
+INFO:root:text='c' state=2
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='c' state=0
+INFO:root:text='c' state=1
+INFO:root:text='c' state=2
+INFO:root:text='com' state=0
+INFO:root:text='com' state=1
+INFO:root:text='com' state=2
+INFO:root:text='comple' state=0
+INFO:root:text='comple' state=1
+INFO:root:text='comple' state=2
+INFO:root:text='comple' state=0
+INFO:root:text='comple' state=1
+INFO:root:text='comple' state=2
+INFO:root:text='comple' state=0
+INFO:root:text='comple' state=1
+INFO:root:text='comple' state=2
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='pr' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:[]
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3
+INFO:root:text='' state=0
+INFO:root:matches
+INFO:root:-------
+INFO:root:['__pycache__', 'compleat.py', 'completer.log']
+INFO:root:text='' state=1
+INFO:root:text='' state=2
+INFO:root:text='' state=3

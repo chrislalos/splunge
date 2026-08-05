@@ -9,11 +9,21 @@ from .app import Config
 
 def completer (text, state):
 	with open('completer.log', 'a') as f:
-		print('meat')
-		dir, prefix = os.path.split(text)
-		s = f'completer(): text={text:<20s}, state={state:<4d} dir={dir:<20} prefix={prefix:<20}\n'
-		print(f"doin it! s={s}")
-		f.write(s)
+		try:
+			print('meat')
+			dir, prefix = os.path.split(text)
+			if not dir:
+				dir = '.'
+			matches = [f for f in os.listdir(dir) if f.startswith(prefix)]
+			s = f'completer(): text={text:<20s} state={state:<4d} dir={dir:<20} prefix={prefix:<20}\n'
+			f.write(s)
+			return matches[state]
+		except ex:
+			import traceback
+			with open('completer.err.log', 'a') as ferr:
+				traceback.print_exc(file=ferr)
+				print(ex)
+			return None
 
 
 # create an a
