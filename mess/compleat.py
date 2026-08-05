@@ -1,44 +1,31 @@
-import glob
 import logging
-import os
-import readline
 
-def path_completer(text, state):
-	with open('./completer_debug.log', 'a') as f:
-		try:
-			f.write(f'text={text} state={state}\n')
-			if state == 0:
-				base = os.path.expanduser(text) if text.startswith('~') else text
-				if os.path.isdir(base):
-					if base.endswith('/'):
-						pattern = base + '*'
-					else:
-						pattern = base + '/*'
-				else:
-					pattern = base + '*'
-				raw_matches = sorted(glob.glob(pattern))
-				home = os.path.expanduser('~')
-				path_completer.matches = []
-				for m in raw_matches:
-					display = m.replace(home, '~', 1) if text.startswith('~') else m
-					if os.path.isdir(m):
-						display += '/'
-					path_completer.matches.append(display)
-				f.write(f'base={base!r} pattern={pattern!r} matches={path_completer.matches}\n')
-			try:
-				return path_completer.matches[state]
-			except IndexError:
-				return None
-		except Exception:
-			import traceback
-			traceback.print_exc(file=f)
+from splunge.path_completer import get_completer_logger, set_completer
+
+'''
+compleat.py - harness for a path completer
+
+When prompting the user for input for a filename or path, autocomplete is a
+must. path_completer handles relative and absolute paths, and translates ~
+to the user's home folder. It uses python's `readline` library instead of
+trying to figure any of that stuff out for itself.
+'''
+
+
+def setup_logging():
+	# add handler to log to completer_debug.log
+	handler = logging.FileHandler('completer_debug.log', mode='a')
+	handler.setLevel(logging.DEBUG)
+	completerLogger = get_completer_logger()
+	completerLogger.addHandler(handler)
+	completerLogger.setLevel(logging.DEBUG)
+
 
 def main():
-	logging.basicConfig(filename='completer.log', level=logging.INFO)
-	readline.set_completer_delims(readline.get_completer_delims().replace('/', ''))
-	readline.set_completer(path_completer)
-	readline.parse_and_bind('tab: complete')
-	line = input("hello ")
+	setup_logging()
+	with set_completer():
+		line = input("hello ")
+		print(line)
 
 if __name__ == '__main__':
 	main()

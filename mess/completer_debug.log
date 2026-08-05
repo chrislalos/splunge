@@ -4821,3 +4821,60 @@ text=co state=3
 text=complea state=0
 base='complea' pattern='complea*' matches=['compleat.py']
 text=complea state=1
+text='com' state=0
+base='com' pattern='com*' matches=['compleat.py', 'completer.log', 'completer_debug.log']
+text='com' state=1
+text='com' state=2
+text='com' state=3
+text='complea' state=0
+base='complea' pattern='complea*' matches=['compleat.py']
+text='complea' state=1
+text='/ho' state=0
+base='/ho' pattern='/ho*' matches=['/home/']
+text='/ho' state=1
+text='/home/c' state=0
+base='/home/c' pattern='/home/c*' matches=['/home/chris.linux/']
+text='/home/c' state=1
+text='/ho' state=0
+base='/ho' pattern='/ho*' matches=['/home/']
+text='/ho' state=1
+text='com' state=0
+base='com' pattern='com*' matches=['compleat.py', 'completer.log', 'completer_debug.log']
+text='com' state=1
+text='com' state=2
+text='com' state=3
+text='' state=0
+base='' pattern='*' matches=['__pycache__/', 'compleat.py', 'completer.log', 'completer_debug.log']
+text='' state=1
+text='' state=2
+text='' state=3
+text='' state=4
+text='' state=0
+base='' pattern='*' matches=['__pycache__/', 'compleat.py', 'completer.log', 'completer_debug.log']
+text='' state=1
+text='' state=2
+text='' state=3
+text='' state=4
+text='comp' state=0
+base='comp' pattern='comp*' matches=['compleat.py', 'completer.log', 'completer_debug.log']
+text='comp' state=1
+text='comp' state=2
+text='comp' state=3
+text='complet' state=0
+base='complet' pattern='complet*' matches=['completer.log', 'completer_debug.log']
+text='complet' state=1
+text='complet' state=2
+text='completer.' state=0
+base='completer.' pattern='completer.*' matches=['completer.log']
+text='completer.' state=1
+text='com' state=0
+base='com' pattern='com*' matches=['compleat.py', 'completer.log', 'completer_debug.log']
+text='com' state=1
+text='com' state=2
+text='com' state=3
+text='/ho' state=0
+base='/ho' pattern='/ho*' matches=['/home/']
+text='/ho' state=1
+text='/home/ch' state=0
+base='/home/ch' pattern='/home/ch*' matches=['/home/chris.linux/']
+text='/home/ch' state=1
