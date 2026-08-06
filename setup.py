@@ -1,6 +1,5 @@
 import setuptools
 
-
 setuptools.setup(name='splunge',
                  entry_points={
 					'console_scripts': [

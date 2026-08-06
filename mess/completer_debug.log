@@ -4878,3 +4878,23 @@ text='/ho' state=1
 text='/home/ch' state=0
 base='/home/ch' pattern='/home/ch*' matches=['/home/chris.linux/']
 text='/home/ch' state=1
+text='HO' state=0
+base='HO' pattern='HO*' matches=[]
+text='HO' state=0
+base='HO' pattern='HO*' matches=[]
+text='HO' state=0
+base='HO' pattern='HO*' matches=[]
+text='HO' state=0
+base='HO' pattern='HO*' matches=[]
+text='HOM' state=0
+base='HOM' pattern='HOM*' matches=[]
+text='HOM' state=0
+base='HOM' pattern='HOM*' matches=[]
+text='HOME' state=0
+base='HOME' pattern='HOME*' matches=[]
+text='HOME' state=0
+base='HOME' pattern='HOME*' matches=[]
+text='HOME/' state=0
+base='HOME/' pattern='HOME/*' matches=[]
+text='HOME/' state=0
+base='HOME/' pattern='HOME/*' matches=[]

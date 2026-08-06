@@ -1,3 +1,4 @@
+import copy
 import glob
 import logging
 import os
@@ -12,14 +13,19 @@ def get_completer_logger():
 
 @contextmanager
 def set_completer():
-	prev = readline.get_completer()
-	readline.set_completer_delims(readline.get_completer_delims().replace('/', ''))
+	prev_completer = readline.get_completer()
+	prev_delims = readline.get_completer_delims()
+	newDelims = copy.copy(prev_delims)
+	newDelims = newDelims.replace('/', '')
+	newDelims = newDelims.replace('$', '')
+	readline.set_completer_delims(newDelims)
 	readline.parse_and_bind('tab: complete')
 	readline.set_completer(completer)
 	try:
 		yield completer
 	finally:
-		readline.set_completer(prev)
+		readline.set_completer(prev_completer)
+		readline.set_completer_delims(prev_delims)
 
 
 def completer(text, state):
