@@ -17,3 +17,4 @@ lib/
 splunge.log
 splunge_test.log
 venv/
+web/

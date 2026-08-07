@@ -1,0 +1,10 @@
+contentFolders = []
+codeFolders = []
+logFolder = "/log"
+name = "mess"
+templateFolders = []
+
+[guniCfg]
+accesslog = "/log/access.log"
+bind = "0.0.0.0:13000"
+errorlog = "/log/error.log"
