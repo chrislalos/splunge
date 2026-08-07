@@ -3,7 +3,7 @@ import os
 import sys
 
 from . import arg_parser, path_completer
-from .app import createGunicornConfig, Config
+from .app import Config, createGunicornConfig, create_run_config
 from .util import get_config_value, prompt_save_file
 
 
@@ -18,9 +18,12 @@ def init(args, configPath=None):
 		while True:
 			cfg = _create_user_app_config(
 				name=args.name,
+				accessLog=args.accessLog,
 				bind=args.bind,
 				codeFolders=args.codeFolders,
 				contentFolders=args.contentFolders,
+				errorLog=args.errorLog,
+				logFolder=args.logFolder,
 				templateFolders=args.templateFolders,
 			)
 			if cfg is not None:
@@ -29,8 +32,8 @@ def init(args, configPath=None):
 			if not (retry and retry.lower().startswith('y')):
 				print("Config creation aborted.")
 				return
-		cfg.pprint()
-		path = prompt_save_file("Save config", default=f"./{cfg.name}.cfg.py")
+		print(cfg)
+		path = prompt_save_file("Save config", default=f"./{cfg.name}.toml")
 		if path:
 		    _save_app_config(cfg, path)
 		    print(f"Config saved to {path}")
@@ -55,9 +58,20 @@ def run(args):
 	if not config_path:
 		print("No config file found. Run 'splunge init' first.", file=sys.stderr)
 		sys.exit(1)
-	cfg = _load_app_config(config_path)
+	app_cfg = _load_app_config(config_path)
 	_mark_as_app_config(config_path)
-	guniCfg = cfg.guniCfg
+	run_cfg = create_run_config(
+		app_cfg,
+		bind=args.bind,
+		codeFolders=args.codeFolders,
+		contentFolders=args.contentFolders,
+		templateFolders=args.templateFolders,
+		logFolder=args.logFolder,
+		accessLog=args.accessLog,
+		errorLog=args.errorLog,
+		reload=args.reload,
+		debug=args.debug,
+	)
 
 
 def setup_logging():
@@ -69,8 +83,14 @@ def setup_logging():
 	completerLogger.setLevel(logging.DEBUG)
 
 
-def _create_user_app_config(name=None, bind=None, codeFolders=None,
-                            contentFolders=None, templateFolders=None):
+def _create_user_app_config(name=None,
+							accessLog=None,
+							bind=None,
+							codeFolders=None,
+                            contentFolders=None,
+							errorLog=None,
+							logFolder=None,
+							templateFolders=None):
 	'''Prompt the user for values to create a basic app config.
 	name            required, scalar, default=$dirname
 	bind            required, scalar, example='0.0.0.0:13000, unix:/var/run/$name.sock'
@@ -81,20 +101,32 @@ def _create_user_app_config(name=None, bind=None, codeFolders=None,
 		if not name:
 			name = get_config_value("Name", default=os.path.basename(os.getcwd()), required=True)
 		if not bind:
-			example = f'0.0.0.0:13000,unix:/run/{name}.sock'
-			bind = get_config_value("bind", example=example, required=True)
+			defaultTcp = '0.0.0.0:13000'
+			defaultUnix = f'unix:/run/{name}.sock'
+			default = defaultTcp
+			example = f'{defaultUnix},{defaultUnix}'
+			bind = get_config_value("bind", default=default, logFolderexample=example, required=True)
 		if not codeFolders:
 			codeFolders = get_config_value("code folder(s)", autoComplete=True, multi=True)
 		if not contentFolders:
 			contentFolders = get_config_value("content folder(s)", autoComplete=True, multi=True)
 		if not templateFolders:
 			templateFolders = get_config_value("template folder(s)", autoComplete=True, multi=True)
-		guniCfg = createGunicornConfig(bind=bind)
+		if not logFolder:
+			logFolder = get_config_value("Log folder", default="/log", autoComplete=True)
+		if not accessLog:
+			default = os.path.join(logFolder, "access.log")
+			accessLog = get_config_value("Access log path", default=default, autoComplete=True)
+		if not errorLog:
+			default = os.path.join(logFolder, "error.log")
+			errorLog = get_config_value("Error log path", default=default, autoComplete=True)
+		guniCfg = createGunicornConfig(accessLog=accessLog, bind=bind, errorLog=errorLog)
 		return Config(
 			name=name,
 			codeFolders=codeFolders,
 			contentFolders=contentFolders,
 			guniCfg=guniCfg,
+			logFolder=logFolder,
 			templateFolders=templateFolders,
 		)
 	except (KeyboardInterrupt, EOFError):
@@ -110,7 +142,7 @@ def _get_app_config_paths():
 
 def _get_default_config_path():
 	"""Get the default config file for this app folder if it exists."""
-	path = f"./{os.path.basename(os.getcwd())}.cfg.py"
+	path = f"./{os.path.basename(os.getcwd())}.toml"
 	return path
 
 
@@ -124,16 +156,10 @@ def _get_user_app_config_path():
 
 
 def _load_app_config(path):
-	"""Load the app config at this path.
-	Config files are python modules so they need to be imported, and then a
-	Config needs to be built from its contents."""
-	import importlib.util
-	spec = importlib.util.spec_from_file_location('__config__', path)
-	cfg_module = importlib.util.module_from_spec(spec)
-	spec.loader.exec_module(cfg_module)
-	fields = {'name', 'codeFolders', 'contentFolders', 'templateFolders', 'guniCfg'}
-	values = {k: v for k, v in vars(cfg_module).items() if k in fields}
-	return Config(**values)
+	"""Load the app config at this path."""
+	import toml
+	d = toml.load(path)
+	return Config(**d)
 
 
 def _load_default_config():
@@ -160,7 +186,7 @@ def _save_default_app_config(cfg, dirPath=None):
 	'''Save the app config to the default app config name for the specified
 	dir. dirPath must be an existing folder.'''
 	if dirPath:
-		path = os.path.join(dirPath, f"{cfg.name}.cfg.py")
+		path = os.path.join(dirPath, f"{cfg.name}.toml")
 	else:
 		path = _get_default_config_path()
 	_save_app_config(cfg, path)
