@@ -1,9 +1,14 @@
 import readline
 import rlcompleter
-readline.parse_and_bind('tab: complete')
 
-import cli
-import util
+from splunge import cli, util
+import boxylady as boxy
 
-print("cli + util helpers loaded. Try: cli.<TAB>, util.<TAB>")
-print("")
+def main():
+	readline.parse_and_bind('tab: complete')
+	print("cli + util helpers loaded. Try: cli.<TAB>, util.<TAB>")
+	print("")
+
+
+if __name__ == '__main__':
+	main()

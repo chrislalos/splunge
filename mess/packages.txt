@@ -1,0 +1,11 @@
+gunicorn==26.0.0
+Jinja2==3.1.6
+markdown-it-py==4.2.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+-e git+https://github.com/chrislalos/splunge.git@4920c319fcf2ec8c80dcf44de7b74c9e8f919c1b#egg=mess&subdirectory=mess
+packaging==26.3
+Pygments==2.20.0
+-e git+https://github.com/chrislalos/splunge.git@4920c319fcf2ec8c80dcf44de7b74c9e8f919c1b#egg=splunge
+toml==0.10.2
+Werkzeug==3.1.8
