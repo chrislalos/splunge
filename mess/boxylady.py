@@ -6,7 +6,8 @@ for system calls (ip, mount, etc.) but the API stays Pythonic.'''
 
 import argparse
 import os
-
+import sysconfig
+import libc
 
 class AppendWithMulti(argparse.Action):
 	''' Allow multiple occurences of a flag
@@ -41,11 +42,9 @@ def create_parser():
 	p.set_defaults(func=test)
 	
 		
-
-# argparser - add subcommand
-# subCmd = '$1'
-# p = subs.add_parser(subCmd)
-# p.set_defaults(func=fnMap[subCmd])
+def create_python_distro():
+	import sysconfig
+	for k, v in sysconfig.get_paths().items(): print(f'{k:<20} {v}')
 
 
 def create_root(dirpath):
@@ -83,6 +82,40 @@ def enter_user_ns(uid=None, gid=None):
 	Maps the calling uid/gid to 0 (root) inside the namespace.
 	Falls back to newuidmap/newgidmap if direct /proc writes fail.'''
 	pass
+
+
+def is_child_path(target, paths):
+	''' Determine if path is a child of one or more elements in paths '''
+	return any(target != path and os.path.commonpath([target, path]) == path for path in paths) 
+
+
+def reduce_sysconfig_paths():
+	paths_dir = sysconfig.get_paths()
+	realpaths_dir = {}
+	for key, path in paths_dir.items():
+		realpaths_dir[key] = os.path.realpath(path)
+	realpaths = realpaths_dir.values()
+	reduced_dir = {}
+	for key, realpath in realpaths_dir.items():
+		if not is_child_path(realpath, realpaths) and realpath not in reduced_dir.values():
+			reduced_dir[key] = realpath
+	return reduced_dir
+
+
+def safe_mount(srcDir, dstDir):
+	''' Do a readonly, private mount of srcDir to dstDir '''
+	os.makedirs(dstDir, exist_ok=True)
+
+
+def stage_current_python(stageDir):
+	''' Stage the current python distro under /python in the staging dir '''
+	pythonHome='/python'
+	vars={'base': pythonHome, 'platbase': pythonHome, 'installed_base': pythonHome, 'installed_platbase': pythonHome}
+	dSrcPaths = reduce_sysconfig_paths()
+	dDstPaths = sysconfig.get_paths(scheme='posix_prefix', vars=vars)
+	for key, srcPath in dSrcPaths.items():
+		dstPath = dDstPaths[key]
+		safe_mount(srcPath, dstPath)
 
 
 def up_lo():
