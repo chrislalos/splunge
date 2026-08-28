@@ -6,14 +6,17 @@ build-backend = "setuptools.build_meta"
 name = "mess"
 version = "0.0.1"
 dependencies = [
+	"bs4",
+	"lxml",
 	"splunge @ file:///home/chris.linux/projects/daylight/src/splunge"
 ]
 
 [project.scripts]
 brap = 'brap:main'
+write_table = 'syscalls:write_syscall_table'
 
 [tool.setuptools]
-py-modules = ['messaround', 'boxylady', 'brap']
+py-modules = ['messaround', 'boxylady', 'brap', 'syscalls', 'libc']
 script-files = ["./messaround"]
 
 [project.optional-dependencies]

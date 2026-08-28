@@ -1,4 +1,15 @@
-archMappings = {
+import json
+from urllib.request import urlretrieve
+
+from bs4 import BeautifulSoup as BS
+
+
+AT_EMPTY_PATH = 0x1000                  # $src/include/uapi/linux/fcntl.h
+OPEN_TREE_CLONE = 1<<0					# $src/include/uapi/linux/mount.h
+MOVE_MOUNT_F_EMPTY_PATH = 0x00000004	# $src/include/uapi/linux/mount.h
+MOVE_MOUNT_T_EMPTY_PATH = 0x00000040	# $src/include/uapi/linux/mount.h
+
+machineMappings = {
 	"x86_64": "x86_64",
 	"aarch64": "arm64",
 	"armv7l": "arm",
@@ -37,12 +48,20 @@ archMappings = {
 }
 
 
+def create_syscall_table(table):
+	syscalls = {}
+	machines = get_machines(table)
+	rows = get_data_rows(table)
+	for row in rows:
+		syscall = get_syscall(row)
+		syscallNums = get_syscall_numbers(row)
+		syscalls[syscall] = dict(zip(machines, syscallNums))
+	return syscalls	
+
+
 def download_table():
 	url = "https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html"
-	from urllib.request import urlretrieve
-	from bs4 import BeautifulSoup as BS
 	(file, msg) = urlretrieve(url)
-	selector = "#infotable"
 	with open(file) as f:
 		doc = BS(f, "lxml")
 	table = doc.select_one("#infotable")
@@ -55,8 +74,8 @@ def get_data_rows(table):
 
 
 def get_machines(table):
-	machines = [th.get_text() for th in table.thead.tr.find_all('th')]
-	return machines[1:]
+	machines = [th.get_text() for th in table.thead.tr.find_all('th')][1:]
+	return machines
 
 
 def get_syscall(row):
@@ -66,17 +85,18 @@ def get_syscall(row):
 
 
 def get_syscall_numbers(row):
-	tds = row.find_all("td")
-	syscallNums = [td.string for td in tds]
-	return syscallNums[1:]
+	tds = row.find_all("td")[1:]
+	syscallNums = [int(td.string) for td in tds]
+	return syscallNums
 
 
-def create_syscall_table(table):
-	syscalls = {}
-	machines = get_machines(table)
-	rows = get_data_rows(table)
-	for row in rows:
-		syscall = get_syscall(row)
-		syscallNums = get_syscall_numbers(row)
-		syscalls[syscall] = dict(zip(machines, syscallNums))
-	return syscalls	
+def load_syscall_table():
+	with open("./syscall_table.json") as f:
+		syscall_table = json.load(f)
+	return syscall_table
+
+
+def write_syscall_table():
+	table = download_table()
+	syscallTable = create_syscall_table(table)
+	print(json.dumps(syscallTable, indent=3))

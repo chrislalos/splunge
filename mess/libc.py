@@ -1,10 +1,30 @@
 import ctypes
+import os
+
+import syscalls
+
+### shortcuts for ctypes type constants
+n = ctypes.c_int
+s = ctypes.c_char_p
+u = ctypes.c_uint
+u64 = ctypes.c_uint64
+p = ctypes.c_void_p
+
+libcso = ctypes.CDLL(None, use_errno=True)
+
+
+def get_syscall_number(name):
+	table = syscalls.load_syscall_table()
+	unameMachine = os.uname().machine
+	machine = syscalls.machineMappings[unameMachine]
+	syscallNum = table[name][machine]
+	return syscallNum
+
 
 ###
 #
 # existing libc wrappers
 #
-libcso = ctypes.CDLL(None, use_errno=True)
 
 # move_mount
 #
@@ -14,22 +34,20 @@ libcso = ctypes.CDLL(None, use_errno=True)
 #				 const char *to_path,
 #				 unsigned int flags);
 _move_mount = libcso.move_mount
-_move_mount.restype = ctypes.cint
-_move_mount.argtypes = [
-	ctypes.c_int,    # int from_dirfd
-	ctypes.c_char_p, # const char *from_path
-	ctypes.c_int,    # int to_dirfd
-	ctypes.c_char_p, # const char *to_path
-	ctypes.c_uint    # unsigned int flags
-]
+_move_mount.restype = n
+_move_mount.argtypes = [n, s, n, s, u]
 
 
-def move_mount(from_dirfd: int, from_path: str, to_dirfd: int, to_path: str, flags: int) -> int:
-	if from_path:
+def move_mount(from_dirfd: int, from_path: str, to_dirfd: int, to_path: str, flags: int=0) -> int:
+	if from_path is not None:
 		from_path = from_path.encode()
-	if to_path:
+	if to_path is not None:
 		to_path = to_path.encode()
-	return _move_mount(from_dirfd, from_path, to_dirfd, to_path, flags)
+	rc =_move_mount(from_dirfd, from_path, to_dirfd, to_path, flags)
+	if rc < 0:
+		errno = ctypes.get_errno()
+		raise OSError(errno, os.strerror(errno))
+	return rc
 
 
 ###
@@ -46,21 +64,27 @@ def move_mount(from_dirfd: int, from_path: str, to_dirfd: int, to_path: str, fla
 #             struct mount_attr *_Nullable attr,
 #             size_t size);
 
-SYS_open_tree_attr = 467
-
 class MountAttr(ctypes.Structure):
 	_fields_ = [
-		("attr_set", ctypes.c_uint64),
-		("attr_clr", ctypes.c_uint64),
-		("propagation", ctypes.c_uint64),
-		("userns_fd", ctypes.c_uint64)
+		("attr_set", u64),
+		("attr_clr", u64),
+		("propagation", u64),
+		("userns_fd", u64)
 	]
 
-
-_open_tree_attr = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_str, ctypes.c_void_p, ctypes.c_int)(("syscall", ctypes.CDLL(None)))
+_open_tree_attr = ctypes.CFUNCTYPE(n, n, n, s, n, p, n, use_errno=True)(("syscall", libcso))
 
 def open_tree_attr(dirfd: int, path: str, flags: int, attr: MountAttr | None = None, size: int = 0) -> int:
-	if path:
+	if path is not None:
 		path = path.encode()
-	return _open_tree_attr(SYS_open_tree_attr, dirfd, path, flags, attr, size)
+	if attr is not None:
+		if size == 0:
+			size = ctypes.sizeof(attr)
+		attr = ctypes.byref(attr)
+	syscallNum = get_syscall_number('open_tree_attr')
+	fd = _open_tree_attr(syscallNum, dirfd, path, flags, attr, size)
+	if fd < 0:
+		errno = ctypes.get_errno()
+		raise OSError(errno, os.strerror(errno))
+	return fd
 

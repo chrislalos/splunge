@@ -7,7 +7,10 @@ for system calls (ip, mount, etc.) but the API stays Pythonic.'''
 import argparse
 import os
 import sysconfig
+
 import libc
+import syscalls
+
 
 class AppendWithMulti(argparse.Action):
 	''' Allow multiple occurences of a flag
@@ -165,6 +168,24 @@ def mount_log_folders(stagePath, cfg):
 	# accessLog
 	# errorLog
 	pass
+
+
+def mount_folder(srcDirPath, dstDirPath):
+	''' mount a folder to a mount point.
+	    use syscalls including the new open_tree_attr syscall which as of this
+		writing does not have a libc mapping and must be invoked directly.
+	'''
+	# use open_tree_attr to create a detached mount of an existing folder (no flags for now)
+	srcDir = os.open(srcDirPath, os.O_DIRECTORY|os.O_PATH)
+	srcFd = libc.open_tree_attr(srcDir, "", syscalls.AT_EMPTY_PATH | syscalls.OPEN_TREE_CLONE, None)
+	# create the destDir if necessary
+	os.makedirs(dstDirPath, exist_ok=True)
+	dstFd = os.open(dstDirPath, os.O_DIRECTORY|os.O_PATH)
+	# call move_mount to do a open_tree fd => dst fd mount. Both src and dst paths will be empty string
+	flags = syscalls.MOVE_MOUNT_F_EMPTY_PATH | syscalls.MOVE_MOUNT_T_EMPTY_PATH
+	return libc.move_mount(srcFd, "", dstFd, "", flags) 
+
+
 
 
 def stage(venv_path, www_path, cfg):
