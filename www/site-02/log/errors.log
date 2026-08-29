@@ -1,0 +1,33 @@
+[2026-07-26 21:00:56 -0500] [841427] [INFO] Starting gunicorn 23.0.0
+[2026-07-26 21:00:56 -0500] [841427] [INFO] Listening at: http://127.0.0.1:13002 (841427)
+[2026-07-26 21:00:56 -0500] [841427] [INFO] Using worker: sync
+[2026-07-26 21:00:56 -0500] [841439] [INFO] Booting worker with pid: 841439
+[2026-07-26 21:00:56 -0500] [841440] [INFO] Booting worker with pid: 841440
+[2026-07-26 21:00:56 -0500] [841443] [INFO] Booting worker with pid: 841443
+[2026-07-26 21:01:59 -0500] [841427] [INFO] Handling signal: int
+[2026-07-26 21:01:59 -0500] [841443] [INFO] Worker exiting (pid: 841443)
+[2026-07-26 21:01:59 -0500] [841439] [INFO] Worker exiting (pid: 841439)
+[2026-07-26 21:01:59 -0500] [841440] [INFO] Worker exiting (pid: 841440)
+[2026-07-26 21:01:59 -0500] [841427] [INFO] Shutting down: Master
+[2026-07-26 21:02:24 -0500] [841547] [INFO] Starting gunicorn 23.0.0
+[2026-07-26 21:02:24 -0500] [841547] [INFO] Listening at: http://0.0.0.0:13002 (841547)
+[2026-07-26 21:02:24 -0500] [841547] [INFO] Using worker: sync
+[2026-07-26 21:02:24 -0500] [841555] [INFO] Booting worker with pid: 841555
+[2026-07-26 21:02:24 -0500] [841556] [INFO] Booting worker with pid: 841556
+[2026-07-26 21:02:24 -0500] [841558] [INFO] Booting worker with pid: 841558
+[2026-07-26 21:04:19 -0500] [841547] [INFO] Handling signal: int
+[2026-07-26 21:04:19 -0500] [841556] [INFO] Worker exiting (pid: 841556)
+[2026-07-26 21:04:19 -0500] [841555] [INFO] Worker exiting (pid: 841555)
+[2026-07-26 21:04:19 -0500] [841558] [INFO] Worker exiting (pid: 841558)
+[2026-07-26 21:04:19 -0500] [841547] [INFO] Shutting down: Master
+[2026-07-26 21:04:47 -0500] [841738] [INFO] Starting gunicorn 23.0.0
+[2026-07-26 21:04:47 -0500] [841738] [INFO] Listening at: http://0.0.0.0:13002 (841738)
+[2026-07-26 21:04:47 -0500] [841738] [INFO] Using worker: sync
+[2026-07-26 21:04:47 -0500] [841746] [INFO] Booting worker with pid: 841746
+[2026-07-26 21:04:47 -0500] [841747] [INFO] Booting worker with pid: 841747
+[2026-07-26 21:04:48 -0500] [841749] [INFO] Booting worker with pid: 841749
+[2026-07-26 21:07:53 -0500] [841738] [INFO] Handling signal: int
+[2026-07-26 21:07:53 -0500] [841747] [INFO] Worker exiting (pid: 841747)
+[2026-07-26 21:07:53 -0500] [841746] [INFO] Worker exiting (pid: 841746)
+[2026-07-26 21:07:53 -0500] [841749] [INFO] Worker exiting (pid: 841749)
+[2026-07-26 21:07:53 -0500] [841738] [INFO] Shutting down: Master

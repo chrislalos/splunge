@@ -1,120 +1,36 @@
 #!/usr/bin/env bash
 
-DEFAULT_PORT=80
+read -r -d '' STARTER_INDEX_PY <<'PYEOF' || true
+welcome = "welcome to splunge"
+byebye = "have fun(ge)!"
+sunmoji = "\U0001f31e"
+PYEOF
 
-# Flags
-config_file=""
-flag_port=""
-flag_host=""
-flag_socket=""
-flag_code_folder=""
-flag_templates_folder=""
-flag_log_file=""
-flag_graceful_timeout=""
-flag_project_name=""
-init_mode=0
+read -r -d '' STARTER_CSS <<'CSSEOF' || true
+body { font-family: sans-serif; text-align: center; margin-top: 20vh; }
+#welcome { font-size: 2rem; color: #333; }
+#byebye { font-size: 1.2rem; color: #666; margin-top: 1rem; }
+.rayray { font-size: 3rem; }
+CSSEOF
 
-while (( $# > 0 )); do
-    case $1 in
-        init)
-            init_mode=1
-            shift
-            ;;
-        --with-config)
-            (( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1 2>/dev/null || exit 1; }
-            config_file=$2
-            shift 2
-            ;;
-        --port)
-            (( $# >= 2 )) || { printf '--port requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_port=$2
-            shift 2
-            ;;
-        --host)
-            (( $# >= 2 )) || { printf '--host requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_host=$2
-            shift 2
-            ;;
-        --socket)
-            (( $# >= 2 )) || { printf '--socket requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_socket=$2
-            shift 2
-            ;;
-        --code-folder)
-            (( $# >= 2 )) || { printf '--code-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_code_folder=$2
-            shift 2
-            ;;
-        --templates-folder)
-            (( $# >= 2 )) || { printf '--templates-folder requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_templates_folder=$2
-            shift 2
-            ;;
-        --log-file)
-            (( $# >= 2 )) || { printf '--log-file requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_log_file=$2
-            shift 2
-            ;;
-        --graceful-timeout)
-            (( $# >= 2 )) || { printf '--graceful-timeout requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_graceful_timeout=$2
-            shift 2
-            ;;
-        --project-name)
-            (( $# >= 2 )) || { printf '--project-name requires a value\n' >&2; return 1 2>/dev/null || exit 1; }
-            flag_project_name=$2
-            shift 2
-            ;;
-        *)
-            printf 'Unknown flag: %s\n' "$1" >&2
-            return 1
-            ;;
-    esac
-done
+read -r -d '' STARTER_INDEX_PYP <<'HTMLEOF' || true
+<html>
+<head>
+    <title>splunge</title>
+    <link rel='stylesheet' href='/style.css'>
+</head>
+<body>
+    <div id='welcome'>{{ welcome }}</div>
+    <div id='byebye'>{{ byebye }}</div>
+    <div><span class='rayray'>{{ sunmoji }}</span></div>
+</body>
+</html>
+HTMLEOF
 
-# Source explicit config file if given
-if [[ -n "$config_file" ]]; then
-    [[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1 2>/dev/null || exit 1; }
-    source "$config_file"
-fi
+init()
+{
+    local project_name code_folder bind log_file pythonpath_arg
 
-# Config file auto-detection — bare www with no flags, no env vars
-if [[ -z "$config_file" && "$init_mode" -eq 0 && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_host" && -z "$flag_templates_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
-    if [[ -f ".splunge.env" ]]; then
-        source ".splunge.env"
-    fi
-fi
-
-# Resolve each value: flag > env var > config file > default
-port=${flag_port:-${SPLUNGE_PORT:-$DEFAULT_PORT}}
-host=${flag_host:-${SPLUNGE_HOST:-localhost}}
-socket_path=${flag_socket:-${SPLUNGE_SOCKET:-''}}
-code_folder=${flag_code_folder:-${SPLUNGE_CODEFOLDER:-'.'}}
-templates_folder=${flag_templates_folder:-${SPLUNGE_TEMPLATES_FOLDER:-'./templates'}}
-log_file=${flag_log_file:-${SPLUNGE_LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
-
-graceful_timeout=${flag_graceful_timeout:-${SPLUNGE_GRACEFUL_TIMEOUT:-''}}
-project_name=${flag_project_name:-${SPLUNGE_PROJECT_NAME:-''}}
-
-# Validate mutual exclusivity
-if [[ -n "$socket_path" && -n "$flag_port" ]]; then
-    printf '%s\n' '--port and --socket are mutually exclusive' >&2
-    return 1 2>/dev/null || exit 1
-fi
-if [[ -n "$socket_path" && -n "$flag_host" ]]; then
-    printf '%s\n' '--host has no effect with --socket' >&2
-fi
-
-# Init mode — prompt and save config
-need_init=0
-if [[ "$init_mode" -eq 1 ]]; then
-    need_init=1
-elif [[ -z "$config_file" && -z "$flag_port" && -z "$flag_socket" && -z "$flag_code_folder" && -z "$flag_templates_folder" && -z "$flag_log_file" && -z "$flag_project_name" && ! -f ".splunge.env" && -z "$SPLUNGE_PORT" && -z "$SPLUNGE_SOCKET" && -z "$SPLUNGE_CODEFOLDER" && -z "$SPLUNGE_HOST" && -z "$SPLUNGE_TEMPLATES_FOLDER" && -z "$SPLUNGE_LOGFILE" && -z "$SPLUNGE_PROJECT_NAME" ]]; then
-    need_init=1
-fi
-
-if [[ "$need_init" -eq 1 ]]; then
-    # Derive default project name from git remote or current dir
     if [[ -z "$project_name" ]]; then
         project_name=$(git rev-parse --show-toplevel 2>/dev/null | xargs basename 2>/dev/null || basename "$PWD" 2>/dev/null || printf '')
     fi
@@ -122,76 +38,244 @@ if [[ "$need_init" -eq 1 ]]; then
     printf 'Splunge first-run setup\n'
     printf 'Enter values or press Enter for defaults.\n\n'
 
-    read -r -p "Project name [${project_name}]: " inp;          project_name=${inp:-$project_name}
-    read -r -p "Content folder [./web]: " inp;                  code_folder=${inp:-'./web'}
-    templates_folder=$code_folder
+    read -r -p "Project name [${project_name}]: " inp;
+	project_name=${inp:-$project_name}
 
-    local bind_type="tcp"
-    read -r -p "Bind type (tcp/unix) [${bind_type}]: " inp;     bind_type=${inp:-$bind_type}
+	local code_folder='./web'
+	read -r -e -p "Content folder [code_folder]: " inp;
+	code_folder=${inp:-$code_folder}
 
-    if [[ "$bind_type" == "unix" ]]; then
-        local default_sock="/tmp/${project_name:-splunge}.sock"
-        read -r -p "Socket path [${default_sock}]: " inp;       socket_path=${inp:-$default_sock}
-        port=""
-        host=""
-    else
-        read -r -p "Host [${host}]: " inp;                      host=${inp:-$host}
-        read -r -p "Port [${port}]: " inp;                      port=${inp:-$port}
-        socket_path=""
-    fi
+    local bind="0.0.0.0:13001"
+    read -r -p "Bind (tcp/unix, eg $bind, unix://tmp/$project_name.sock) [${bind}]: " inp;
+	bind=${inp:-$bind_type}
 
-    read -r -p "Graceful timeout (seconds, blank for default) []: " inp; graceful_timeout=${inp:-''}
+
+    read -r -p "Graceful timeout (seconds, blank for default) []: "
+	inp; graceful_timeout=${inp:-''}
 
     local default_log="$HOME/tmp/${project_name:-splunge}/log/splunge.log"
-    read -r -p "Log file [${default_log}]: " inp;               log_file=${inp:-$default_log}
+    read -r -e -p "Log file [${default_log}]: " inp;
+	log_file=${inp:-$default_log}
+    
+	read -r -e -p "Python path (blank for none) []: " inp;
+	pythonpath_arg=${inp:-''}
     printf '\n'
 
-    # Create content folder if missing
     mkdir -p "$code_folder" 2>/dev/null
 
-    config_file=${config_file:-.splunge.env}
+    local generate_site="y"
+    read -r -p "Generate a starter site? (Y/n): " inp;
+	generate_site=${inp:-$generate_site}
+    if [[ "$generate_site" =~ ^[Yy]?$ ]]; then
+        local _cf="$code_folder"
+        printf '%s\n' "$STARTER_INDEX_PY"  > "$_cf/index.py"
+        printf '%s\n' "$STARTER_CSS"       > "$_cf/style.css"
+        printf '%s\n' "$STARTER_INDEX_PYP" > "$_cf/index.pyp"
+        printf '  Starter site created in %s\n' "$_cf"
+    fi
+
+    local config_file="${config_file:-.splunge.env}"
     cat > "$config_file" <<EOF
-SPLUNGE_PROJECT_NAME=$project_name
-SPLUNGE_PORT=$port
-SPLUNGE_HOST=$host
-SPLUNGE_SOCKET=$socket_path
-SPLUNGE_CODEFOLDER=$code_folder
-SPLUNGE_TEMPLATES_FOLDER=$templates_folder
-SPLUNGE_GRACEFUL_TIMEOUT=$graceful_timeout
-SPLUNGE_LOGFILE=$log_file
+PROJECT_NAME=$project_name
+BIND=$bind
+CODEFOLDER=$code_folder
+TEMPLATEFOLDER=.
+GRACEFUL_TIMEOUT=$graceful_timeout
+LOGFILE=$log_file
+PYTHONPATH=$pythonpath_arg
 EOF
     printf 'Config written to %s\n' "$config_file"
-    return 0 2>/dev/null || exit 0
-fi
+}
 
-# Validate required values
-[[ -d "$code_folder" ]] || { printf 'Content folder not found: %s\n' "$code_folder" >&2; return 1 2>/dev/null || exit 1; }
 
-log_folder=$(dirname "$log_file")
-mkdir -p "$log_folder" || { printf 'Unable to create log folder %s\n' "$log_folder" >&2; return 1 2>/dev/null || exit 1; }
+main()
+{
+	# Flags
+	local config_file=""
+	local flag_bind=""
+	local flag_code_folder=""
+	local flag_template_folder=""
+	local flag_log_file=""
+	local flag_graceful_timeout=""
+	local flag_project_name=""
+	local flag_init=0
+	local flag_run=0
+	local flag_no_run=0
+	local -a pythonpaths=()
 
-# Build gunicorn bind string
-if [[ -n "$socket_path" ]]; then
-    bind_str="unix:$socket_path"
-    printf 'Splunge serving %s on socket %s\n' "$code_folder" "$socket_path"
-else
-    bind_str="$host:$port"
-    printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind_str" "$log_file"
-fi
+	while (( $# > 0 )); do
+		case $1 in
+			--bind)
+				(( $# >= 2 )) || { printf '--bind requires a value\n' >&2; return 1; }
+				flag_bind=$2
+				shift 2
+				;;
+			--code-folder)
+				(( $# >= 2 )) || { printf '--code-folder requires a value\n' >&2; return 1; }
+				flag_code_folder=$2
+				shift 2
+				;;
+			--graceful-timeout)
+				(( $# >= 2 )) || { printf '--graceful-timeout requires a value\n' >&2; return 1; }
+				flag_graceful_timeout=$2
+				shift 2
+				;;
+			--init)
+				flag_init=1
+				shift
+				;;
+			--log-file)
+				(( $# >= 2 )) || { printf '--log-file requires a value\n' >&2; return 1; }
+				flag_log_file=$2
+				shift 2
+				;;
+			--no-run)
+				flag_no_run=1
+				shift
+				;;
+			--project-name)
+				(( $# >= 2 )) || { printf '--project-name requires a value\n' >&2; return 1; }
+				flag_project_name=$2
+				shift 2
+				;;
+			--python-path)
+				(( $# >= 2 )) || { printf '--python-path requires a value\n' >&2; return 1; }
+				pythonpaths+=("$2")
+				shift 2
+				;;
+			--run)
+				flag_run=1
+				shift
+				;;
+			--template-folder)
+				(( $# >= 2 )) || { printf '--template-folder requires a value\n' >&2; return 1; }
+				flag_template_folder=$2
+				shift 2
+				;;
+			--with-config)
+				(( $# >= 2 )) || { printf '--with-config requires a path\n' >&2; return 1; }
+				config_file=$2
+				shift 2
+				;;
+			*)
+				printf 'Unknown flag: %s\n' "$1" >&2
+				return 1
+				;;
+		esac
+	done
 
-flags=(
-    --bind "$bind_str"
-    --access-logfile "$log_folder/access.log"
-    --chdir "$code_folder"
-    --env "SPLUNGE_CODEFOLDER=$code_folder"
-    --env "SPLUNGE_TEMPLATE_FOLDER=$templates_folder"
-    --env "SPLUNGE_LOGFILE=$log_file"
-    --error-logfile "$log_folder/errors.log"
-    --workers 3
-    --umask 007
-    --reload
-)
+	# Init mode — prompt, save config, optionally run
+	need_init=0
+	if [[ "$flag_init" -eq 1 ]]; then
+		need_init=1
+	elif [[ -z "$config_file" && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" && ! -f ".splunge.env" && -z "$BIND" && -z "$CODEFOLDER" && -z "$TEMPLATEFOLDER" && -z "$LOGFILE" && -z "$GRACEFUL_TIMEOUT" && -z "$PROJECT_NAME" ]]; then
+		need_init=1
+	fi
 
-[[ -n "$graceful_timeout" ]] && flags+=(--graceful-timeout "$graceful_timeout")
+	if [[ "$need_init" -eq 1 ]]; then
+		init
 
-exec gunicorn "${flags[@]}" splunge.app:app
+		# Re-source the config we just wrote and re-resolve
+		# shellcheck source=/dev/null
+		source ".splunge.env"
+		bind=${flag_bind:-${BIND:-localhost:13000}}
+		code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
+		template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
+		log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+		graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
+		project_name=${flag_project_name:-${PROJECT_NAME:-''}}
+		if (( ${#pythonpaths[@]} == 0 )); then
+			if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
+				pythonpaths=("$SPLUNGE_PYTHONPATH")
+			elif [[ -n "$PYTHONPATH" ]]; then
+				pythonpaths=("$PYTHONPATH")
+			fi
+		fi
+
+		if [[ "$flag_run" -eq 0 && "$flag_no_run" -eq 0 ]]; then
+			read -r -p "Run the app now? (Y/n): " inp
+			flag_run=1
+			[[ "$inp" =~ ^[Nn] ]] && flag_run=0
+		fi
+
+		if [[ "$flag_run" -eq 0 ]]; then
+			return
+		fi
+	fi
+
+	# Source explicit config file if given
+	if [[ -n "$config_file" ]]; then
+		[[ -f "$config_file" ]] || { printf 'Config file not found: %s\n' "$config_file" >&2; return 1; }
+		# shellcheck source=/dev/null
+		source "$config_file"
+	fi
+
+	# Config file auto-detection — bare www with no flags
+	if [[ -z "$config_file" && "$flag_init" -eq 0 && -z "$flag_bind" && -z "$flag_code_folder" && -z "$flag_template_folder" && -z "$flag_log_file" && -z "$flag_project_name" ]]; then
+		if [[ -f ".splunge.env" ]]; then
+			# shellcheck source=/dev/null
+			source ".splunge.env"
+		fi
+	fi
+
+	# Resolve each value: flag > config short name > default
+	bind=${flag_bind:-${BIND:-localhost:13000}}
+	code_folder=${flag_code_folder:-${CODEFOLDER:-'.'}}
+	template_folder=${flag_template_folder:-${TEMPLATEFOLDER:-''}}
+	log_file=${flag_log_file:-${LOGFILE:-"$HOME/tmp/splunge/log/splunge.log"}}
+
+	graceful_timeout=${flag_graceful_timeout:-${GRACEFUL_TIMEOUT:-''}}
+	project_name=${flag_project_name:-${PROJECT_NAME:-''}}
+
+	# Python path: flags array > SPLUNGE_PYTHONPATH > PYTHONPATH (config)
+	if (( ${#pythonpaths[@]} == 0 )); then
+		if [[ -n "$SPLUNGE_PYTHONPATH" ]]; then
+			pythonpaths=("$SPLUNGE_PYTHONPATH")
+		elif [[ -n "$PYTHONPATH" ]]; then
+			pythonpaths=("$PYTHONPATH")
+		fi
+	fi
+
+	# Resolve relative paths to absolute so they don't shift after --chdir
+	code_folder=$(realpath -- "$code_folder" 2>/dev/null || readlink -f -- "$code_folder" 2>/dev/null || printf '%s' "$code_folder")
+	[[ -z "$template_folder" ]] && template_folder=$code_folder
+	template_folder=$(realpath -- "$template_folder" 2>/dev/null || readlink -f -- "$template_folder" 2>/dev/null || printf '%s' "$template_folder")
+
+	# Validate required values
+	[[ -d "$code_folder" ]] || { printf 'Content folder not found: %s\n' "$code_folder" >&2; return 1; }
+
+	log_folder=$(dirname "$log_file")
+	mkdir -p "$log_folder" || { printf 'Unable to create log folder %s\n' "$log_folder" >&2; return 1; }
+
+	# Startup message
+	if [[ "$bind" == unix:* ]]; then
+		printf 'Splunge serving %s on socket %s\n' "$code_folder" "${bind#unix:}"
+	else
+		printf 'Splunge serving %s on %s; logging to %s\n' "$code_folder" "$bind" "$log_file"
+	fi
+
+	flags=(
+		--bind "$bind"
+		--access-logfile "$log_folder/access.log"
+		--chdir "$code_folder"
+		--env "SPLUNGE_CODEFOLDER=$code_folder"
+		--env "SPLUNGE_TEMPLATEFOLDER=$template_folder"
+		--env "SPLUNGE_TEMPLATE_FOLDER=$template_folder"
+		--env "SPLUNGE_LOGFILE=$log_file"
+		--error-logfile "$log_folder/errors.log"
+		--workers 3
+		--umask 007
+		--reload
+	)
+
+	[[ -n "$graceful_timeout" ]] && flags+=(--graceful-timeout "$graceful_timeout")
+
+	if (( ${#pythonpaths[@]} > 0 )); then
+		local IFS=':'
+		export PYTHONPATH="${pythonpaths[*]}:${PYTHONPATH:-}"
+	fi
+
+	exec gunicorn "${flags[@]}" splunge.app:app
+}
+
+(return 0 2>/dev/null) || main "$@"

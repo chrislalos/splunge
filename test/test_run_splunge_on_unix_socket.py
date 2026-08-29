@@ -46,12 +46,12 @@ class Tests(unittest.TestCase):
 		self.assertEqual(200, status)
 		self.assertIn('helloooo', body)
 
-	def test_meat_foo(self):
-		status, body = util.socket_get(self.sock_path, '/meat/foo')
+	def test_hello_foo(self):
+		status, body = util.socket_get(self.sock_path, '/hello/foo')
 		self.assertEqual(200, status)
 		self.assertIn('Hi everybody', body)
 
-	def test_meat_foo3(self):
-		status, body = util.socket_get(self.sock_path, '/meat/foo3')
+	def test_hello_foo3(self):
+		status, body = util.socket_get(self.sock_path, '/hello/foo3')
 		self.assertEqual(200, status)
 		self.assertIn('MEAT', body)

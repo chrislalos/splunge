@@ -7,18 +7,18 @@ class RedirectTests(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.cwd = os.getcwd()
-		os.chdir('./www')
+		os.chdir('/www')
 
 	@classmethod
 	def tearDownClass(cls):
 		os.chdir(cls.cwd)
 
 	def test_to_html(self):
-		url = "/meat/redirect_0_from"
+		url = "/hello/redirect_0_from"
 		test_redirect(self, url)
 	
 	def test_to_template(self):
-		url = "/meat/redirect_1_from"
+		url = "/hello/redirect_1_from"
 		test_redirect(self, url)
 
 

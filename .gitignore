@@ -10,9 +10,11 @@ src/*.html
 src/*.py
 src/*.pyp
 bin/
+boxymusic/
 build/
 include/
 lib/
 splunge.log
 splunge_test.log
 venv/
+web/

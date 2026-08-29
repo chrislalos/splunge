@@ -30,7 +30,7 @@ class ResponseTests(unittest.TestCase):
 	def test_set_content(self):
 		resp = Response.createEmpty()
 		self.assertIsNone(resp.contentType)
-		contentType = 'text/html'
+		contentType = constants.MT_html
 		resp.contentType = contentType
 		self.assertEqual(contentType, resp.contentType)
 		self.assertEqual(contentType, resp.headers.get(Headers.HN_ContentType))

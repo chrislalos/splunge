@@ -3,6 +3,7 @@ import os
 import pathlib
 import sys
 
+
 def critical(msg, *args, **kwargs):
 	logger.critical(msg, *args, **kwargs)
 
@@ -41,11 +42,8 @@ def warning(msg, *args, **kwargs):
 
 
 def init():
-	print("init'ing logger ...", file=sys.stderr)
 	splungeLogFile = os.getenv("SPLUNGE_LOGFILE")
-	print(f'splungeLogFile={splungeLogFile}')
 	testing = os.getenv("TESTING")
-	print(f'testing={testing}', file=sys.stderr)
 	f: logging.Formatter = None
 	h: logging.FileHandler = None
 	if splungeLogFile:
@@ -60,7 +58,7 @@ def init():
 		print(f'writing log to {os.path.abspath(logPath)}', file=sys.stderr)
 	else:
 		h = logging.StreamHandler(sys.stderr)
-		print(f'arg is stream: writing log to sys.stderr', file=sys.stderr)
+		print('arg is stream: writing log to sys.stderr', file=sys.stderr)
 	h.setFormatter(f)
 	logger = logging.getLogger("splunge")
 	logger.setLevel(logging.DEBUG)

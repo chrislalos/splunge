@@ -2,6 +2,7 @@ import io
 import pygments
 import pygments.formatters
 import pygments.lexers
+from .. import constants
 from ..Response import Response
 from ..Xgi import Xgi
 from .HtmlGenHandler import HtmlGenHandler

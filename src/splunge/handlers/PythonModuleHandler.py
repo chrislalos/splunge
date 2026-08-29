@@ -1,3 +1,4 @@
+import importlib
 import os
 from .. import loggin, util, module_runner
 from ..EnrichedModule import EnrichedModule
@@ -18,13 +19,9 @@ class PythonModuleHandler(BaseHandler):
 		# if not module:
 		# 	raise Exception(f'module not found: {util.get_module_path(self.xgi)}')
 		# result = enrichedModule.exec()
-		codeFolderPath = os.path.abspath(os.getenv("SPLUNGE_CODEFOLDER"))
-		codeFolderNspName = 'codefolder'
-		# moduleName = os.path.basename(self.xgi.get_path())
-		moduleName = '.'.join(self.xgi.get_path().removeprefix('/').split('/'))
-		loggin.debug(f'codeFolderPath={codeFolderPath}')
+		moduleName = self.xgi.get_module_name()
 		loggin.debug(f'moduleName={moduleName}')
-		mod = util.load_module(moduleName, codeFolderPath, codeFolderNspName)
+		mod = importlib.import_module(moduleName)
 		mod = util.enrich_module(mod, self.xgi)
 		result = module_runner.exec_module(mod, self.xgi)
 		loggin.debug(f'result.context={result.context}')

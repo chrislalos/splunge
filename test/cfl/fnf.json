@@ -1,0 +1,57 @@
+{
+  "dasher",
+  "dancer",
+  "Duluth_Bulldogs": {
+    "Chicago_Talons": {
+      "San_Francisco_Miners": [
+        "koba",
+        "dakota"
+      ],
+      "Korean_Invasion": [
+        "lexi"
+      ]
+    },
+    "Monroeville_Zombies": [
+      "ivy",
+      "isabella"
+    ]
+  },
+  "The_Harlem_Heroes": {
+    "Miami_Thunder": {
+      "New_New_York_Mets": [
+        "pedro",
+        "billie",
+        "ernie"
+      ]
+    }
+  },
+  "code": {
+    "Washington_Punishers": {
+      "Indianapolis_Rays": {
+        "Ohio_Red_Dogs": [
+          "dolly"
+        ]
+      },
+      "London_Silly_Nannies": {
+        "Big_Green": [
+          "ruger"
+        ]
+      }
+    }
+  },
+  "content": {
+    "Boston_Minutemen": {
+      "Rump_City_Bootyheads": {
+        "Pelotillehue_Unido": [
+          "tiffany",
+          "tessie"
+        ]
+      },
+      "Whopping_Street_Wanderers": {
+        "Boston_Whalers": [
+          "brownie"
+        ]
+      }
+    }
+  }
+}

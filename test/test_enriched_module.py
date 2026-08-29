@@ -13,13 +13,13 @@ class Tests(unittest.TestCase):
 		os.chdir(cls.cwd)
 
 	def test_get_status_404(self):
-		test_status(self, 404, "4ile N0t 4ound")
+		check_status(self, 404, "4ile N0t 4ound")
 
 	def test_get_status_ok(self):
-		test_status(self, 200, "OK")
+		check_status(self, 200, "OK")
 
 	def test_get_args(self):
-		xgi = Xgi.create("/meat/foo?name=meat")
+		xgi = Xgi.create("/hello/foo?name=meat")
 		mod = EnrichedModule.create(xgi)
 		self.assertIsNotNone(mod.http.args)
 		self.assertEqual(1, len(mod.http.args))
@@ -27,7 +27,7 @@ class Tests(unittest.TestCase):
 		self.assertEqual('meat', mod.http.args['name'])
 
 
-def test_status (t: unittest.TestCase, code: int, msg: str):
+def check_status (t: unittest.TestCase, code: int, msg: str):
 	status = f"{code} {msg}"
 	result = EnrichedModuleResult.createEmpty()
 	result.status = status

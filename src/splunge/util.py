@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from http.cookies import SimpleCookie
 import importlib
 from importlib._bootstrap import _load
@@ -18,7 +19,7 @@ import jinja2
 
 from .HttpEnricher import HttpEnricher
 from .Xgi import Xgi
-from . import constants, loggin
+from . import constants, loggin, path_completer
 
 
 def add_code_folder(nsp_name, code_folder_path):
@@ -155,8 +156,8 @@ def get_spec_name_and_module_path (module_name, code_folder_path, code_folder_ns
 
 
 def get_template_folder():
-	default = "templates"
-	envvar = "SPLUNGE_TEMPLATE_FOLDER"
+	default = "."
+	envvar = "SPLUNGE_TEMPLATEFOLDER"
 	templateFolder = os.getenv(envvar)
 	if not templateFolder:
 		loggin.info(f"No envvar found for {envvar}; using default ({default})")
@@ -312,3 +313,116 @@ def validate_method (method, methods):
 	if not method.lower() in [s.lower() for s in methods]:
 		return False
 	return True
+
+
+def get_config_xattr(path):
+	try:
+		os.getxattr(path, 'user.splunge.app.cfg')
+		return True
+	except (OSError, AttributeError):
+		return False
+
+
+def set_config_xattr(path):
+	try:
+		os.setxattr(path, 'user.splunge.app.cfg', b'')
+	except (OSError, AttributeError):
+		pass
+
+
+def find_xattr_configs(directory):
+	results = []
+	try:
+		for entry in os.listdir(directory):
+			full = os.path.join(directory, entry)
+			if not os.path.isfile(full):
+				continue
+			if get_config_xattr(full):
+				results.append(full)
+	except OSError:
+		pass
+	return results
+
+
+def remove_config_xattr(path):
+	try:
+		os.removexattr(path, 'user.splunge.app.cfg')
+	except (OSError, AttributeError):
+		pass
+
+
+def _read_list(prompt, required=False):
+	results = []
+	while True:
+		val = input(prompt if not results else '  ...: ')
+		if val == '':
+			if not results and required:
+				print("Please enter at least one value.", file=sys.stderr)
+				continue
+			return results
+		results.append(val)
+
+
+def _read_scalar(prompt, required=False):
+	while True:
+		val = input(prompt)
+		if val != '' or not required:
+			return val
+		print("Please enter a value.", file=sys.stderr)
+
+
+def _sanitize_prompt(prompt):
+	if prompt.endswith(": "):
+		return prompt
+	if prompt.endswith(":"):
+		return prompt + " "
+	return prompt.rstrip() + ": "
+
+
+def get_config_value(
+	prompt, *, autoComplete=False, default=None, example=None, multi=False, required=False
+):
+	# set prompt
+	if example is not None:
+		prompt = f"{prompt} (ex. {example}) "
+	if default is not None:
+		prompt = f"{prompt} [{default}] "
+	prompt = _sanitize_prompt(prompt)
+	# set 'withable' completer, possibly none
+	if autoComplete:
+		completer = path_completer.set_completer()
+	else:
+		completer = nullcontext()
+	# get user config value(s) with completer
+	reader_required = required and default is None
+	val = None
+	with completer:
+		if multi:
+		    val = _read_list(prompt, reader_required)
+		    if not val and default is not None:
+		        val = default
+		else:
+		    val = _read_scalar(prompt, reader_required)
+		    if not val and default is not None:
+		        val = default
+	return val
+
+
+def prompt_save_file(prompt, *, default=None):
+	try:
+		save = get_config_value(prompt, default="y")
+		if not (save and save.lower().startswith('y')):
+			return None
+		while True:
+			path = get_config_value("File path", default=default, autoComplete=True)
+			if not path and default:
+				path = default
+			if not os.path.exists(path):
+				return path
+			overwrite = get_config_value(f"Overwrite {path}", default="n")
+			if overwrite and overwrite.lower().startswith('y'):
+				return path
+			print("Please choose a different path.", file=sys.stderr)
+	except (KeyboardInterrupt, EOFError):
+		print()
+		return None
