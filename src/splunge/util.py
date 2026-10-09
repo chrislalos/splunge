@@ -155,8 +155,8 @@ def get_spec_name_and_module_path (module_name, code_folder_path, code_folder_ns
 
 
 def get_template_folder():
-	default = "templates"
-	envvar = "SPLUNGE_TEMPLATE_FOLDER"
+	default = "."
+	envvar = "SPLUNGE_TEMPLATEFOLDER"
 	templateFolder = os.getenv(envvar)
 	if not templateFolder:
 		loggin.info(f"No envvar found for {envvar}; using default ({default})")
